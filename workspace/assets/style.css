@@ -13,17 +13,17 @@ html{background:var(--bg)}
 body{margin:0;background:var(--bg);color:var(--t1);font-family:var(--mono);font-size:13px;line-height:1.5;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
 a{color:var(--up);text-decoration:none}
 a:hover{text-decoration:underline}
-.app{max-width:1040px;margin:0 auto;padding:22px 24px 80px}
+.app{max-width:none;margin:0;padding:24px 32px 96px}
 
 /* breadcrumbs (путь как в проводнике) */
-.crumbs{max-width:72ch;margin-left:auto;margin-right:auto;display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:18px}
+.crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:18px}
 .crumbs a{color:var(--t3)}
 .crumbs a:hover{color:var(--t2);text-decoration:none}
 .crumbs .sep{color:var(--t4)}
 .crumbs .cur{color:var(--t1)}
 
 /* header */
-.hdr{max-width:72ch;margin-left:auto;margin-right:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding-bottom:16px;margin-bottom:18px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.hdr{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding-bottom:16px;margin-bottom:18px;border-bottom:1px solid var(--border);flex-wrap:wrap}
 .hdr h1{margin:0;font-size:15px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
 .hdr .sub{font-size:10px;color:var(--t3);letter-spacing:.14em;text-transform:uppercase;margin-top:5px}
 .hdr .meta{font-size:10px;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;text-align:right;line-height:1.9}
@@ -32,24 +32,21 @@ a:hover{text-decoration:underline}
 
 /* cards */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:18px 20px;margin-bottom:16px}
-.card-title{max-width:72ch;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--t1);font-weight:600;margin:0 auto 14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.card-title{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--t1);font-weight:600;margin:0 0 14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .card-title .hint{font-weight:400;color:var(--t3);letter-spacing:.06em;text-transform:none}
 
 /* карточки детей раздела (как в Notion) */
-.cards{max-width:72ch;margin-left:auto;margin-right:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:16px}
 .tcard{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:16px 18px;color:var(--t1);min-height:120px;transition:border-color .15s}
 .tcard:hover{border-color:var(--border-2);text-decoration:none;background:var(--surface-2)}
 .tcard-kind{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--t3)}
 .tcard-name{font-size:13.5px;font-weight:600;letter-spacing:.02em}
 .tcard-sub{font-family:var(--sans);font-size:13px;color:var(--t2);line-height:1.5;flex:1}
 .tcard-foot{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
-.empty{max-width:72ch;margin:0 auto;font-family:var(--sans);font-size:13.5px;color:var(--t3);padding:24px 0}
-
-/* широкие карточки (результаты, воронка): колонка на всю ширину */
-.card.wide .card-title,.card.wide .prose{max-width:none}
+.empty{font-family:var(--sans);font-size:13.5px;color:var(--t3);padding:24px 0}
 
 /* prose */
-.prose{font-family:var(--sans);font-size:14.5px;line-height:1.65;color:var(--t2);max-width:72ch;margin:0 auto}
+.prose{font-family:var(--sans);font-size:14.5px;line-height:1.65;color:var(--t2)}
 .prose p{margin:0 0 12px}
 .prose strong{color:var(--t1);font-weight:500}
 .prose h2,.prose h3{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--t1);margin:22px 0 10px;font-weight:600}
@@ -63,9 +60,9 @@ a:hover{text-decoration:underline}
 @media (max-width:820px){.two{grid-template-columns:1fr}}
 
 /* key/value table (паспорт теста) */
-.kv{width:100%;max-width:72ch;margin:0 auto;border-collapse:collapse;font-size:12px}
+.kv{width:100%;border-collapse:collapse;font-size:12px}
 .kv td{padding:8px 0;border-bottom:1px solid var(--border);vertical-align:top}
-.kv td:first-child{color:var(--t3);letter-spacing:.06em;text-transform:uppercase;font-size:10px;width:22%;padding-right:14px}
+.kv td:first-child{color:var(--t3);letter-spacing:.06em;text-transform:uppercase;font-size:10px;width:170px;padding-right:18px}
 .kv tr:last-child td{border-bottom:none}
 .kv .sans{font-family:var(--sans);font-size:13.5px;color:var(--t2)}
 .kv ul{margin:0;padding-left:16px}
@@ -160,4 +157,4 @@ table.plain{width:100%;border-collapse:collapse;font-size:12px}
 .plain.md td:first-child{font-family:var(--mono);font-size:12px;color:var(--t1);white-space:nowrap}
 .note{font-family:var(--sans);font-size:13px;color:var(--t3);margin-top:12px;line-height:1.55}
 .chip{display:inline-block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--border-2);border-radius:2px;padding:2px 7px;color:var(--t2);margin-right:6px}
-.foot{max-width:72ch;margin-left:auto;margin-right:auto;margin-top:28px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--t4)}
+.foot{margin-top:28px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--t4)}

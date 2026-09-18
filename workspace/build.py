@@ -198,12 +198,11 @@ def page_shell(title: str, sub: str, crumbs: list[str], depth: int, body: str, m
     )
 
 
-def card(title: str | None, inner: str, hint: str = "", wide: bool = False) -> str:
+def card(title: str | None, inner: str, hint: str = "") -> str:
     head = ""
     if title:
         head = f'<h2 class="card-title">{esc(title)}' + (f'<span class="hint">{esc(hint)}</span>' if hint else "") + "</h2>"
-    cls = "card wide" if wide else "card"
-    return f'<section class="{cls}">{head}<div class="prose">{inner}</div></section>'
+    return f'<section class="card">{head}<div class="prose">{inner}</div></section>'
 
 
 def pill(text: str, cls_map: dict) -> str:
@@ -247,7 +246,7 @@ def mount_cot_pa_tables(meta: dict) -> str:
 
 
 def extra_cot_pa_tables(meta: dict) -> str:
-    return card("Воронка недель", '<div id="pa-funnel"></div>', "для выбранной группы и режима ролловых недель", wide=True)
+    return card("Воронка недель", '<div id="pa-funnel"></div>', "для выбранной группы и режима ролловых недель")
 
 
 def mount_cot_yesno(meta: dict) -> str:
@@ -303,13 +302,13 @@ def render_test(folder: Path, depth: int, crumbs: list[str]) -> tuple[str, dict]
         if head == "Результаты" and r["mount"]:
             has_results_section = True
             inner += r["mount"](meta)
-            parts.append(card(head, inner, wide=True))
+            parts.append(card(head, inner))
             if r["extra"]:
                 parts.append(r["extra"](meta))
         else:
             parts.append(card(head, inner))
     if r["mount"] and not has_results_section:
-        parts.append(card("Результаты", r["mount"](meta), wide=True))
+        parts.append(card("Результаты", r["mount"](meta)))
         if r["extra"]:
             parts.append(r["extra"](meta))
 
