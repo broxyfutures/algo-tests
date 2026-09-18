@@ -1,0 +1,13 @@
+# секреты
+.env
+
+# сырые данные: качаются скриптами 01 и 03, вместе ~130 МБ
+cot-es-pipeline/data/cot/
+cot-es-pipeline/data/es/
+
+# служебное
+__pycache__/
+*.pyc
+.DS_Store
+.netlify/
+**/.claude/settings.local.json

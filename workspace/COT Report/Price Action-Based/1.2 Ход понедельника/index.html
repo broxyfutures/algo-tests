@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>1.2 Ход понедельника после отчёта</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../../assets/style.css"></head>
+<body>
+<div class="app">
+<nav class="crumbs"><a href="../../../index.html">Тесты</a><span class="sep">/</span><a href="../../index.html">COT Report</a><span class="sep">/</span><a href="../index.html">Price Action-Based</a><span class="sep">/</span><span class="cur">1.2 Ход понедельника</span></nav>
+<header class="hdr"><div><h1>1.2 Ход понедельника после отчёта</h1><div class="sub">ES · S&amp;P 500 Consolidated · TFF Futures Only</div></div><div class="meta" id="hdr-meta"></div></header>
+<section class="card"><table class="kv"><tr><td>Статус</td><td><span class="pill pass">завершён</span></td></tr><tr><td>Вердикт</td><td><span class="pill part">частично</span> <span class="sans" style="margin-left:8px">LF не прошло. AM: 4 ячейки прошли на обоих порогах, но это сдвиг волатильности, а не направления, и он привязан к году.</span></td></tr><tr><td>Инструмент</td><td><span class="sans">ES · S&amp;P 500 Consolidated · TFF Futures Only</span></td></tr><tr><td>Даты</td><td>создан 2026-09-16 · обновлён 2026-09-17</td></tr><tr><td>Переменные</td><td><ul class="sans"><li>Группа: Leveraged Funds (основная), Asset Managers (второй прогон)</li><li>Метрика: Net = Long − Short, COT Index, окно 52 недели</li><li>Состояния: Low ≤ 20 / Mid / High ≥ 80, второй порог 10 / 90</li><li>Исход: mon_move = Close пн RTH / Open пн RTH − 1, в %</li><li>Бакеты: &lt; −1 · −1…−0.3 · ±0.3 · +0.3…+1 · &gt; +1, края открытые</li></ul></td></tr><tr><td>Источник</td><td><span class="sans">scripts/06_export_results.py → results.json</span></td></tr><tr><td>ID</td><td><code>cot-pa-1.2</code></td></tr></table></section>
+<section class="card"><h2 class="card-title">Идея</h2><div class="prose"><p>Понедельник это первая сессия после новой информации. Дальше в неделе накапливается слишком много других влияний, поэтому на первом проходе тестируется <strong>только понедельник</strong>. Остальные дни недели проверяются вторым проходом, и только если недельный тест что-то показал.</p>
+<p>Исход: ход от RTH-открытия до RTH-закрытия понедельника, в процентах. Гэп выходных не входит, это отдельный вопрос. Бакеты уже, чем у недели, потому что дневной ход меньше недельного.</p>
+<h3>Что здесь можно увидеть</h3>
+<p>Кроме направления, таблица показывает и волатильность: если средний бакет ±0.3% раздувается или сжимается против Mid, это сдвиг в «тихий» или «дёрганый» понедельник независимо от знака. Такие результаты требуют отдельной проверки, потому что волатильность режима видна и без COT.</p></div></section>
+<section class="card"><h2 class="card-title">Переменные</h2><div class="prose"><div class="twrap"><table class="plain md"><thead><tr><th>Параметр</th><th>Значение</th></tr></thead><tbody><tr><td>Состояние</td><td>совпадает с 1.1: та же группа, тот же индекс 52w, те же пороги, то же выравнивание. Одно состояние на все тесты</td></tr><tr><td>Неделя применения</td><td>понедельник после пятничной публикации</td></tr><tr><td>Исход</td><td>mon_move = Close пн RTH / Open пн RTH − 1, в %</td></tr><tr><td>Бакеты</td><td>&lt; −1% · −1…−0.3% · ±0.3% · +0.3…+1% · &gt; +1%, края открытые</td></tr><tr><td>Исключения</td><td>те же, что в 1.1: неделя должна быть полной, поэтому праздничные понедельники выпадают автоматически</td></tr></tbody></table></div></div></section>
+<section class="card"><h2 class="card-title">Метод и исключения</h2><div class="prose"><p>Полностью совпадают с тестом 1.1: период с 2011, полные недели, ролловые недели исключены (переключатель на странице), шатдаун-отчёты исключены, критерий прохода n ≥ 30, |разница с Mid| ≥ 10 п.п., тот же знак на 20/80 и 10/90.</p></div></section>
+<section class="card wide"><h2 class="card-title">Результаты</h2><div class="prose"><p>Таблица 3×5 по понедельникам. Селекторы переключают группу, порог и режим ролловых недель.</p><div class="controls" id="pa-controls"></div><div id="pa-results"></div></div></section>
+<section class="card wide"><h2 class="card-title">Воронка недель<span class="hint">для выбранной группы и режима ролловых недель</span></h2><div class="prose"><div id="pa-funnel"></div></div></section>
+<section class="card"><h2 class="card-title">Вердикт</h2><div class="prose"><p><strong>Leveraged Funds.</strong> Ни одной ячейки ≥ 10 п.п. ни на одном пороге. Не прошло.</p>
+<p><strong>Asset Managers.</strong> Четыре ячейки прошли на обоих порогах при исключённых ролловых неделях (20/80 → 10/90): Low · &lt; −1% (+10.3 → +14.6), Low · ±0.3% (−13.2 → −12.6), High · −1…−0.3% (−10.4 → −10.6), High · ±0.3% (+13.1 → +16.3). Формально это проход.</p>
+<p>Но читать его как торговое правило нельзя, и вот почему:</p>
+<ul><li>Эффект симметричный и про размах, а не про знак: при AM Low понедельники дёрганые (больше и сильных падений, и сильных ростов), при AM High тихие. Направление не сдвигается.</li><li>Состояние AM почти целиком задаётся годом. Low приходится на годы коррекций (2011: 71% недель, 2015: 61%, 2018: 56%, 2022: 72%), High на спокойные бычьи годы (2017: 67%, 2019: 56%, 2021: 51%, 2023: 63%, 2024: 86%). Эпизоды AM High длятся в медиане 7 недель, максимум 25, то есть индекс AM это медленная переменная, почти синоним режима.</li><li>Эффект держится в обеих половинах истории (2011–2018 и 2019–2026), так что это не артефакт одного периода. Но в те же годы реализованная волатильность цены сама показывает то же самое без COT.</li></ul>
+<p>Итог: индекс AM здесь прокси волатильного режима, а не самостоятельный сигнал. Чтобы вернуть этому результату статус, нужен контроль на реализованную волатильность за прошлые 20 сессий. Без этого вердикт «частично»: статистика прошла, интерпретация нет.</p></div></section>
+<section class="card"><h2 class="card-title">Журнал</h2><div class="prose"><div class="twrap"><table class="plain md"><thead><tr><th>Дата</th><th>Запись</th></tr></thead><tbody><tr><td>2026-09-16</td><td>Первый прогон. LF не прошло. AM: 4 ячейки прошли на обоих порогах, эффект про волатильность</td></tr><tr><td>2026-09-16</td><td>Структурные проверки (эпизоды, распределение состояний по годам, разбиение на эпохи): состояние AM определяется годом, эффект держится в обеих эпохах</td></tr><tr><td>2026-09-17</td><td>Перенесён в workspace. Вкладка «Проверки» убрана, её выводы записаны в вердикт. Вердикт «частично» вместо «прошло», с условием контроля на реализованную волатильность</td></tr></tbody></table></div></div></section>
+<div class="foot">Тесты / COT Report / Price Action-Based / 1.2 Ход понедельника</div>
+</div>
+<script>window.DATA = {"test":"mon","meta":{"built":"2026-09-17","cot_reports":848,"cot_from":"2010-06-15","cot_to":"2026-09-08","es_from":"2010-06-07","es_to":"2026-09-15","es_days":4182,"es_weeks":850,"roll_weeks":130,"delayed":14,"state_counts":{"lf_2080":{"Mid":556,"Low":139,"High":102},"lf_1090":{"Mid":667,"Low":70,"High":60},"am_2080":{"Mid":403,"High":211,"Low":183},"am_1090":{"Mid":537,"High":156,"Low":104}},"tests":{"week":{"col":"week_move_pct","edges":[-2.0,-0.5,0.5,2.0],"labels":["< −2%","−2…−0.5%","±0.5%","+0.5…+2%","> +2%"]},"mon":{"col":"mon_move_pct","edges":[-1.0,-0.3,0.3,1.0],"labels":["< −1%","−1…−0.3%","±0.3%","+0.3…+1%","> +1%"]}},"min_n":30,"min_lift":10.0},"funnels":{"lf_excl":{"all":850,"year":820,"full":669,"roll":557,"delay":545,"state":529},"lf_incl":{"all":850,"year":820,"full":669,"roll":669,"delay":657,"state":638},"am_excl":{"all":850,"year":820,"full":669,"roll":557,"delay":545,"state":529},"am_incl":{"all":850,"year":820,"full":669,"roll":669,"delay":657,"state":638}},"results":{"lf_excl_2080_mon":{"rows":{"Low":{"n":88,"pct":[3.4,12.5,47.7,29.5,6.8],"mean":0.15,"median":0.14,"pup":62.5},"Mid":{"n":375,"pct":[6.9,15.7,45.3,25.9,6.1],"mean":0.02,"median":0.05,"pup":54.1},"High":{"n":66,"pct":[7.6,12.1,50.0,19.7,10.6],"mean":0.05,"median":0.07,"pup":57.6}},"diff":{"Low":[-3.5,-3.2,2.4,3.6,0.7],"High":[0.7,-3.6,4.7,-6.2,4.5]},"hits":[]},"lf_excl_1090_mon":{"rows":{"Low":{"n":44,"pct":[2.3,13.6,43.2,34.1,6.8],"mean":0.18,"median":0.12,"pup":59.1},"Mid":{"n":447,"pct":[6.3,15.4,46.1,25.5,6.7],"mean":0.05,"median":0.09,"pup":56.4},"High":{"n":38,"pct":[13.2,7.9,52.6,18.4,7.9],"mean":-0.15,"median":0.0,"pup":47.4}},"diff":{"Low":[-4.0,-1.8,-2.9,8.6,0.1],"High":[6.9,-7.5,6.5,-7.1,1.2]},"hits":[]},"lf_excl_mon_passed":[],"lf_incl_2080_mon":{"rows":{"Low":{"n":111,"pct":[3.6,15.3,47.7,26.1,7.2],"mean":0.15,"median":0.11,"pup":59.5},"Mid":{"n":447,"pct":[7.4,16.6,45.0,24.8,6.3],"mean":0.01,"median":0.05,"pup":54.1},"High":{"n":80,"pct":[7.5,13.8,47.5,22.5,8.8],"mean":0.04,"median":0.08,"pup":57.5}},"diff":{"Low":[-3.8,-1.3,2.7,1.3,0.9],"High":[0.1,-2.8,2.5,-2.3,2.5]},"hits":[]},"lf_incl_1090_mon":{"rows":{"Low":{"n":56,"pct":[1.8,17.9,39.3,32.1,8.9],"mean":0.24,"median":0.12,"pup":60.7},"Mid":{"n":535,"pct":[6.7,16.4,46.0,24.3,6.5],"mean":0.03,"median":0.07,"pup":55.3},"High":{"n":47,"pct":[12.8,8.5,51.1,21.3,6.4],"mean":-0.11,"median":0.01,"pup":51.1}},"diff":{"Low":[-4.9,1.5,-6.7,7.8,2.4],"High":[6.1,-7.9,5.1,-3.0,-0.1]},"hits":[]},"lf_incl_mon_passed":[],"am_excl_2080_mon":{"rows":{"Low":{"n":123,"pct":[14.6,17.1,32.5,22.8,13.0],"mean":-0.04,"median":0.04,"pup":53.7},"Mid":{"n":258,"pct":[4.3,17.8,45.7,27.1,5.0],"mean":0.08,"median":0.1,"pup":56.2},"High":{"n":148,"pct":[3.4,7.4,58.8,25.7,4.7],"mean":0.07,"median":0.05,"pup":57.4}},"diff":{"Low":[10.3,-0.7,-13.2,-4.3,8.0],"High":[-0.9,-10.4,13.1,-1.4,-0.3]},"hits":[{"state":"Low","bucket":"< −1%","diff":10.3,"n_ok":true},{"state":"Low","bucket":"±0.3%","diff":-13.2,"n_ok":true},{"state":"High","bucket":"−1…−0.3%","diff":-10.4,"n_ok":true},{"state":"High","bucket":"±0.3%","diff":13.1,"n_ok":true}]},"am_excl_1090_mon":{"rows":{"Low":{"n":66,"pct":[19.7,12.1,31.8,19.7,16.7],"mean":-0.1,"median":0.03,"pup":53.0},"Mid":{"n":351,"pct":[5.1,17.7,44.4,27.4,5.4],"mean":0.06,"median":0.09,"pup":55.8},"High":{"n":112,"pct":[2.7,7.1,60.7,24.1,5.4],"mean":0.1,"median":0.06,"pup":58.0}},"diff":{"Low":[14.6,-5.6,-12.6,-7.7,11.3],"High":[-2.4,-10.6,16.3,-3.3,0.0]},"hits":[{"state":"Low","bucket":"< −1%","diff":14.6,"n_ok":true},{"state":"Low","bucket":"±0.3%","diff":-12.6,"n_ok":true},{"state":"Low","bucket":"> +1%","diff":11.3,"n_ok":true},{"state":"High","bucket":"−1…−0.3%","diff":-10.6,"n_ok":true},{"state":"High","bucket":"±0.3%","diff":16.3,"n_ok":true}]},"am_excl_mon_passed":[{"state":"Low","bucket":"< −1%","d2080":10.3,"d1090":14.6},{"state":"Low","bucket":"±0.3%","d2080":-13.2,"d1090":-12.6},{"state":"High","bucket":"−1…−0.3%","d2080":-10.4,"d1090":-10.6},{"state":"High","bucket":"±0.3%","d2080":13.1,"d1090":16.3}],"am_incl_2080_mon":{"rows":{"Low":{"n":148,"pct":[14.9,17.6,32.4,23.6,11.5],"mean":-0.08,"median":0.04,"pup":54.1},"Mid":{"n":315,"pct":[5.1,20.0,44.1,25.1,5.7],"mean":0.06,"median":0.08,"pup":54.0},"High":{"n":175,"pct":[2.9,7.4,60.0,25.1,4.6],"mean":0.09,"median":0.07,"pup":59.4}},"diff":{"Low":[9.8,-2.4,-11.7,-1.5,5.8],"High":[-2.2,-12.6,15.9,0.0,-1.1]},"hits":[{"state":"Low","bucket":"±0.3%","diff":-11.7,"n_ok":true},{"state":"High","bucket":"−1…−0.3%","diff":-12.6,"n_ok":true},{"state":"High","bucket":"±0.3%","diff":15.9,"n_ok":true}]},"am_incl_1090_mon":{"rows":{"Low":{"n":85,"pct":[20.0,14.1,30.6,21.2,14.1],"mean":-0.17,"median":0.03,"pup":52.9},"Mid":{"n":424,"pct":[5.4,19.1,44.1,25.7,5.7],"mean":0.05,"median":0.07,"pup":54.5},"High":{"n":129,"pct":[2.3,7.0,61.2,24.0,5.4],"mean":0.12,"median":0.07,"pup":60.5}},"diff":{"Low":[14.6,-5.0,-13.5,-4.5,8.4],"High":[-3.1,-12.1,17.1,-1.7,-0.3]},"hits":[{"state":"Low","bucket":"< −1%","diff":14.6,"n_ok":true},{"state":"Low","bucket":"±0.3%","diff":-13.5,"n_ok":true},{"state":"High","bucket":"−1…−0.3%","diff":-12.1,"n_ok":true},{"state":"High","bucket":"±0.3%","diff":17.1,"n_ok":true}]},"am_incl_mon_passed":[{"state":"Low","bucket":"±0.3%","d2080":-11.7,"d1090":-13.5},{"state":"High","bucket":"−1…−0.3%","d2080":-12.6,"d1090":-12.1},{"state":"High","bucket":"±0.3%","d2080":15.9,"d1090":17.1}]}};</script>
+<script>
+// Рендерер cot_pa_tables: таблицы 3×5 теста 1.1 / 1.2.
+// Ожидает window.DATA = {test, meta, funnels, results} из results.json
+// и на странице: #hdr-meta, #pa-controls, #pa-results, #pa-funnel.
+(function(){
+  const D = window.DATA;
+  const M = D.meta;
+  const T = D.test;
+  const GROUPS = {lf:'Leveraged Funds', am:'Asset Managers'};
+  const fmt = (v, d=1) => v === null || v === undefined ? '' : v.toFixed(d);
+  const sgn = v => v > 0 ? '+' + fmt(v) : fmt(v);
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+  const hm = document.getElementById('hdr-meta');
+  if (hm) hm.innerHTML =
+    `<div><span class="dot"></span>COT <b>${M.cot_from} → ${M.cot_to}</b> · ${M.cot_reports} отчётов</div>` +
+    `<div>ES RTH <b>${M.es_from} → ${M.es_to}</b> · ${M.es_days} сессий · ${M.es_weeks} недель</div>` +
+    `<div>Результаты собраны ${M.built}</div>`;
+
+  const s = {g:'lf', thr:'2080', roll:'excl'};
+  try{ Object.assign(s, JSON.parse(localStorage.getItem('cot-pa-' + T) || '{}')); }catch(e){}
+  const save = () => { try{ localStorage.setItem('cot-pa-' + T, JSON.stringify(s)); }catch(e){} };
+
+  function seg(opts, cur, cb){
+    const el = document.createElement('div'); el.className = 'seg';
+    opts.forEach(([v, label]) => {
+      const b = document.createElement('button'); b.textContent = label;
+      b.setAttribute('aria-pressed', v === cur);
+      b.addEventListener('click', () => cb(v));
+      el.appendChild(b);
+    });
+    return el;
+  }
+  function ctl(label, node){
+    const w = document.createElement('div'); w.className = 'ctl';
+    const l = document.createElement('span'); l.className = 'ctl-label'; l.textContent = label;
+    w.append(l, node); return w;
+  }
+  const upd = (k, v) => { s[k] = v; save(); renderControls(); renderResults(); };
+  function renderControls(){
+    const host = document.getElementById('pa-controls'); host.innerHTML = '';
+    host.appendChild(ctl('Группа', seg([['lf','LF'],['am','AM']], s.g, v => upd('g', v))));
+    host.appendChild(ctl('Порог', seg([['2080','20 / 80'],['1090','10 / 90']], s.thr, v => upd('thr', v))));
+    host.appendChild(ctl('Ролловые недели', seg([['excl','Исключены'],['incl','Включены']], s.roll, v => upd('roll', v))));
+  }
+
+  function renderFunnel(){
+    const host = document.getElementById('pa-funnel'); if (!host) return;
+    const F = D.funnels[`${s.g}_${s.roll}`];
+    const steps = [['Недель в ценовом ряде', F.all],['С 2011', F.year],['Полные недели (5 сессий, без укороченных)', F.full],
+      [s.roll === 'excl' ? 'Без ролловых недель' : 'Ролловые недели оставлены', F.roll],['Без отчётов с задержкой', F.delay],['С рассчитанным состоянием COT', F.state]];
+    let prev = null;
+    host.innerHTML = '<div class="funnel">' + steps.map(([k, v]) => { const d = prev === null ? '' : `<small>−${prev - v}</small>`; prev = v; return `<div class="frow"><div class="k">${k}</div><div class="v">${v}${d}</div></div>`; }).join('') + '</div>';
+  }
+
+  function renderResults(){
+    const key = `${s.g}_${s.roll}_${s.thr}_${T}`;
+    const R = D.results[key];
+    const passed = D.results[`${s.g}_${s.roll}_${T}_passed`];
+    const labels = M.tests[T].labels;
+    const F = D.funnels[`${s.g}_${s.roll}`];
+    const host = document.getElementById('pa-results');
+    const rows = R.rows;
+
+    let html = '<div class="tiles">';
+    const pdn = st => rows[st].pup === null ? null : 100 - rows[st].pup;
+    html += `<div class="tile"><div class="l">Low · перепродано → вверх?</div><div class="v up">${fmt(rows.Low.pup)}%</div><div class="s">недель вверх · n ${rows.Low.n} · Mid ${fmt(rows.Mid.pup)}% · ${sgn(rows.Low.pup - rows.Mid.pup)} п.п.</div></div>`;
+    html += `<div class="tile"><div class="l">High · перекуплено → вниз?</div><div class="v dn">${fmt(pdn('High'))}%</div><div class="s">недель вниз · n ${rows.High.n} · Mid ${fmt(pdn('Mid'))}% · ${sgn(pdn('High') - pdn('Mid'))} п.п.</div></div>`;
+    html += `<div class="tile"><div class="l">Mid · база</div><div class="v">${fmt(rows.Mid.pup,0)} / ${fmt(pdn('Mid'),0)}</div><div class="s">вверх / вниз, % · n ${rows.Mid.n}</div></div>`;
+    html += `<div class="tile"><div class="l">В тесте</div><div class="v">${F.state}</div><div class="s">из ${F.all} недель</div></div>`;
+    html += '</div>';
+
+    if (passed.length){
+      html += `<div class="verdict"><span class="pill pass">Прошло</span><div>${passed.map(p => `<b>${p.state}</b> · ${esc(p.bucket)}: ${sgn(p.d2080)} п.п. на 20/80, ${sgn(p.d1090)} п.п. на 10/90`).join('<br>')}</div></div>`;
+    } else {
+      const hits = R.hits.filter(h => h.n_ok);
+      html += `<div class="verdict"><span class="pill fail">Не прошло</span><div>${hits.length ? 'На этом пороге есть ячейки ≥ 10 п.п. (' + hits.map(h => `${h.state} · ${esc(h.bucket)} ${sgn(h.diff)}`).join('; ') + '), но на втором пороге та же ячейка не подтверждается.' : 'Ни одна ячейка не отличается от Mid на 10 п.п. и больше.'}</div></div>`;
+    }
+
+    html += '<div class="twrap"><table class="res"><thead><tr><th>Состояние</th><th>n</th>';
+    labels.forEach((l, i) => html += `<th class="${i===0?'sep':''}">${esc(l)}</th>`);
+    html += '<th class="sep">mean %</th><th>median %</th><th>В сторону идеи %</th></tr></thead><tbody>';
+    ['Low','Mid','High'].forEach(st => {
+      const r = rows[st]; const isMid = st === 'Mid';
+      html += `<tr class="${isMid?'mid':''}"><td class="state">${st}</td><td class="n">${r.n}</td>`;
+      r.pct.forEach((p, i) => {
+        let cls = i === 0 ? 'sep' : '';
+        let d = '';
+        if (!isMid){
+          const dv = R.diff[st][i];
+          const dcls = dv > 0 ? 'up' : dv < 0 ? 'dn' : '';
+          if (dv !== null && Math.abs(dv) >= M.min_lift) cls += dv > 0 ? ' hit-up' : ' hit-dn';
+          d = `<span class="d ${dcls}">${sgn(dv)}</span>`;
+        } else {
+          d = '<span class="d">база</span>';
+        }
+        html += `<td class="${cls}"><div class="cell"><span class="pct">${fmt(p)}</span>${d}</div></td>`;
+      });
+      const mc = r.mean > 0 ? 'up' : r.mean < 0 ? 'dn' : '';
+      const idea = st === 'Low' ? `<span class="up">${fmt(r.pup)}</span> вверх` : st === 'High' ? `<span class="dn">${fmt(100 - r.pup)}</span> вниз` : `<span class="muted">${fmt(r.pup,0)} / ${fmt(100 - r.pup,0)}</span>`;
+      html += `<td class="sep"><span class="${mc}">${sgn(r.mean)}</span></td><td>${sgn(r.median)}</td><td>${idea}</td></tr>`;
+    });
+    html += '</tbody></table></div>';
+
+    html += '<div class="bars">';
+    ['Low','Mid','High'].forEach(st => {
+      html += `<div class="bar-row"><div class="bar-lbl">${st}</div><div class="bar">` +
+        rows[st].pct.map((p, i) => `<span class="b${i}" style="width:${p||0}%" title="${esc(labels[i])}: ${fmt(p)}%"></span>`).join('') +
+        '</div></div>';
+    });
+    html += '</div><div class="bar-legend">' + labels.map((l, i) => `<span><i class="b${i}" style="background:var(--${['dn-bg-2','dn-bg','surface-2','up-bg','up-bg-2'][i]})"></i>${esc(l)}</span>`).join('') + '</div>';
+    html += `<div class="note">Под каждым процентом у Low и High стоит разница с Mid в процентных пунктах. Подсвечены ячейки с |разницей| ≥ ${M.min_lift} п.п. Синий сдвиг вверх, розовый вниз. Колонка «В сторону идеи»: для Low доля недель вверх (перепродано → рост), для High доля недель вниз (перекуплено → падение), для Mid база вверх / вниз. ${GROUPS[s.g]}, порог ${s.thr.slice(0,2)}/${s.thr.slice(2)}, ролловые недели ${s.roll==='excl'?'исключены':'включены'}.</div>`;
+    host.innerHTML = html;
+    renderFunnel();
+  }
+  renderControls(); renderResults();
+})();
+
+</script>
+</body></html>

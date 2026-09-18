@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Тесты</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/style.css"></head>
+<body>
+<div class="app">
+<nav class="crumbs"><span class="cur">Тесты</span></nav>
+<header class="hdr"><div><h1>Тесты</h1><div class="sub">рабочее пространство алгоритмических проверок торговых инструментов</div></div><div class="meta" id="hdr-meta"><div>3 элемента</div></div></header>
+<section class="card"><h2 class="card-title">Что это</h2><div class="prose"><p>Здесь лежат все проверки инструментов, которые я использую или собираюсь использовать в торговле: COT Report, Market Profile, Footprint и другие переменные. Каждая проверка отвечает на один заранее сформулированный вопрос, имеет зафиксированные до запуска критерии прохода и записанный вердикт. Результат «не прошло» такой же результат, как и «прошло», и хранится так же.</p>
+<p>Структура повторяет проводник: раздел → семейство тестов → тест. Путь к текущей странице всегда написан сверху.</p></div></section>
+<section class="card"><h2 class="card-title">Как устроена страница теста</h2><div class="prose"><p>Каждый тест это папка с двумя файлами:</p>
+<ul><li><code>test.md</code>: паспорт теста (статус, вердикт, переменные) и текст: идея, переменные, метод и исключения, вердикт, журнал изменений;</li><li><code>results.json</code>: числа, которые экспортирует скрипт пайплайна. Страница рисует их интерактивно, текст при этом не меняется.</li></ul>
+<p>Страницы собираются командой <code>python3 build.py</code> из корня этого пространства. Документ-выжимка по ресерчу потом собирается из <code>test.md</code>, поэтому всё, что важно для истории, пишется туда, а не в HTML.</p></div></section>
+<section class="card"><h2 class="card-title">Как добавить тест</h2><div class="prose"><ol><li>Создать папку в нужном разделе, имя папки станет заголовком и частью пути.</li><li>Положить в неё <code>test.md</code> по образцу любого готового теста. Ключ <code>renderer</code> выбирает, как рисовать результаты: <code>markdown</code> (только текст), <code>cot_pa_tables</code>, <code>cot_yesno</code>.</li><li>Если нужен интерактивный блок, скрипт пайплайна пишет в папку <code>results.json</code>.</li><li>Запустить <code>python3 build.py</code>.</li></ol></div></section>
+<div class="cards"><a class="tcard" href="COT%20Report/index.html"><div class="tcard-kind">Раздел</div><div class="tcard-name">COT Report</div><div class="tcard-sub">Проверки, меняет ли позиционирование групп из отчёта CFTC распределение исходов по ES</div></a><a class="tcard" href="Footprint/index.html"><div class="tcard-kind">Раздел</div><div class="tcard-name">Footprint</div><div class="tcard-sub">Проверки по футпринту. Пока пусто: нужны тиковые или bid/ask-агрегированные данные</div></a><a class="tcard" href="Market%20Profile/index.html"><div class="tcard-kind">Раздел</div><div class="tcard-name">Market Profile</div><div class="tcard-sub">Проверки по Market Profile. Пока пусто: сначала замораживаются числовые правила классификатора</div></a></div>
+<div class="foot">Тесты</div>
+</div>
+
+</body></html>

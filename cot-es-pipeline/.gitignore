@@ -1,0 +1,5 @@
+.env
+data/cot/
+data/es/
+__pycache__/
+.DS_Store
