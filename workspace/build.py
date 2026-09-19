@@ -34,6 +34,40 @@ FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?'
 VERDICT_CLASS = {"прошло": "pass", "не прошло": "fail", "частично": "part"}
 STATUS_CLASS = {"завершён": "pass", "закрыт": "dim", "в работе": "part"}
 
+# ставится в <head> до подключения style.css, чтобы выбранная тема
+# применилась ещё до первой отрисовки страницы (без вспышки не той темы)
+THEME_HEAD_SCRIPT = (
+    '<script>try{if(localStorage.getItem("algo-tests-theme")==="light")'
+    'document.documentElement.setAttribute("data-theme","light")}catch(e){}</script>'
+)
+
+# кнопка-переключатель и её логика: сама тема ставится head-скриптом выше,
+# здесь только синхронизация подписи/иконки кнопки и обработчик клика
+THEME_TOGGLE_HTML = (
+    '<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Переключить тему">'
+    '<span class="icon">\u263e</span><span class="label">Тёмная</span></button>'
+)
+THEME_TOGGLE_SCRIPT = """<script>
+(function(){
+  var KEY = 'algo-tests-theme';
+  var btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  function sync(){
+    var light = document.documentElement.getAttribute('data-theme') === 'light';
+    btn.querySelector('.icon').textContent = light ? '\u2600' : '\u263e';
+    btn.querySelector('.label').textContent = light ? 'Светлая' : 'Тёмная';
+  }
+  sync();
+  btn.addEventListener('click', function(){
+    var light = document.documentElement.getAttribute('data-theme') === 'light';
+    if (light) document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', 'light');
+    try { localStorage.setItem(KEY, light ? 'dark' : 'light'); } catch(e){}
+    sync();
+  });
+})();
+</script>"""
+
 
 # ---------------------------------------------------------------- helpers
 def esc(s) -> str:
@@ -186,15 +220,17 @@ def page_shell(title: str, sub: str, crumbs: list[str], depth: int, body: str, m
     return (
         f"<!doctype html>\n<html lang=\"ru\"><head><meta charset=\"utf-8\">"
         f"<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
-        f"<title>{esc(title)}</title>\n{FONTS}\n"
-        f'<link rel="stylesheet" href="{rel(depth)}assets/style.css"></head>\n<body>\n<div class="app">\n'
+        f"<title>{esc(title)}</title>\n{THEME_HEAD_SCRIPT}\n{FONTS}\n"
+        f'<link rel="stylesheet" href="{rel(depth)}assets/style.css"></head>\n<body>\n'
+        f"{THEME_TOGGLE_HTML}\n"
+        f'<div class="app">\n'
         f"{crumbs_html(crumbs, depth)}\n"
         f'<header class="hdr"><div><h1>{esc(title)}</h1>'
         + (f'<div class="sub">{esc(sub)}</div>' if sub else "")
         + f'</div><div class="meta" id="hdr-meta">{meta_html}</div></header>\n'
         f"{body}\n"
         f'<div class="foot">{esc(" / ".join(crumbs))}</div>\n'
-        f"</div>\n{scripts}\n</body></html>\n"
+        f"</div>\n{scripts}\n{THEME_TOGGLE_SCRIPT}\n</body></html>\n"
     )
 
 

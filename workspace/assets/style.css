@@ -4,16 +4,32 @@
   --t1:#f0f0f0;--t2:#aaaaaa;--t3:#666666;--t4:#3a3a3a;
   --up:#7da8ff;--up-bg:rgba(91,141,239,.14);--up-bg-2:rgba(91,141,239,.28);
   --dn:#f4a0cc;--dn-bg:rgba(244,160,204,.12);--dn-bg-2:rgba(244,160,204,.26);
+  --dot:#3fbf6f;
   --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
   --sans:'IBM Plex Sans',-apple-system,'Helvetica Neue',Arial,sans-serif;
   color-scheme:dark;
 }
+/* светлая тема: включается переключателем в углу экрана (кнопка внизу файла) */
+:root[data-theme="light"]{
+  --bg:#ffffff;--surface:#f6f7f8;--surface-2:#ebedef;--border:#e2e4e7;--border-2:#d2d5d9;--border-hi:#1a1a1a;
+  --t1:#111318;--t2:#52565c;--t3:#84888e;--t4:#c7cad0;
+  --up:#2f5fd6;--up-bg:rgba(47,95,214,.10);--up-bg-2:rgba(47,95,214,.20);
+  --dn:#c22e6d;--dn-bg:rgba(194,46,109,.09);--dn-bg-2:rgba(194,46,109,.18);
+  --dot:#1f9d54;
+  color-scheme:light;
+}
 *,*::before,*::after{box-sizing:border-box}
 html{background:var(--bg)}
-body{margin:0;background:var(--bg);color:var(--t1);font-family:var(--mono);font-size:13px;line-height:1.5;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--bg);color:var(--t1);font-family:var(--mono);font-size:13px;line-height:1.5;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;transition:background-color .15s,color .15s}
 a{color:var(--up);text-decoration:none}
 a:hover{text-decoration:underline}
 .app{max-width:none;margin:0;padding:24px 32px 96px}
+
+/* переключатель темы */
+.theme-toggle{position:fixed;top:16px;right:20px;z-index:50;display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);background:var(--surface);border:1px solid var(--border-2);border-radius:20px;padding:7px 13px 7px 11px;cursor:pointer;transition:color .15s,border-color .15s,background-color .15s}
+.theme-toggle:hover{color:var(--t1);border-color:var(--border-hi)}
+.theme-toggle .icon{font-size:13px;line-height:1}
+@media(max-width:640px){.theme-toggle .label{display:none}.theme-toggle{padding:8px}}
 
 /* breadcrumbs (путь как в проводнике) */
 .crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:18px}
@@ -28,7 +44,7 @@ a:hover{text-decoration:underline}
 .hdr .sub{font-size:10px;color:var(--t3);letter-spacing:.14em;text-transform:uppercase;margin-top:5px}
 .hdr .meta{font-size:10px;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;text-align:right;line-height:1.9}
 .hdr .meta b{color:var(--t2);font-weight:500}
-.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#3fbf6f;margin-right:6px;vertical-align:1px}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--dot);margin-right:6px;vertical-align:1px}
 
 /* cards */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:18px 20px;margin-bottom:16px}
