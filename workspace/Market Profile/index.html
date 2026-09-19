@@ -7,10 +7,12 @@
 <div class="theme-toggle" id="theme-toggle" role="button" tabindex="0" aria-label="Переключить тему"><span class="label" id="theme-toggle-label">Тёмная</span><div class="theme-toggle-track"><div class="theme-toggle-knob"></div></div></div>
 <div class="app">
 <nav class="crumbs"><a href="../index.html">Тесты</a><span class="sep">/</span><span class="cur">Market Profile</span></nav>
-<header class="hdr"><div><h1>Market Profile</h1><div class="sub">типы дня, типы открытия, value area · раздел зарезервирован</div></div><div class="meta" id="hdr-meta"></div></header>
-<section class="card"><h2 class="card-title">Что здесь будет</h2><div class="prose"><p>Тесты, где переменная или исход берётся из Market Profile: типы дня (Trend, Normal, Normal Variation, Neutral, Neutral Extreme, Non-Trend), типы открытия (Open Drive, Open Test Drive, Open Rejection Reverse, Open Auction), положение цены относительно value area.</p>
-<p>Правило раздела: числовые правила классификатора фиксируются в отдельной странице до того, как будет посмотрена хоть одна таблица результатов. Любая правка классификатора обнуляет результаты тестов, которые от него зависят.</p></div></section>
-<div class="empty">Пока пусто. Добавь папку с test.md и запусти build.py.</div>
+<header class="hdr"><div><h1>Market Profile</h1><div class="sub">TPO-профиль ES, восстановленный из минуток · 2010–2026</div></div><div class="meta" id="hdr-meta"><div>1 элемент</div></div></header>
+<section class="card"><h2 class="card-title">О чём раздел</h2><div class="prose"><p>Market Profile строится здесь из минуток ES за всю историю с июня 2010: 4088 RTH-дней, для каждого TPO-профиль (буквы A…M по 30 минут), POC, value area, initial balance, хвосты, single prints, ночная сессия и положение открытия относительно вчерашнего профиля.</p>
+<p>Здесь будут проверки конкретных идей: как ведёт себя цена после определённого открытия, типа дня, положения относительно value area. Каждый тест отвечает на один вопрос, критерии прохода фиксируются до запуска.</p></div></section>
+<section class="card"><h2 class="card-title">Правило раздела</h2><div class="prose"><p>Параметры профиля (сессия, высота строки, метод value area, IB, что считается хвостом) и числовые правила типов дня и открытия фиксируются <strong>до</strong> того, как посмотрим хоть одну таблицу результатов. Любая правка после этого обнуляет результаты тестов, которые от неё зависят.</p>
+<p>Данные и код лежат в папке <code>mp-es-pipeline</code> рядом с этим пространством. Что восстанавливается точно, что приближённо, и ловушки в данных описаны на странице «Данные и метод».</p></div></section>
+<div class="cards"><a class="tcard" href="%D0%94%D0%B0%D0%BD%D0%BD%D1%8B%D0%B5%20%D0%B8%20%D0%BC%D0%B5%D1%82%D0%BE%D0%B4/index.html"><div class="tcard-kind">Тест</div><div class="tcard-name">Данные и метод</div><div class="tcard-sub">Справочная страница: как восстановлены профили, два режима размера блока, сверка с терминалом</div><div class="tcard-foot"><span class="pill part">в работе</span><span class="pill ">—</span></div></a></div>
 <div class="foot">Тесты / Market Profile</div>
 </div>
 

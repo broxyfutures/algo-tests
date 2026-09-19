@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Данные и метод</title>
+<script>try{if(localStorage.getItem("algo-tests-theme")==="light")document.documentElement.setAttribute("data-theme","light")}catch(e){}</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../assets/style.css"></head>
+<body>
+<div class="theme-toggle" id="theme-toggle" role="button" tabindex="0" aria-label="Переключить тему"><span class="label" id="theme-toggle-label">Тёмная</span><div class="theme-toggle-track"><div class="theme-toggle-knob"></div></div></div>
+<div class="app">
+<nav class="crumbs"><a href="../../index.html">Тесты</a><span class="sep">/</span><a href="../index.html">Market Profile</a><span class="sep">/</span><span class="cur">Данные и метод</span></nav>
+<header class="hdr"><div><h1>Данные и метод</h1><div class="sub">Databento ES.v.0 ohlcv-1m · TPO-профили день / неделя / месяц</div></div><div class="meta" id="hdr-meta"><div>Обновлено <b>2026-09-19</b></div></div></header>
+<section class="card"><table class="kv"><tr><td>Статус</td><td><span class="pill part">в работе</span></td></tr><tr><td>Вердикт</td><td><span class="pill ">—</span> <span class="sans" style="margin-left:8px">Справочная страница: как восстановлены профили, два режима размера блока, сверка с терминалом</span></td></tr><tr><td>Инструмент</td><td><span class="sans">Databento ES.v.0 ohlcv-1m · TPO-профили день / неделя / месяц</span></td></tr><tr><td>Даты</td><td>создан 2026-09-19 · обновлён 2026-09-19</td></tr><tr><td>Источник</td><td><span class="sans">README пайплайна mp-es-pipeline</span></td></tr><tr><td>ID</td><td><code>mp-data</code></td></tr></table></section>
+<section class="card"><h2 class="card-title">Источник</h2><div class="prose"><div class="twrap"><table class="plain md"><thead><tr><th>Параметр</th><th>Значение</th></tr></thead><tbody><tr><td>Данные</td><td>Databento · GLBX.MDP3 · ES.v.0 (континуальный, фронт по объёму) · ohlcv-1m, те же минутки, что в серии COT</td></tr><tr><td>Период</td><td>2010-06-07 → 2026-09-15</td></tr><tr><td>Профилей</td><td>4088 дневных (4054 полных, 34 укороченных), 850 недельных, 196 месячных</td></tr></tbody></table></div></div></section>
+<section class="card"><h2 class="card-title">Что восстанавливается точно, что приближённо</h2><div class="prose"><div class="twrap"><table class="plain md"><thead><tr><th>Элемент</th><th>Точность</th></tr></thead><tbody><tr><td>TPO-профиль, POC и value area по TPO, IB, выход за IB, хвосты, single prints, poor high/low</td><td>точно: минутный ряд непрерывен, поэтому блок побывал на каждой цене между своими low и high</td></tr><tr><td>Ночная сессия: high / low, ON POC</td><td>точно</td></tr><tr><td>Объёмный профиль, VPOC</td><td>приближённо: объём минуты раскладывается поровну по её диапазону</td></tr><tr><td>Дельта, bid/ask</td><td>нет, нужны тиковые данные</td></tr></tbody></table></div></div></section>
+<section class="card"><h2 class="card-title">Профили</h2><div class="prose"><div class="twrap"><table class="plain md"><thead><tr><th>Профиль</th><th>Блок по времени</th><th>Что входит</th></tr></thead><tbody><tr><td>Дневной</td><td>30 мин, A…M</td><td>только RTH 09:30–16:00 New York</td></tr><tr><td>Ночь (к дневному)</td><td>30 мин</td><td>18:00 накануне → 09:29</td></tr><tr><td>Недельный</td><td>4 часа от 18:00</td><td>все торги с 18:00 воскресенья до 17:00 пятницы</td></tr><tr><td>Месячный</td><td>1 день (сутки Globex)</td><td>все торги месяца</td></tr></tbody></table></div>
+<p>Праздничные сессии Globex (NYSE закрыта, ES до 13:00) не считаются дневным профилем, но входят в недельный и месячный. Час 16:00–17:00 входит только в недельный и месячный.</p></div></section>
+<section class="card"><h2 class="card-title">Размер блока: два режима параллельно</h2><div class="prose"><p>Каждый профиль считается дважды, тесты показывают результаты рядом.</p>
+<ul><li><strong>fixed</strong>: день 2 пт, неделя 4 пт, месяц 8 пт на всю историю, как в терминале сейчас.</li><li><strong>adaptive</strong>: дневной блок = медиана диапазона RTH за 20 прошлых дней / 25, округление до сетки 0.25 · 0.5 · 0.75 · 1 · 1.5 · 2 · 2.5 · 3 · 4 · 5 · 6 · 8. Пересчёт по понедельникам. Сдвиг на 1 ступень применяется, если держится 2 недели подряд, на 2+ ступени сразу. Недельный = дневной × 2, месячный = дневной первой недели месяца × 4.</li></ul>
+<div class="twrap"><table class="plain md"><thead><tr><th>Год</th><th>adaptive: день</th><th>неделя</th><th>месяц</th></tr></thead><tbody><tr><td>2012–2013</td><td>0.5–0.75</td><td>1–1.5</td><td>2–3</td></tr><tr><td>2020</td><td>0.5–6</td><td>1–12</td><td>2–24</td></tr><tr><td>2022</td><td>2–4</td><td>4–8</td><td>8–16</td></tr><tr><td>2026</td><td>1.5–4</td><td>3–8</td><td>8–12</td></tr></tbody></table></div>
+<p>При fixed дневной профиль 2012 года состоит в среднем из 7 рядов и value area занимает 71 % диапазона дня, в 2026 году 34 ряда и 51 %. При adaptive около 25 рядов и 50–53 % в любой год. Подробная инструкция по пересчёту с примерами: <code>mp-es-pipeline/PROFILE_RULES.md</code>.</p></div></section>
+<section class="card"><h2 class="card-title">Ролл контракта</h2><div class="prose"><ul><li>Спред новый − старый контракт в момент переключения: 2010–2021 от −5 до −10 пт, 2023–2026 от +45 до +74 пт.</li><li>Дневной профиль всегда по одному контракту. В день ролла сравнение со вчера отключено.</li><li>Недельный и месячный профили через ролл: старый контракт сдвигается на спред (бэк-адъюст), форма профиля сохраняется.</li><li>Databento переключает поздно, за 1–3 дня до экспирации. Эти 177 дней остаются в тестах: спред за день почти не меняется, TPO-форма та же, ниже только объём.</li></ul></div></section>
+<section class="card"><h2 class="card-title">Сверка с терминалом</h2><div class="prose"><ul><li>Дневной 17.01.2025, блок 2 пт: совпадает построчно. POC 6042, VA 6030–6048, IB 6012.75–6033.</li><li>Недельный 30.12.2024, блок 4 пт: POC 5956 и VAH 5984 совпадают. Неделя 06.01.2025 до реплея 08.01 10:19: POC 6020 совпадает.</li><li>Недельный 16.12.2024 с роллом внутри: у нас POC 6132 со сдвигом старого контракта на +74 пт, в терминале около 6078. Похоже, терминал склеивает контракты без сдвига.</li></ul></div></section>
+<section class="card"><h2 class="card-title">Области профиля</h2><div class="prose"><div class="twrap"><table class="plain md"><thead><tr><th>Область</th><th>Правило</th></tr></thead><tbody><tr><td>Value area</td><td>68 %, по две строки от POC (CBOT)</td></tr><tr><td>POC</td><td>строка с наибольшим числом TPO, при равенстве ближайшая к центру</td></tr><tr><td>IB</td><td>2 блока по 30 минут (A + B)</td></tr><tr><td>Excess</td><td>≥ 2 блоков с одной отметкой на краю. Одиночные отметки последнего блока не excess: цена не успела доказать отторжение (Далтон)</td></tr><tr><td>Single prints</td><td>≥ 2 блоков подряд с одной отметкой внутри профиля</td></tr><tr><td>Poor high / low</td><td>≥ 2 отметки на крайней строке (2 блока в ширину)</td></tr></tbody></table></div>
+<p>Доля дней с excess зависит от блока: сверху 18 % дней при fixed и 32 % при adaptive, снизу 28 % и 47 %.</p></div></section>
+<section class="card"><h2 class="card-title">Дневные композиты (тумблер)</h2><div class="prose"><p>Дни склеиваются в композит, если VA нового дня больше чем на 50 % лежит внутри VA композита и получившийся профиль остаётся симметричным колоколом (POC в средней половине диапазона, нет двойного распределения, короткая сторона VA от POC не меньше трети длинной). Если форма ломается, день пропускается, композит остаётся открытым. Композит закрывается только миграцией (VA не совпала) или сменой контракта. Недельные и месячные профили не склеиваются.</p>
+<p>В тестах: тумблер выкл = опора вчерашний день, вкл = открытый композит от 2 дней. За историю 810 композитов от 2 дней в fixed и 742 в adaptive, самый длинный 9 дней.</p>
+<p>Проверка на данных: VAL ≤ POC ≤ VAH во всех профилях, IB всегда внутри диапазона дня.</p>
+<p>Типы дня и типы открытия ещё не определены. Их числовые правила фиксируются отдельно до первого теста.</p></div></section>
+<section class="card"><h2 class="card-title">Журнал</h2><div class="prose"><ul><li>2026-09-19: раздел открыт, пайплайн <code>mp-es-pipeline</code> собран.</li><li>2026-09-19: дневные композиты как тумблер, правило в <code>mp-es-pipeline/PROFILE_RULES.md</code>, раздел 5.</li><li>2026-09-19: VA 68 %, excess без последнего блока, single prints от 2 блоков, poor high / low = 2 блока в ширину.</li><li>2026-09-19: ETH с 18:00. Блоки по времени: день 30 мин, неделя 4 ч, месяц 1 день. Размер блока в двух режимах параллельно. Хвост ≥ 2 блоков. Дни на уходящем контракте остаются в тестах.</li></ul></div></section>
+<div class="foot">Тесты / Market Profile / Данные и метод</div>
+</div>
+
+<script>
+(function(){
+  var KEY = 'algo-tests-theme';
+  var el = document.getElementById('theme-toggle');
+  var label = document.getElementById('theme-toggle-label');
+  if (!el) return;
+  function sync(){
+    var light = document.documentElement.getAttribute('data-theme') === 'light';
+    label.textContent = light ? 'Светлая' : 'Тёмная';
+  }
+  function flip(){
+    var light = document.documentElement.getAttribute('data-theme') === 'light';
+    if (light) document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', 'light');
+    try { localStorage.setItem(KEY, light ? 'dark' : 'light'); } catch(e){}
+    sync();
+  }
+  sync();
+  el.addEventListener('click', flip);
+  el.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
+})();
+</script>
+</body></html>
