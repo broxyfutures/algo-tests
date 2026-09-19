@@ -73,6 +73,24 @@ def main() -> int:
         + f"\nВчера: VA {d.prev_val} – {d.prev_vah}, POC {d.prev_poc}, диапазон {d.prev_low} – {d.prev_high}"
         + f"   открытие: {f(d.open_location)}"
     )
+    names = {"normal": "Normal", "normal_variation": "Normal Variation", "trend": "Trend",
+             "double_distribution_trend": "Double-Distribution Trend", "nontrend": "Nontrend",
+             "neutral_center": "Neutral-Center", "neutral_extreme": "Neutral-Extreme",
+             "open_drive": "Open-Drive", "open_test_drive": "Open-Test-Drive",
+             "open_rejection_reverse": "Open-Rejection-Reverse", "open_auction": "Open-Auction", "": "—"}
+    dt_path, op_path = C.DERIVED / f"mp_daytype_{a.mode}.csv", C.DERIVED / f"mp_open_{a.mode}.csv"
+    if dt_path.exists():
+        t = pd.read_csv(dt_path, parse_dates=["date"], keep_default_na=False).set_index("date").loc[day]
+        print(f"Тип дня: {names[t.day_type]} {t.day_dir}   (IB {float(t.ib_width_r20):.2f} × R20, выход вверх "
+              f"{float(t.ext_up_ib):.2f} IB, вниз {float(t.ext_down_ib):.2f} IB, макс. TPO в строке {t.max_tpo_row}, "
+              f"закрытие на {float(t.close_pos):.0%} диапазона)")
+    if op_path.exists():
+        o = pd.read_csv(op_path, parse_dates=["date"], keep_default_na=False).set_index("date").loc[day]
+        for sfx, lab in (("day", "опора вчера"), ("comp", "опора композит")):
+            acc = {"True": "принято", "False": "отвергнуто", "": "—"}[str(o[f"open_accept_{sfx}"])]
+            extra = ", тест VA" if str(o[f"orr_tested_va_{sfx}"]) == "True" else ""
+            print(f"Открытие ({lab}): {names[o[f'open_type_{sfx}']]} {o[f'open_dir_{sfx}']}{extra}; "
+                  f"зона {o[f'open_zone_{sfx}'] or '—'}, {acc}   (OR {o.or_low}–{o.or_high})")
     flags = [k for k in ("roll_day", "expiring_contract", "half_day", "suspicious") if bool(d[k])]
     if flags:
         print("Флаги:", ", ".join(flags))

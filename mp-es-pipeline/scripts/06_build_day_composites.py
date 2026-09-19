@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Шаг 5. Дневные композиты (тумблер COMPOSITE_MODES в тестах) в обоих режимах размера блока.
+Шаг 6. Дневные композиты (тумблер COMPOSITE_MODES в тестах) в обоих режимах размера блока.
 
 Выход: data/derived/mp_composite_{fixed,adaptive}.csv, одна строка на RTH-день.
 
 Что произошло с днём:
-  date, row, action           start (день начал новый композит) / added / skipped_shape
+  date, row, action           start (день начал новый композит) / added / skipped_shape /
+                              skipped_daytype (Trend или Double-Distribution Trend, VA совпала)
   start_reason                first / migration (VA не совпала) / roll (новый контракт)
   overlap                     доля VA дня внутри VA композита до этого дня
   poc_pos, bimodal, va_sym    форма пробного профиля (композит + день), если была проверка
@@ -20,7 +21,7 @@
 Тумблер off = опора всегда вчерашний день (prev_* в mp_daily_*.csv).
 Тумблер on  = ref_* отсюда: композит, если он открыт и в нём не меньше 2 дней, иначе вчерашний день.
 
-Запуск: python3 scripts/05_build_day_composites.py   (после 01 и 02)
+Запуск: python3 scripts/06_build_day_composites.py   (после 02 и 05)
 """
 import sys
 from pathlib import Path
@@ -54,6 +55,8 @@ def main() -> int:
 
     for mode in C.ROW_MODES:
         daily = pd.read_csv(C.DERIVED / f"mp_daily_{mode}.csv", parse_dates=["date"])
+        dtype = pd.read_csv(C.DERIVED / f"mp_daytype_{mode}.csv", parse_dates=["date"])
+        daily = daily.merge(dtype[["date", "day_type"]], on="date", how="left")
         rows = []
         comp_lo = comp_hi = None  # массивы блоков открытого композита
         comp_id, comp_start, comp_days = 0, None, 0
@@ -84,7 +87,9 @@ def main() -> int:
                 cs = P.tpo_stats(comp_lo, comp_hi, row)
                 ov = overlap_share(b.val, b.vah, cs["val"], cs["vah"])
                 r["overlap"] = round(ov, 3)
-                if ov > C.COMP_MIN_OVERLAP:
+                if ov > C.COMP_MIN_OVERLAP and b.day_type in C.COMP_EXCLUDE_DAY_TYPES:
+                    action, reason = "skipped_daytype", ""
+                elif ov > C.COMP_MIN_OVERLAP:
                     tl, th = np.r_[comp_lo, lo], np.r_[comp_hi, hi]
                     sh = shape(tl, th, row)
                     r.update(poc_pos=sh["poc_pos"], bimodal=sh["bimodal"], va_sym=sh["va_sym"])

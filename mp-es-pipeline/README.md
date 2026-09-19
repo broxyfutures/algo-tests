@@ -41,11 +41,15 @@ mp/sessions.py         загрузка минуток и разметка: то
 mp/profile.py          профиль: TPO и объём по строкам, POC, VA, хвосты, single prints
 mp/rows.py             расписание размера блока по неделям (fixed и adaptive)
 mp/composite.py        дневные композиты: перекрытие VA и проверка формы
+mp/daytype.py          тип дня (Mind Over Markets, гл. 2)
+mp/opentype.py         тип открытия и зона открытия (гл. 4)
 scripts/01_build_periods.py     → periods_30m.parquet
 scripts/02_build_profiles.py    → row_schedule.csv, mp_daily_fixed.csv, mp_daily_adaptive.csv
 scripts/03_print_day.py         ASCII-профиль дня для сверки с терминалом
 scripts/04_build_weekly_monthly.py  → rolls.csv, mp_weekly_{fixed,adaptive}.csv, mp_monthly_{fixed,adaptive}.csv
-scripts/05_build_day_composites.py  → mp_composite_{fixed,adaptive}.csv
+scripts/05_classify_days.py         → mp_daytype_{fixed,adaptive}.csv
+scripts/06_build_day_composites.py  → mp_composite_{fixed,adaptive}.csv
+scripts/07_classify_opens.py        → mp_open_{fixed,adaptive}.csv
 scripts/1x_test_*.py            по скрипту на тест, появляются по мере тестов
 data/derived/          производные файлы (коммитятся, ~7 МБ)
 ../workspace/Market Profile/  страницы тестов (test.md + results.json)
@@ -66,7 +70,15 @@ python3 scripts/04_build_weekly_monthly.py
 ```
 
 ```bash
-python3 scripts/05_build_day_composites.py
+python3 scripts/05_classify_days.py
+```
+
+```bash
+python3 scripts/06_build_day_composites.py
+```
+
+```bash
+python3 scripts/07_classify_opens.py
 ```
 
 Профиль дня для сверки с терминалом:
@@ -79,7 +91,7 @@ python3 scripts/03_print_day.py 2025-01-17
 python3 scripts/03_print_day.py 2025-01-17 --mode adaptive
 ```
 
-После любой правки `config.py` запускаются 01, 02, 04 и 05 заново.
+После любой правки `config.py` запускаются 01, 02, 04, 05, 06 и 07 заново.
 
 ---
 
@@ -172,7 +184,15 @@ Excess / single prints = не меньше 2 блоков в обоих режи
 
 ### `mp_composite_{fixed,adaptive}.csv`, одна строка на RTH-день
 
-Что произошло с днём (`action`: start / added / skipped_shape, `start_reason`: migration / roll, `overlap`, `poc_pos`, `bimodal`, `va_sym`), состояние композита после дня (`comp_*`) и опора на этот день (`ref_source`: composite / day / older_day / none, `ref_*`, `open_location_ref`). Правило и примеры: [PROFILE_RULES.md](PROFILE_RULES.md), раздел 5.
+Что произошло с днём (`action`: start / added / skipped_shape / skipped_daytype, `start_reason`: migration / roll, `overlap`, `poc_pos`, `bimodal`, `va_sym`), состояние композита после дня (`comp_*`) и опора на этот день (`ref_source`: composite / day / older_day / none, `ref_*`, `open_location_ref`). Правило и примеры: [PROFILE_RULES.md](PROFILE_RULES.md), раздел 5.
+
+### `mp_daytype_{fixed,adaptive}.csv`, одна строка на RTH-день
+
+`r20, ib_width_r20, ib_narrow, ext_up_ib, ext_down_ib, re_up, re_down, max_tpo_row, thin_profile, tf_viol_up, tf_viol_down, close_pos, open_is_extreme, dd_split, day_type, day_dir`. Правила: [PROFILE_RULES.md](PROFILE_RULES.md), раздел 6.
+
+### `mp_open_{fixed,adaptive}.csv`, одна строка на RTH-день
+
+`open, or_high, or_low, r20` и для опоры «вчера» (`_day`) и «композит» (`_comp`): `open_type, open_dir, orr_tested_va, open_zone, open_accept`. Правила: [PROFILE_RULES.md](PROFILE_RULES.md), раздел 7.
 
 ### Прочее
 
@@ -180,7 +200,7 @@ Excess / single prints = не меньше 2 блоков в обоих режи
 - `row_schedule.csv`: размер блока по неделям в обоих режимах.
 - `rolls.csv`: момент и спред каждого переключения контракта.
 
-Типов дня и типов открытия пока **нет**. Их числовые правила фиксируются вместе до первого теста (шаг `06_classify.py`).
+Типы дня и типы открытия размечены шагами 05 и 07 по правилам из Mind Over Markets (PROFILE_RULES.md, разделы 6 и 7).
 
 ---
 
@@ -209,6 +229,8 @@ Excess / single prints = не меньше 2 блоков в обоих режи
 | 2026-09-19 | Размер блока: два режима параллельно, fixed 2 / 4 / 8 и adaptive (раздел 4). Хвост ≥ 2 блоков |
 | 2026-09-19 | VA 68 %. Excess и single prints от 2 блоков, excess последнего блока не считается. Poor high / low = 2 блока в ширину. IB = 2 блока по 30 мин. Инструкция в PROFILE_RULES.md |
 | 2026-09-19 | Дневные композиты как тумблер: перекрытие VA нового дня с VA композита > 50 %, проверка на симметричный колокол, пропуск дня по форме не закрывает композит, длина без ограничений. Недельные и месячные не склеиваются. Исключение трендовых дней включится после классификатора |
+| 2026-09-19 | Типы дня по Mind Over Markets, гл. 2: выход за IB засчитывается от 20 % IB, узкий IB < 0.4 × R20, Trend = выход ≥ 1 IB + one-timeframe до экстремума дня (≤ 1 нарушение) + закрытие в крайних 20 %, «≤ 5 TPO» только пометка. Trend и Double-Distribution не добавляются в композит |
+| 2026-09-19 | Типы открытия по гл. 4: граница = диапазон первых 5 минут, окно = первый час, драйв ≥ 0.25 × R20 (у Open-Drive в пределах A), тест Open-Test-Drive = VAH / VAL опоры. Тип открытия и зона открытия (5 уровней + принятие) хранятся раздельно |
 | 2026-09-19 | Объёмный профиль приближённый (объём минуты поровну по диапазону). Точный `trades` не покупаем, пока тест не потребует |
 
 Наблюдения по ходу (в правила не попадают без проверки):
