@@ -41,30 +41,33 @@ THEME_HEAD_SCRIPT = (
     'document.documentElement.setAttribute("data-theme","light")}catch(e){}</script>'
 )
 
-# кнопка-переключатель и её логика: сама тема ставится head-скриптом выше,
-# здесь только синхронизация подписи/иконки кнопки и обработчик клика
+# тумблер (трек + кружок) — тема ставится head-скриптом выше,
+# здесь только синхронизация подписи и обработчик клика по всему блоку
 THEME_TOGGLE_HTML = (
-    '<button class="theme-toggle" id="theme-toggle" type="button" aria-label="Переключить тему">'
-    '<span class="icon">\u263e</span><span class="label">Тёмная</span></button>'
+    '<div class="theme-toggle" id="theme-toggle" role="button" tabindex="0" aria-label="Переключить тему">'
+    '<span class="label" id="theme-toggle-label">Тёмная</span>'
+    '<div class="theme-toggle-track"><div class="theme-toggle-knob"></div></div></div>'
 )
 THEME_TOGGLE_SCRIPT = """<script>
 (function(){
   var KEY = 'algo-tests-theme';
-  var btn = document.getElementById('theme-toggle');
-  if (!btn) return;
+  var el = document.getElementById('theme-toggle');
+  var label = document.getElementById('theme-toggle-label');
+  if (!el) return;
   function sync(){
     var light = document.documentElement.getAttribute('data-theme') === 'light';
-    btn.querySelector('.icon').textContent = light ? '\u2600' : '\u263e';
-    btn.querySelector('.label').textContent = light ? 'Светлая' : 'Тёмная';
+    label.textContent = light ? 'Светлая' : 'Тёмная';
   }
-  sync();
-  btn.addEventListener('click', function(){
+  function flip(){
     var light = document.documentElement.getAttribute('data-theme') === 'light';
     if (light) document.documentElement.removeAttribute('data-theme');
     else document.documentElement.setAttribute('data-theme', 'light');
     try { localStorage.setItem(KEY, light ? 'dark' : 'light'); } catch(e){}
     sync();
-  });
+  }
+  sync();
+  el.addEventListener('click', flip);
+  el.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
 })();
 </script>"""
 
