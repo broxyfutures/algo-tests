@@ -14,6 +14,7 @@ test.md = frontmatter (плоские key: value и списки «- item») + �
 заголовками «## …». Ключ renderer выбирает, что вставить в раздел «Результаты»:
   markdown       ничего, только текст;
   cot_pa_tables  таблицы 3×5 (нужен results.json от scripts/06_export_results.py);
+  mp_zone_table  зона открытия × тип (results.json от mp-es-pipeline/scripts/11_test_zone_types.py);
   cot_yesno      вопрос да/нет у границ индекса (results.json от 08_export_yesno.py).
 
 Запуск:  python3 build.py
@@ -312,10 +313,18 @@ def mount_cot_yesno(meta: dict) -> str:
     )
 
 
+def mount_mp_zone_table(meta: dict) -> str:
+    return ('<div class="controls" id="zt-controls"></div>'
+            '<h3 class="card-title" style="margin-top:4px">Какой тип</h3><div id="zt-types"></div>'
+            '<h3 class="card-title" style="margin-top:22px">По тренду открытия или против</h3><div id="zt-dirs"></div>'
+            '<p class="note" id="zt-note"></p>')
+
+
 RENDERERS = {
     "markdown": {"mount": None, "extra": None, "js": None, "needs_results": False},
     "cot_pa_tables": {"mount": mount_cot_pa_tables, "extra": extra_cot_pa_tables, "js": "cot_pa_tables.js", "needs_results": True},
     "cot_yesno": {"mount": mount_cot_yesno, "extra": None, "js": "cot_yesno.js", "needs_results": True},
+    "mp_zone_table": {"mount": mount_mp_zone_table, "extra": None, "js": "mp_zone_table.js", "needs_results": True},
 }
 
 

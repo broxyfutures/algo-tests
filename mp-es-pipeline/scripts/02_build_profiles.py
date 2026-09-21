@@ -17,13 +17,14 @@
              poor_high, poor_low (на крайней строке ≥ 2 буквы), sp_above_poc, sp_below_poc
   объём      vpoc, vvah, vval (приближённо: объём минуты поровну по её диапазону)
   ночь       on_high, on_low, on_poc, on_vpoc, on_volume, on_complete (18:00 накануне → 09:29)
-  вчера      prev_high, prev_low, prev_close, prev_poc, prev_vah, prev_val, prev_ref_valid,
+  вчера      prev_high, prev_low, prev_close, prev_poc, prev_vah, prev_val, prev_ref_valid, prev_shift,
              open_location (above_range / above_value / in_value / below_value / below_range)
 
 Не зависят от блока: сессия, RTH, IB, ночь high/low. Зависят: всё остальное.
 
 Ночь на день ролла считается только по минуткам нового контракта (ролл ES.v.0 в 00:00 UTC),
-on_complete=False. Ссылки на вчера через ролл недействительны: prev_ref_valid=False.
+on_complete=False. В день ролла вчерашние уровни (prev_*) сдвинуты на спред новый − старый контракт
+в момент переключения (prev_shift), чтобы сравнивать сегодняшние цены со вчерашними в одном контракте.
 Вчера = предыдущий RTH-день (праздничные сессии Globex не считаются днём).
 
 expiring_contract=True: день в окне ролла CME (с четверга за 8 дней до третьей пятницы
@@ -92,6 +93,10 @@ def main() -> int:
     per = pd.read_parquet(per_path)
 
     m = tag(load_minutes())
+    # спред в момент переключения ES.v.0: новый контракт → (первая цена нового − последняя старого)
+    ctr_all = m["instrument_id"].to_numpy()
+    sw = np.flatnonzero(ctr_all[1:] != ctr_all[:-1]) + 1
+    spread_by_new = dict(zip(ctr_all[sw], m["open"].to_numpy()[sw] - m["close"].to_numpy()[sw - 1]))
     m = m[m["session"].isin(["RTH", "ETH"])]
     mins = {}
     for s in ("RTH", "ETH"):
@@ -159,7 +164,8 @@ def main() -> int:
     prev_ctr = base["contract"].shift(1)
     base["roll_day"] = (base["contract"] != prev_ctr) & prev_ctr.notna()
     base["expiring_contract"] = expiring_flags(base["date"], base["roll_day"])
-    base["prev_ref_valid"] = (~base["roll_day"]) & prev_ctr.notna()
+    base["prev_ref_valid"] = prev_ctr.notna()
+    base["prev_shift"] = [float(spread_by_new.get(c, 0.0)) if r else 0.0 for c, r in zip(base["contract"], base["roll_day"])]
     base["week_monday"] = week_monday(base["date"])
 
     for mode in C.ROW_MODES:
@@ -184,7 +190,7 @@ def main() -> int:
         df = pd.concat([base.drop(columns="week_monday"), pd.DataFrame(rows)], axis=1)
         prev = df.shift(1)
         for k in ("high", "low", "close", "poc", "vah", "val"):
-            df[f"prev_{k}"] = prev[k]
+            df[f"prev_{k}"] = prev[k] + df["prev_shift"]
         df["open_location"] = [
             open_location(o, pl, ph, ql, qh) if ok else ""
             for o, pl, ph, ql, qh, ok in zip(df.open, df.prev_val, df.prev_vah, df.prev_low, df.prev_high, df.prev_ref_valid)

@@ -7,14 +7,15 @@
 Что произошло с днём:
   date, row, action           start (день начал новый композит) / added / skipped_shape /
                               skipped_daytype (Trend или Double-Distribution Trend, VA совпала)
-  start_reason                first / migration (VA не совпала) / roll (новый контракт)
+  start_reason                first / migration (VA не совпала)
+В день ролла открытый композит сдвигается на спред новый − старый контракт (prev_shift) и живёт дальше.
   overlap                     доля VA дня внутри VA композита до этого дня
   poc_pos, bimodal, va_sym    форма пробного профиля (композит + день), если была проверка
 Состояние композита после дня:
   comp_id, comp_start, comp_days, comp_high, comp_low, comp_poc, comp_vah, comp_val
 Опора для этого дня (известна до открытия, без заглядывания вперёд):
   ref_source                  composite (открыт композит от 2 дней) / day (вчерашний профиль) /
-                              older_day (композит из 1 дня, а следующие дни пропущены по форме) / none (ролл)
+                              older_day (композит из 1 дня, а следующие дни пропущены) / none (первый день)
   ref_days, ref_high, ref_low, ref_poc, ref_vah, ref_val
   open_location_ref           открытие относительно опоры: above_range / above_value / in_value / below_value / below_range
 
@@ -67,8 +68,13 @@ def main() -> int:
             row = float(b.row)
             r = {"date": b.date.date(), "row": row}
 
+            # ролл: композит и опора переводятся в цены нового контракта
+            if b.roll_day and comp_lo is not None:
+                comp_lo, comp_hi = comp_lo + b.prev_shift, comp_hi + b.prev_shift
+                state = {k: (v + b.prev_shift if k.startswith("ref_") and k != "ref_days" else v) for k, v in state.items()}
+
             # опора на сегодня = состояние после вчера
-            if state is None or b.roll_day:
+            if state is None:
                 r.update(ref_source="none", ref_days=0)
             else:
                 r.update({k: v for k, v in state.items() if k != "_start"})
@@ -81,8 +87,8 @@ def main() -> int:
 
             # что делаем с сегодняшним днём
             r.update(overlap=np.nan, poc_pos=np.nan, bimodal=None, va_sym=np.nan)
-            if comp_lo is None or b.roll_day:
-                action, reason = "start", "first" if comp_lo is None else "roll"
+            if comp_lo is None:
+                action, reason = "start", "first"
             else:
                 cs = P.tpo_stats(comp_lo, comp_hi, row)
                 ov = overlap_share(b.val, b.vah, cs["val"], cs["vah"])
