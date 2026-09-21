@@ -13,7 +13,7 @@ Open-Test-Drive, Open-Rejection-Reverse) делятся на «по тренду
   rows: [date, f0 zone, f0 type, f0 dir, f1 …, a0 …, a1 …]
   варианты: f / a = fixed / adaptive, 0 / 1 = композит выкл / вкл
 
-Исключены: укороченные дни, первый день истории (нет опоры), первые дни без R20.
+Исключены: укороченные дни, первый день истории и дни после дыр в данных (нет опоры), первые дни без R20.
 
 Запуск: python3 scripts/11_test_zone_types.py   (после 07)
 """
@@ -53,7 +53,7 @@ def load(mode: str) -> pd.DataFrame:
     kw = dict(parse_dates=["date"], keep_default_na=False)
     d = pd.read_csv(C.DERIVED / f"mp_daily_{mode}.csv", parse_dates=["date"])[["date", "half_day"]]
     t = pd.read_csv(C.DERIVED / f"mp_daytype_{mode}.csv", **kw)[["date", "r20", "day_type", "day_dir"]]
-    o = pd.read_csv(C.DERIVED / f"mp_open_{mode}.csv", **kw).drop(columns=["r20", "open"])
+    o = pd.read_csv(C.DERIVED / f"mp_open_{mode}.csv", **kw).drop(columns=["open"])
     return d.merge(t, on="date").merge(o, on="date")
 
 
@@ -81,7 +81,7 @@ def main() -> int:
     meta = {
         "built": date.today().isoformat(),
         "from": dates[0], "to": dates[-1], "days": len(dates),
-        "note": "Полные RTH-дни ES, опора = вчерашний день или композит. Укороченные дни исключены.",
+        "note": "Полные RTH-дни ES, опора = вчерашний день или композит. Исключены укороченные дни и дни после дыр в данных.",
     }
     common = {"zones": ZONES, "variants": ["f0", "f1", "a0", "a1"], "meta": meta}
     res = {

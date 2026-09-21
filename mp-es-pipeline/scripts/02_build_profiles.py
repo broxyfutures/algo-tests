@@ -25,7 +25,8 @@
 Ночь на день ролла считается только по минуткам нового контракта (ролл ES.v.0 в 00:00 UTC),
 on_complete=False. В день ролла вчерашние уровни (prev_*) сдвинуты на спред новый − старый контракт
 в момент переключения (prev_shift), чтобы сравнивать сегодняшние цены со вчерашними в одном контракте.
-Вчера = предыдущий RTH-день (праздничные сессии Globex не считаются днём).
+Вчера = предыдущий RTH-день (праздничные сессии Globex не считаются днём). После дыры в данных
+(config.DATA_HOLES) сравнение со вчера отключено: prev_ref_valid=False, after_data_hole=True.
 
 expiring_contract=True: день в окне ролла CME (с четверга за 8 дней до третьей пятницы
 мар/июн/сен/дек), когда ES.v.0 ещё не переключился. Объём уходящего контракта ниже нормы,
@@ -164,7 +165,12 @@ def main() -> int:
     prev_ctr = base["contract"].shift(1)
     base["roll_day"] = (base["contract"] != prev_ctr) & prev_ctr.notna()
     base["expiring_contract"] = expiring_flags(base["date"], base["roll_day"])
-    base["prev_ref_valid"] = prev_ctr.notna()
+    # после дыры в данных (config.DATA_HOLES) «вчера» — не предыдущий торговый день: сравнение отключено
+    holes = pd.to_datetime(list(C.DATA_HOLES))
+    prev_date = base["date"].shift(1)
+    after_hole = [bool(((holes > p) & (holes < d)).any()) if pd.notna(p) else False for p, d in zip(prev_date, base["date"])]
+    base["after_data_hole"] = after_hole
+    base["prev_ref_valid"] = prev_ctr.notna() & ~base["after_data_hole"]
     base["prev_shift"] = [float(spread_by_new.get(c, 0.0)) if r else 0.0 for c, r in zip(base["contract"], base["roll_day"])]
     base["week_monday"] = week_monday(base["date"])
 

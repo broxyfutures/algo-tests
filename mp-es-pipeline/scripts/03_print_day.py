@@ -88,9 +88,10 @@ def main() -> int:
         o = pd.read_csv(op_path, parse_dates=["date"], keep_default_na=False).set_index("date").loc[day]
         for sfx, lab in (("day", "опора вчера"), ("comp", "опора композит")):
             acc = {"True": "принято", "False": "отвергнуто", "": "—"}[str(o[f"open_accept_{sfx}"])]
-            extra = ", тест VA" if str(o[f"orr_tested_va_{sfx}"]) == "True" else ""
+            lvl = o[f"open_test_level_{sfx}"]
+            extra = f", первый ход {o[f'first_leg_{sfx}']} пт, ближайшая граница VA {lvl}" if lvl != "" else ""
             print(f"Открытие ({lab}): {names[o[f'open_type_{sfx}']]} {o[f'open_dir_{sfx}']}{extra}; "
-                  f"зона {o[f'open_zone_{sfx}'] or '—'}, {acc}   (OR {o.or_low}–{o.or_high})")
+                  f"зона {o[f'open_zone_{sfx}'] or '—'}, {acc}   (открытие {o.open}, IB {o.ib_low}–{o.ib_high})")
     flags = [k for k in ("roll_day", "expiring_contract", "half_day", "suspicious") if bool(d[k])]
     if flags:
         print("Флаги:", ", ".join(flags))

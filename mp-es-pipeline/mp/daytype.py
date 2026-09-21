@@ -4,11 +4,11 @@
 Порядок проверки:
   1. Neutral            выход за IB в обе стороны. Extreme: закрытие в крайних 20 % диапазона, иначе Center
   2. Normal / Nontrend  выхода за IB нет. IB ≥ 0.4 × R20 → Normal, уже → Nontrend
-  3. Double-Distribution Trend   выход в одну сторону, IB узкий, две области распределения,
-                        разделённые single prints (≥ 2 блоков), в каждой ≥ 25 % TPO
-  4. Trend              выход в одну сторону ≥ 1 IB; one-timeframe: от B до блока, поставившего
-                        экстремум дня, не больше 1 блока зашло за экстремум предыдущего против тренда
-                        (равенство можно); закрытие в крайних 20 % диапазона по тренду.
+  3. Double-Distribution Trend   выход в одну сторону, две области распределения, разделённые
+                        single prints (≥ 2 блоков), в каждой ≥ 25 % TPO (узкий IB не требуется)
+  4. Trend              выход в одну сторону ≥ 1 IB; one-timeframe: от блока, первым вышедшего за IB,
+                        до блока, поставившего экстремум дня, не больше 1 блока зашло за экстремум
+                        предыдущего против тренда (равенство можно); закрытие в крайних 20 % по тренду.
                         «Не больше 5 TPO в строке» (книга: usually) = пометка thin_profile, не условие
   5. Normal Variation   выход в одну сторону, остальное
 Выход за IB засчитывается, если он больше RE_TOL × ширины IB.
@@ -46,12 +46,20 @@ def dd_split(counts: np.ndarray) -> bool:
     return False
 
 
-def tf_violations(lows, highs, up: bool) -> int:
-    """Сколько блоков от B до блока, поставившего экстремум дня, зашли за экстремум
-    предыдущего блока против тренда (равенство не нарушение)."""
+def tf_violations(lows, highs, up: bool, start: int = 0) -> int:
+    """Сколько блоков после start (блок, первым вышедший за IB) и до блока, поставившего экстремум
+    дня, зашли за экстремум предыдущего блока против тренда (равенство не нарушение).
+    Книга, рис. 2.6: тренд начинается с выхода за IB, one-timeframe считается от него."""
     k = int(np.argmax(highs)) if up else int(np.argmin(lows))
     v = (lows[1:] < lows[:-1]) if up else (highs[1:] > highs[:-1])
-    return int(v[:k].sum())
+    return int(v[start:k].sum()) if k > start else 0
+
+
+def re_start(lows, highs, ib_hi: float, ib_lo: float, up: bool) -> int:
+    """Номер блока, который первым вышел за IB больше чем на RE_TOL × IB."""
+    tol = C.RE_TOL * (ib_hi - ib_lo)
+    idx = np.flatnonzero(highs[C.IB_PERIODS:] > ib_hi + tol) if up else np.flatnonzero(lows[C.IB_PERIODS:] < ib_lo - tol)
+    return int(idx[0]) + C.IB_PERIODS if idx.size else len(lows)
 
 
 def classify(lows, highs, open_: float, close: float, r20: float, row: float) -> dict:
@@ -81,8 +89,8 @@ def classify(lows, highs, open_: float, close: float, r20: float, row: float) ->
         "re_down": re_dn,
         "max_tpo_row": max_tpo,
         "thin_profile": max_tpo <= C.TREND_MAX_TPO,
-        "tf_viol_up": tf_violations(lows, highs, True),
-        "tf_viol_down": tf_violations(lows, highs, False),
+        "tf_viol_up": tf_violations(lows, highs, True, re_start(lows, highs, ib_hi, ib_lo, True)),
+        "tf_viol_down": tf_violations(lows, highs, False, re_start(lows, highs, ib_hi, ib_lo, False)),
         "close_pos": round(close_pos, 3),
         "open_is_extreme": "low" if open_pos <= 0.1 else ("high" if open_pos >= 0.9 else ""),
         "dd_split": split,
@@ -103,9 +111,10 @@ def classify(lows, highs, open_: float, close: float, r20: float, row: float) ->
         d = "up" if up else "down"
         ext = ext_up if up else ext_dn
         close_ok = close_pos >= 1 - C.TREND_CLOSE_ZONE if up else close_pos <= C.TREND_CLOSE_ZONE
-        if narrow and split:
+        viol = tf_violations(lows, highs, up, re_start(lows, highs, ib_hi, ib_lo, up))
+        if split:
             t = "double_distribution_trend"
-        elif (ext >= C.TREND_MIN_EXT and tf_violations(lows, highs, up) <= C.TREND_MAX_VIOL and close_ok):
+        elif ext >= C.TREND_MIN_EXT and viol <= C.TREND_MAX_VIOL and close_ok:
             t = "trend"
         else:
             t = "normal_variation"

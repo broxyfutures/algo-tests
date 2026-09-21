@@ -7,7 +7,7 @@
 Что произошло с днём:
   date, row, action           start (день начал новый композит) / added / skipped_shape /
                               skipped_daytype (Trend или Double-Distribution Trend, VA совпала)
-  start_reason                first / migration (VA не совпала)
+  start_reason                first / migration (VA не совпала) / data_gap (день после дыры в данных)
 В день ролла открытый композит сдвигается на спред новый − старый контракт (prev_shift) и живёт дальше.
   overlap                     доля VA дня внутри VA композита до этого дня
   poc_pos, bimodal, va_sym    форма пробного профиля (композит + день), если была проверка
@@ -15,7 +15,7 @@
   comp_id, comp_start, comp_days, comp_high, comp_low, comp_poc, comp_vah, comp_val
 Опора для этого дня (известна до открытия, без заглядывания вперёд):
   ref_source                  composite (открыт композит от 2 дней) / day (вчерашний профиль) /
-                              older_day (композит из 1 дня, а следующие дни пропущены) / none (первый день)
+                              none (первый день истории или день после дыры в данных)
   ref_days, ref_high, ref_low, ref_poc, ref_vah, ref_val
   open_location_ref           открытие относительно опоры: above_range / above_value / in_value / below_value / below_range
 
@@ -73,15 +73,15 @@ def main() -> int:
                 comp_lo, comp_hi = comp_lo + b.prev_shift, comp_hi + b.prev_shift
                 state = {k: (v + b.prev_shift if k.startswith("ref_") and k != "ref_days" else v) for k, v in state.items()}
 
-            # опора на сегодня = состояние после вчера
-            if state is None:
+            # опора на сегодня: открытый композит от 2 дней, иначе вчерашний профиль
+            if state is None or not b.prev_ref_valid:
                 r.update(ref_source="none", ref_days=0)
-            else:
+            elif state["ref_days"] >= 2:
                 r.update({k: v for k, v in state.items() if k != "_start"})
-                if state["ref_days"] >= 2:
-                    r["ref_source"] = "composite"
-                else:
-                    r["ref_source"] = "day" if state["_start"] == prev_date else "older_day"
+                r["ref_source"] = "composite"
+            else:
+                r.update(ref_source="day", ref_days=1, ref_high=b.prev_high, ref_low=b.prev_low,
+                         ref_poc=b.prev_poc, ref_vah=b.prev_vah, ref_val=b.prev_val)
             if r["ref_source"] != "none":
                 r["open_location_ref"] = open_location(b.open, r["ref_val"], r["ref_vah"], r["ref_low"], r["ref_high"])
 
@@ -89,6 +89,8 @@ def main() -> int:
             r.update(overlap=np.nan, poc_pos=np.nan, bimodal=None, va_sym=np.nan)
             if comp_lo is None:
                 action, reason = "start", "first"
+            elif not b.prev_ref_valid:
+                action, reason = "start", "data_gap"
             else:
                 cs = P.tpo_stats(comp_lo, comp_hi, row)
                 ov = overlap_share(b.val, b.vah, cs["val"], cs["vah"])

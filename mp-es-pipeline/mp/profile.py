@@ -105,7 +105,8 @@ def single_runs(mask: np.ndarray, min_len: int) -> np.ndarray:
 def tpo_stats(lows, highs, row: float) -> dict:
     """lows/highs по блокам сессии в хронологическом порядке (последний элемент = последний блок).
 
-    VAH/VAL: границы value area (VAH = верх верхней строки).
+    VAH/VAL: границы value area (VAH = верх верхней строки), обрезанные по high / low сессии:
+    строка шире тика, и без обрезки VAH могла оказаться выше реального хая.
     Excess (хвост): строки с одной отметкой подряд от края профиля, не меньше TAIL_MIN_ROWS.
       Строки, поставленные последним блоком, в excess не входят: цена не успела доказать
       отторжение (Dalton). Если одиночный край целиком от последнего блока, excess = 0,
@@ -135,8 +136,9 @@ def tpo_stats(lows, highs, row: float) -> dict:
         "row": row,
         "n_rows": n,
         "poc": p.price(poc),
-        "vah": p.price(va_hi) + row,
-        "val": p.price(va_lo),
+        # граница VA = край строки, но не дальше реально проторгованного диапазона
+        "vah": min(p.price(va_hi) + row, float(np.max(highs))),
+        "val": max(p.price(va_lo), float(np.min(lows))),
         "tpo_count": int(c.sum()),
         "tail_up_rows": top_ex if top_ex >= C.TAIL_MIN_ROWS else 0,
         "tail_down_rows": bot_ex if bot_ex >= C.TAIL_MIN_ROWS else 0,
@@ -154,4 +156,5 @@ def volume_stats(lows, highs, volumes, row: float) -> dict:
     p = build(lows, highs, row, volumes)
     poc = poc_index(p)
     va_lo, va_hi = value_area(p, poc)
-    return {"vpoc": p.price(poc), "vvah": p.price(va_hi) + row, "vval": p.price(va_lo)}
+    return {"vpoc": p.price(poc), "vvah": min(p.price(va_hi) + row, float(np.max(highs))),
+            "vval": max(p.price(va_lo), float(np.min(lows)))}

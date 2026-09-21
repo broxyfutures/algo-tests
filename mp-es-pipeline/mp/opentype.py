@@ -1,21 +1,26 @@
 """
-Тип открытия по Mind Over Markets (гл. 4) и зона открытия. Числа в config, раздел «Типы открытия».
+Тип открытия по Mind Over Markets (гл. 4) и зона открытия. Только три переменные:
+точка открытия O (цена 09:30), VA опоры (вчерашний день или композит) и IB (блоки A + B).
+Никаких диапазонов открытия и порогов; события отслеживаются в течение всего RTH-дня.
+Касание уровня = с точностью до 1 тика. Выход за IB = как в типах дня (больше RE_TOL × IB).
+Ограничение минуток: если в одной минуте цена ушла от открытия в обе стороны (так в ~70 % дней
+в первую же минуту), порядок ходов неизвестен; первый ход берётся по закрытию этой минуты
+(флаг ambiguous). Точно это решается только тиковыми данными.
 
-Обозначения: O = цена 09:30, OR = диапазон первых OR_MIN минут, окно = первый час (до 10:30),
-D = DRIVE_R20 × R20, m = ORR_MIN_R20 × R20, уровни теста = VAH / VAL опорного профиля
-(вчерашний день или композит).
+Порядок проверки (первый подошедший), направление = куда в итоге пошла цена:
+  1. Open-Drive        открытие = экстремум IB: за весь IB цена не ушла за точку открытия против
+                       направления больше чем на 1 тик. Направление = сторона, где построен IB.
+  2. Open-Test-Drive   первый ход от открытия в одну сторону касается ближайшей границы VA
+                       в этом направлении; затем цена возвращается через открытие и выходит за IB
+                       с другой стороны; экстремум первого хода до этого выхода не обновлён.
+  3. Open-Rejection-Reverse   то же, что Open-Test-Drive, но первый ход до границы VA не дошёл
+                       (или в этом направлении границы VA нет).
+  4. Open-Auction      всё остальное: цена ходит по обе стороны открытия, экстремумы ходов
+                       переписываются, либо разворота с выходом за IB не было.
 
-Порядок проверки (первый подошедший):
-  1. Open-Drive        после OR цена до 10:30 не заходит за противоположную границу OR
-                       и уходит от OR на ≥ D в пределах A (до 10:00, OD_DRIVE_MIN)
-  2. Open-Test-Drive   в первый час цена касается (до 1 тика) или пробивает уровень теста
-                       против будущего направления, после этого экстремума уходит от
-                       противоположной границы OR на ≥ D; экстремум теста до 10:30 не обновлён
-  3. Open-Rejection-Reverse   первый ход от OR ≥ m в одну сторону, затем до 10:30 цена
-                       торгуется за противоположной границей OR. Флаг orr_tested_va: был ли
-                       в первом ходе тест VAH / VAL
-  4. Open-Auction      всё остальное
-open_dir = направление итогового хода (у ORR направление разворота).
+Ближайшая граница VA в направлении теста: вниз от открытия — VAH, если открылись выше VA,
+VAL, если внутри VA; вверх — VAL, если открылись ниже VA, VAH, если внутри VA. Если в этом
+направлении границы VA нет (например, вниз при открытии ниже VA), тест невозможен.
 
 Зона открытия относительно опоры: above_range / above_value / in_value / below_value / below_range.
 Принятие (accept): блоки A и B торговались на общих уровнях внутри зоны открытия (двойные TPO).
@@ -25,57 +30,86 @@ import numpy as np
 import config as C
 
 
-def classify(lo, hi, n_or: int, open_: float, r20: float, vah: float, val: float) -> dict:
-    """lo/hi — минутные low/high первого часа по порядку; первые n_or минут = диапазон открытия."""
-    lo, hi = np.asarray(lo, float), np.asarray(hi, float)
-    or_hi, or_lo = hi[:n_or].max(), lo[:n_or].min()
-    D, m = C.DRIVE_R20 * r20, C.ORR_MIN_R20 * r20
-    a_lo, a_hi = lo[n_or:], hi[n_or:]
-    res = {"or_high": or_hi, "or_low": or_lo, "open_type": "open_auction", "open_dir": "", "orr_tested_va": False}
-    if len(a_lo) == 0 or not r20 or np.isnan(r20):
-        res["open_type"] = ""
+def nearest_level(open_: float, vah: float, val: float, down: bool):
+    """Ближайшая граница VA от точки открытия в направлении хода (None, если её нет)."""
+    if vah is None or val is None or np.isnan(vah) or np.isnan(val):
+        return None
+    if down:
+        return vah if open_ > vah else (val if open_ >= val else None)
+    return val if open_ < val else (vah if open_ <= vah else None)
+
+
+def classify(lo, hi, cl, open_: float, vah: float, val: float, n_ib: int = 60) -> dict:
+    """lo/hi/cl — минутные low/high/close всего RTH-дня по порядку; первые n_ib минут = IB."""
+    lo, hi, cl = np.asarray(lo, float), np.asarray(hi, float), np.asarray(cl, float)
+    t = C.TICK
+    ib_hi, ib_lo = hi[:n_ib].max(), lo[:n_ib].min()
+    res = {"open_type": "open_auction", "open_dir": "", "open_test_level": np.nan, "first_leg": np.nan, "ambiguous": False}
+
+    # 1. Open-Drive: открытие — экстремум IB
+    up_od, dn_od = ib_lo >= open_ - t, ib_hi <= open_ + t
+    if up_od != dn_od:
+        res.update(open_type="open_drive", open_dir="up" if up_od else "down")
         return res
 
-    # 1. Open-Drive: весь час не за противоположной границей OR, драйв ≥ D в пределах A
-    k = max(C.OD_DRIVE_MIN - n_or, 0)
-    if a_lo.min() >= or_lo and a_hi[:k].size and a_hi[:k].max() - or_hi >= D:
-        res.update(open_type="open_drive", open_dir="up")
+    # первый ход: куда цена первой ушла от открытия больше чем на тик
+    away_dn = np.flatnonzero(lo < open_ - t)
+    away_up = np.flatnonzero(hi > open_ + t)
+    if not away_dn.size and not away_up.size:
         return res
-    if a_hi.max() <= or_hi and a_lo[:k].size and or_lo - a_lo[:k].min() >= D:
-        res.update(open_type="open_drive", open_dir="down")
-        return res
-
-    # 2. Open-Test-Drive (уровни VAH / VAL; тест против будущего направления)
-    levels = [x for x in (vah, val) if x is not None and not np.isnan(x)]
-    if levels:
-        t_lo = int(np.argmin(lo))  # тест снизу → драйв вверх
-        if any(lo[t_lo] <= e + C.TICK and e <= open_ for e in levels):
-            if hi[t_lo + 1 :].size and hi[t_lo + 1 :].max() - or_hi >= D:
-                res.update(open_type="open_test_drive", open_dir="up")
-                return res
-        t_hi = int(np.argmax(hi))  # тест сверху → драйв вниз
-        if any(hi[t_hi] >= e - C.TICK and e >= open_ for e in levels):
-            if lo[t_hi + 1 :].size and or_lo - lo[t_hi + 1 :].min() >= D:
-                res.update(open_type="open_test_drive", open_dir="down")
-                return res
-
-    # 3. Open-Rejection-Reverse
-    up_hit = np.flatnonzero(a_hi >= or_hi + m)
-    dn_hit = np.flatnonzero(a_lo <= or_lo - m)
-    first_up = up_hit[0] if up_hit.size else None
-    first_dn = dn_hit[0] if dn_hit.size else None
-    if first_up is not None and (first_dn is None or first_up < first_dn):
-        if (a_lo[first_up + 1 :] < or_lo).any():
-            k = first_up + np.argmax(a_lo[first_up + 1 :] < or_lo) + 1
-            tested = any(a_hi[: k].max() >= e - C.TICK and e >= or_hi for e in levels)
-            res.update(open_type="open_rejection_reverse", open_dir="down", orr_tested_va=bool(tested))
+    if away_dn.size and away_up.size and away_dn[0] == away_up[0]:
+        # в одной минуте цена ушла от открытия в обе стороны: порядок внутри минуты неизвестен.
+        # Симметричное правило: первый ход — туда, где минута закрылась; при закрытии на открытии —
+        # в сторону большего отклонения; при равенстве — Open-Auction
+        k = int(away_dn[0])
+        if cl[k] != open_:
+            first_down = cl[k] < open_
+        elif (open_ - lo[k]) != (hi[k] - open_):
+            first_down = (open_ - lo[k]) > (hi[k] - open_)
+        else:
+            res["ambiguous"] = True
             return res
-    if first_dn is not None and (first_up is None or first_dn < first_up):
-        if (a_hi[first_dn + 1 :] > or_hi).any():
-            k = first_dn + np.argmax(a_hi[first_dn + 1 :] > or_hi) + 1
-            tested = any(a_lo[: k].min() <= e + C.TICK and e <= or_lo for e in levels)
-            res.update(open_type="open_rejection_reverse", open_dir="up", orr_tested_va=bool(tested))
+        res["ambiguous"] = True
+    else:
+        first_down = away_up.size == 0 or (away_dn.size and away_dn[0] < away_up[0])
+
+    tol = C.RE_TOL * (ib_hi - ib_lo)
+    # возврат через открытие ищется после минуты первого ухода (внутри минуты порядок неизвестен)
+    if first_down:
+        a0 = int(away_dn[0])
+        back = np.flatnonzero(hi[a0 + 1:] > open_ + t) + a0 + 1   # возврат через открытие вверх
+        if not back.size:
             return res
+        x = int(back[0])
+        leg = lo[:x].min()                                 # экстремум первого хода
+        re = np.flatnonzero(hi[n_ib:] > ib_hi + tol)       # выход за IB вверх
+        if not re.size:
+            return res
+        r = int(re[0]) + n_ib
+        if r <= x or lo[x:r + 1].min() < leg:
+            return res
+        e = nearest_level(open_, vah, val, down=True)
+        tested = e is not None and leg <= e + t
+        res.update(open_type="open_test_drive" if tested else "open_rejection_reverse", open_dir="up",
+                   open_test_level=e if e is not None else np.nan, first_leg=round(open_ - leg, 2))
+        return res
+
+    a0 = int(away_up[0])
+    back = np.flatnonzero(lo[a0 + 1:] < open_ - t) + a0 + 1       # возврат через открытие вниз
+    if not back.size:
+        return res
+    x = int(back[0])
+    leg = hi[:x].max()
+    re = np.flatnonzero(lo[n_ib:] < ib_lo - tol)
+    if not re.size:
+        return res
+    r = int(re[0]) + n_ib
+    if r <= x or hi[x:r + 1].max() > leg:
+        return res
+    e = nearest_level(open_, vah, val, down=False)
+    tested = e is not None and leg >= e - t
+    res.update(open_type="open_test_drive" if tested else "open_rejection_reverse", open_dir="down",
+               open_test_level=e if e is not None else np.nan, first_leg=round(leg - open_, 2))
     return res
 
 

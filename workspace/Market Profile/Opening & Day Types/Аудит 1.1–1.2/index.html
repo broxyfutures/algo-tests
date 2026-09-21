@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Аудит 1.1–1.2</title>
+<script>try{if(localStorage.getItem("algo-tests-theme")==="light")document.documentElement.setAttribute("data-theme","light")}catch(e){}</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../../assets/style.css"></head>
+<body>
+<div class="theme-toggle" id="theme-toggle" role="button" tabindex="0" aria-label="Переключить тему"><span class="label" id="theme-toggle-label">Тёмная</span><div class="theme-toggle-track"><div class="theme-toggle-knob"></div></div></div>
+<div class="app">
+<nav class="crumbs"><a href="../../../index.html">Тесты</a><span class="sep">/</span><a href="../../index.html">Market Profile</a><span class="sep">/</span><a href="../index.html">Opening &amp; Day Types</a><span class="sep">/</span><span class="cur">Аудит 1.1–1.2</span></nav>
+<header class="hdr"><div><h1>Аудит 1.1–1.2</h1><div class="sub">ES · данные, профили, классификаторы, тесты 1.1 и 1.2</div></div><div class="meta" id="hdr-meta"><div>Обновлено <b>2026-09-21</b></div></div></header>
+<section class="card"><table class="kv"><tr><td>Статус</td><td><span class="pill pass">завершён</span></td></tr><tr><td>Вердикт</td><td><span class="pill ">—</span> <span class="sans" style="margin-left:8px">Стресс-тест: баги исправлены, ограничения и решения на обсуждение</span></td></tr><tr><td>Инструмент</td><td><span class="sans">ES · данные, профили, классификаторы, тесты 1.1 и 1.2</span></td></tr><tr><td>Даты</td><td>создан 2026-09-21 · обновлён 2026-09-21</td></tr><tr><td>Источник</td><td><span class="sans">проверки по mp-es-pipeline/data/derived, Mind Over Markets гл. 2 и 4</span></td></tr><tr><td>ID</td><td><code>mp-open-audit</code></td></tr></table></section>
+<section class="card"><h2 class="card-title">Что проверялось</h2><div class="prose"><p>Весь путь от минуток до таблиц тестов 1.1 и 1.2: данные, сессии, профили и VA, типы дня, композиты, типы открытия, сами тесты. Отдельно — соответствие книге Далтона.</p></div></section>
+<section class="card"><h2 class="card-title">Найдено и исправлено</h2><div class="prose"><div class="twrap"><table class="plain md"><thead><tr><th>Что</th><th>Масштаб</th><th>Последствие</th><th>Исправление</th></tr></thead><tbody><tr><td><strong>Границы VA выходили за реальный диапазон дня.</strong> VAH = верх строки блока, при блоке 2 пт она могла быть выше хая, где торгов не было</td><td>fixed: 712 дней VAH выше хая, 304 дня VAL ниже лоу; adaptive: 194 и 60</td><td>открытие одновременно «выше диапазона» и «внутри VA»; 7 невозможных по правилу Open-Test-Drive</td><td>границы VA обрезаются по high / low сессии (дневные, недельные, месячные профили и композиты)</td></tr><tr><td><strong>Перекос первого хода.</strong> Если в первую минуту цена ушла от открытия в обе стороны, код считал первым ход вверх</td><td>69 % дней</td><td>Open-Rejection-Reverse вниз в 3–5 раз чаще, чем вверх</td><td>симметричное правило: первый ход туда, где закрылась минута; после правки 300 вверх / 261 вниз</td></tr><tr><td><strong>Композит: опора старше вчерашнего дня.</strong> Если в композите 1 день, а следующие дни пропущены, опорой был этот старый день</td><td>около 140 дней на режим</td><td>зона открытия считалась от профиля двух-трёхдневной давности</td><td>композит меньше 2 дней → опора = вчерашний профиль</td></tr><tr><td><strong>Дыры в данных Databento.</strong> Нет минуток за 12–13.06, 23–25.09 и 31.12.2014 (NYSE торговала)</td><td>6 торговых дней, 3 дня после дыр</td><td>«вчера» оказывалось на несколько дней старше</td><td>день после дыры без опоры, композит начинается заново</td></tr><tr><td><strong>Trend строже книги.</strong> One-timeframe считался с блока B, а не с выхода за IB</td><td>Trend 3.1 % → 5.6 % (fixed)</td><td>трендовые дни с колебаниями внутри IB уходили в Normal Variation</td><td>one-timeframe от блока, первым вышедшего за IB (рис. 2.6)</td></tr><tr><td><strong>Double-Distribution строже книги.</strong> Узкий IB был обязательным</td><td>40 → 143 дня (fixed)</td><td>дни с двумя областями и широким IB уходили в Normal Variation</td><td>узкий IB не требуется</td></tr><tr><td><strong>Типы открытия с диапазоном открытия и порогами</strong></td><td>все дни</td><td>не по трём переменным трейдера</td><td>переписаны: точка открытия, VA, IB, весь день</td></tr></tbody></table></div></div></section>
+<section class="card"><h2 class="card-title">Особенности данных (не ошибки)</h2><div class="prose"><ul><li><strong>Переход на летнее время</strong> обработан верно: блок A всегда начинается в 09:30 NY, в днях перехода 390 минут.</li><li><strong>Праздники и спецзакрытия</strong> (Sandy 2012, похороны Буша 2018 и Картера 2025, Страстная пятница) правильно не считаются RTH-днями.</li><li><strong>Остановки по лимиту в марте 2020</strong> (09, 12, 16, 18.03): в днях не хватает 13–14 минут. Это реальные остановки торгов, дни оставлены.</li><li><strong>Поздний ролл Databento:</strong> 177 дней на уходящем контракте с низким объёмом. На TPO не влияет, на объёмные метрики да.</li></ul></div></section>
+<section class="card"><h2 class="card-title">Критические ограничения (решать трейдеру)</h2><div class="prose"><p><strong>1. Open-Drive и допуск в 1 тик.</strong></p>
+<div class="twrap"><table class="plain md"><thead><tr><th>Допуск у точки открытия</th><th>Доля Open-Drive</th></tr></thead><tbody><tr><td>1 тик (сейчас)</td><td>6.9 %</td></tr><tr><td>1 блок, adaptive</td><td>22.2 %</td></tr><tr><td>1 блок, fixed 2 пт</td><td>45.6 %</td></tr><tr><td>2 блока, fixed 4 пт</td><td>56.9 %</td></tr></tbody></table></div>
+<p>Тик не масштабируется с ценой: доля Open-Drive упала с 9.5 % (2010–2018) до 4.1 % (2019–2026), потому что ES вырос с 1100 до 7400 и 1 тик стал относительно меньше. Это та же проблема, что с фиксированным блоком.</p>
+<p><strong>2. Первая минута неоднозначна в 69 % дней.</strong> По минуткам нельзя сказать, какой ход был первым. Сейчас берётся закрытие первой минуты. Точно это решают только тиковые данные.</p>
+<p><strong>3. Шумовые первые ходы.</strong> У 21 % Open-Test-Drive и Open-Rejection-Reverse первый ход меньше 2 пунктов, у 5 % меньше 1 пункта. Это фактически несколько тиков в сторону перед разворотом. У 70 % этих дней первая минута неоднозначна (п. 2).</p>
+<p><strong>4. Механические связи в определениях.</strong></p>
+<ul><li>Open-Test-Drive и Open-Rejection-Reverse требуют выхода за IB, поэтому после них не бывает Normal и Nontrend.</li><li>При открытии вне VA Open-Test-Drive возможен только в одну сторону (ближайшая граница есть только с одной стороны).</li></ul>
+<p>Эти нули в таблицах — следствие правил, а не свойство рынка.</p>
+<p><strong>5. Когда тип открытия известен.</strong> Open-Drive известен в 10:30. Open-Test-Drive и Open-Rejection-Reverse — только в момент выхода за IB, то есть иногда после полудня. Для торговых выводов (тест 2.1) это важно: в 10:30 этих типов ещё нет.</p>
+<p><strong>6. Фиксированный блок на старых годах.</strong> В 2010–2017 дневной профиль при 2 пт состоит из 6–7 строк, и value area занимает почти весь день:</p>
+<div class="twrap"><table class="plain md"><thead><tr><th></th><th>Внутри VA открывались, 2010–2017</th><th>2018–2026</th></tr></thead><tbody><tr><td>fixed 2 пт</td><td>42.3 %</td><td>35.2 %</td></tr><tr><td>adaptive</td><td>33.4 %</td><td>34.0 %</td></tr></tbody></table></div>
+<p>То же с Double-Distribution в fixed: 1.1 % в 2010–2018 против 6.2 % в 2019–2026 (в adaptive 7.2 % и 6.8 %). Статистику fixed по старым годам стоит читать осторожно.</p>
+<p><strong>7. Шум выборки.</strong> Полуширина 95 % доверительного интервала:</p>
+<div class="twrap"><table class="plain md"><thead><tr><th>n</th><th>тип с долей 10 %</th><th>Normal Variation (66 %)</th></tr></thead><tbody><tr><td>400</td><td>±2.9 п.п.</td><td>±4.6 п.п.</td></tr><tr><td>1560</td><td>±1.5 п.п.</td><td>±2.4 п.п.</td></tr></tbody></table></div>
+<p>Большинство отклонений зон от базовой частоты в 1.1 (±1–3 п.п.) в пределах шума.</p>
+<p><strong>8. Много сравнений.</strong> На странице около 420 ячеек (5 зон × 7 типов × 4 варианта × 3 периода). Несколько «ярких» отклонений появится случайно; смотреть стоит на то, что держится в обеих половинах истории и в обоих режимах блока.</p>
+<p><strong>9. Рост ES.</strong> Normal Variation вверх 1404 дня, вниз 1260; Trend 131 вверх, 96 вниз. Поэтому «по тренду открытия» у открытий вниз систематически меньше, чем у открытий вверх.</p>
+<p><strong>10. Композит почти не меняет зону.</strong> Зона открытия от композита совпадает с зоной от вчерашнего дня в 92–93 % дней, поэтому тумблер в 1.1 и 1.2 даёт малую разницу. Он важнее для тестов уровней (3.x).</p></div></section>
+<section class="card"><h2 class="card-title">Отличия от Далтона</h2><div class="prose"><div class="twrap"><table class="plain md"><thead><tr><th>Далтон</th><th>У нас</th><th>Последствие</th></tr></thead><tbody><tr><td>Тип открытия — ранняя активность, «first few minutes», граница — opening range</td><td>точка открытия, VA, IB, весь день (решение 21.09)</td><td>Open-Drive строже; Open-Test-Drive и Open-Rejection-Reverse известны после выхода за IB</td></tr><tr><td>IB — первый час пит-сессии</td><td>IB — первый час RTH при круглосуточной торговле</td><td>сам Далтон пишет, что IB сегодня «slightly more ambiguous»; Normal Variation доминирует</td></tr><tr><td>Normal Variation: IB уже, чем у Normal, выход обычно рано</td><td>ширина IB и время выхода не проверяются</td><td>в Normal Variation попадают и поздние выходы</td></tr><tr><td>Neutral: IB между Trend и Normal</td><td>ширина IB не проверяется</td><td>Neutral шире книжного</td></tr><tr><td>Принятие — цена торгуется в зоне не меньше часа</td><td>A и B торговались на общих уровнях в зоне</td><td>близко к книге</td></tr></tbody></table></div></div></section>
+<section class="card"><h2 class="card-title">Решения на обсуждение</h2><div class="prose"><ol><li><strong>Допуск у точки открытия в блоках</strong>, а не в тиках: 1 блок в adaptive даёт Open-Drive около 22 % и масштабируется с ценой.</li><li><strong>Минимальный первый ход</strong> для Open-Test-Drive и Open-Rejection-Reverse — 2 блока, как твоё правило для excess и single prints.</li><li><strong>Тиковые данные Databento</strong> для точного порядка ходов в первую минуту (сначала оценка стоимости).</li><li><strong>Доверительные интервалы на странице</strong>, чтобы сразу видеть, что в пределах шума.</li><li><strong>Fixed по 2010–2017:</strong> помечать или смотреть только 2018+.</li><li><strong>Докачать 6 пропущенных дней</strong> по отдельным контрактам.</li></ol></div></section>
+<section class="card"><h2 class="card-title">Журнал</h2><div class="prose"><ul><li>2026-09-21: аудит проведён, баги из таблицы «Найдено и исправлено» исправлены и пересчитаны тесты 1.1 и 1.2.</li></ul></div></section>
+<div class="foot">Тесты / Market Profile / Opening &amp; Day Types / Аудит 1.1–1.2</div>
+</div>
+
+<script>
+(function(){
+  var KEY = 'algo-tests-theme';
+  var el = document.getElementById('theme-toggle');
+  var label = document.getElementById('theme-toggle-label');
+  if (!el) return;
+  function sync(){
+    var light = document.documentElement.getAttribute('data-theme') === 'light';
+    label.textContent = light ? 'Светлая' : 'Тёмная';
+  }
+  function flip(){
+    var light = document.documentElement.getAttribute('data-theme') === 'light';
+    if (light) document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', 'light');
+    try { localStorage.setItem(KEY, light ? 'dark' : 'light'); } catch(e){}
+    sync();
+  }
+  sync();
+  el.addEventListener('click', flip);
+  el.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
+})();
+</script>
+</body></html>
