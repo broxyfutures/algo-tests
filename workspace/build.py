@@ -14,7 +14,8 @@ test.md = frontmatter (плоские key: value и списки «- item») + �
 заголовками «## …». Ключ renderer выбирает, что вставить в раздел «Результаты»:
   markdown       ничего, только текст;
   cot_pa_tables  таблицы 3×5 (нужен results.json от scripts/06_export_results.py);
-  mp_zone_table  зона открытия × тип (results.json от mp-es-pipeline/scripts/11_test_zone_types.py);
+  mp_zone_table  зона открытия × тип (архивные тесты 1.1 и 1.2, results.json заморожен);
+  mp_open_matrix точка открытия × тип открытия → тип дня (results.json от mp-es-pipeline/scripts/11_test_open_matrix.py);
   cot_yesno      вопрос да/нет у границ индекса (results.json от 08_export_yesno.py).
 
 Запуск:  python3 build.py
@@ -33,7 +34,7 @@ FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?'
          'family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap">')
 
 VERDICT_CLASS = {"прошло": "pass", "не прошло": "fail", "частично": "part"}
-STATUS_CLASS = {"завершён": "pass", "закрыт": "dim", "в работе": "part"}
+STATUS_CLASS = {"завершён": "pass", "закрыт": "dim", "заменён": "dim", "в работе": "part"}
 
 # ставится в <head> до подключения style.css, чтобы выбранная тема
 # применилась ещё до первой отрисовки страницы (без вспышки не той темы)
@@ -320,11 +321,19 @@ def mount_mp_zone_table(meta: dict) -> str:
             '<p class="note" id="zt-note"></p>')
 
 
+def mount_mp_open_matrix(meta: dict) -> str:
+    return ('<div class="controls" id="om-controls"></div>'
+            '<h3 class="card-title" style="margin-top:4px">Какой тип дня</h3><div id="om-types"></div>'
+            '<h3 class="card-title" style="margin-top:22px">По тренду точки открытия или против</h3><div id="om-dirs"></div>'
+            '<p class="note" id="om-note"></p>')
+
+
 RENDERERS = {
     "markdown": {"mount": None, "extra": None, "js": None, "needs_results": False},
     "cot_pa_tables": {"mount": mount_cot_pa_tables, "extra": extra_cot_pa_tables, "js": "cot_pa_tables.js", "needs_results": True},
     "cot_yesno": {"mount": mount_cot_yesno, "extra": None, "js": "cot_yesno.js", "needs_results": True},
     "mp_zone_table": {"mount": mount_mp_zone_table, "extra": None, "js": "mp_zone_table.js", "needs_results": True},
+    "mp_open_matrix": {"mount": mount_mp_open_matrix, "extra": None, "js": "mp_open_matrix.js", "needs_results": True},
 }
 
 

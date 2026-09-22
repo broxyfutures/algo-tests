@@ -77,7 +77,8 @@ def main() -> int:
              "double_distribution_trend": "Double-Distribution Trend", "nontrend": "Nontrend",
              "neutral_center": "Neutral-Center", "neutral_extreme": "Neutral-Extreme",
              "open_drive": "Open-Drive", "open_test_drive": "Open-Test-Drive",
-             "open_rejection_reverse": "Open-Rejection-Reverse", "open_auction": "Open-Auction", "": "—"}
+             "open_rejection_reverse": "Open-Rejection-Reverse", "open_auction_in": "Open-Auction внутри VA",
+             "open_auction_out": "Open-Auction вне VA", "": "—"}
     dt_path, op_path = C.DERIVED / f"mp_daytype_{a.mode}.csv", C.DERIVED / f"mp_open_{a.mode}.csv"
     if dt_path.exists():
         t = pd.read_csv(dt_path, parse_dates=["date"], keep_default_na=False).set_index("date").loc[day]
@@ -87,11 +88,12 @@ def main() -> int:
     if op_path.exists():
         o = pd.read_csv(op_path, parse_dates=["date"], keep_default_na=False).set_index("date").loc[day]
         for sfx, lab in (("day", "опора вчера"), ("comp", "опора композит")):
-            acc = {"True": "принято", "False": "отвергнуто", "": "—"}[str(o[f"open_accept_{sfx}"])]
-            lvl = o[f"open_test_level_{sfx}"]
-            extra = f", первый ход {o[f'first_leg_{sfx}']} пт, ближайшая граница VA {lvl}" if lvl != "" else ""
-            print(f"Открытие ({lab}): {names[o[f'open_type_{sfx}']]} {o[f'open_dir_{sfx}']}{extra}; "
-                  f"зона {o[f'open_zone_{sfx}'] or '—'}, {acc}   (открытие {o.open}, IB {o.ib_low}–{o.ib_high})")
+            trig = {"va": "тест VA", "a_extreme": "возврат к экстремуму A", "range": "касание границы диапазона",
+                    "a_blurred": "экстремум A размыт", "": ""}[o[f"trigger_{sfx}"]]
+            brk = ", пробой IB в 10:30–11:30" if str(o[f"ib_break_{sfx}"]) == "True" else ""
+            print(f"Открытие ({lab}): точка {o[f'open_zone_{sfx}'] or '—'}, тип {names[o[f'open_type_{sfx}']]} "
+                  f"{o[f'open_dir_{sfx}']}" + (f" ({trig}{brk})" if trig else "") +
+                  f"; цена в 10:30 {o[f'c1030_{sfx}']}   (открытие {o.open}, IB {o.ib_low}–{o.ib_high})")
     flags = [k for k in ("roll_day", "expiring_contract", "half_day", "suspicious") if bool(d[k])]
     if flags:
         print("Флаги:", ", ".join(flags))

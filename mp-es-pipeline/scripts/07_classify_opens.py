@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
 """
 Шаг 7. Тип открытия и зона открытия (правила в mp/opentype.py и PROFILE_RULES.md, раздел 7).
-Переменные только три: точка открытия, VA опоры, IB. События отслеживаются весь RTH-день.
 
 Выход: data/derived/mp_open_{fixed,adaptive}.csv, одна строка на RTH-день:
   date, open, ib_high, ib_low
   для опоры «вчерашний день» (суффикс _day) и «композит» (суффикс _comp, тумблер):
-    open_type        open_drive / open_test_drive / open_rejection_reverse / open_auction (пусто: нет опоры)
-    open_dir         up / down: куда в итоге пошла цена
-    open_test_level  ближайшая граница VA в направлении первого хода (у OTD / ORR), если есть
-    first_leg        длина первого хода от открытия в пунктах (у OTD / ORR)
-    first_leg_ambiguous  в первую минуту цена ушла от открытия в обе стороны, первый ход взят по закрытию минуты
-    open_zone        above_range / above_value / in_value / below_value / below_range
-    open_accept      True: A и B торговались на общих уровнях внутри зоны открытия (принятие)
-
-Open-Drive от опоры не зависит; Open-Test-Drive / Open-Rejection-Reverse различаются тестом границы
-VA опоры, поэтому тип может отличаться между _day и _comp. От режима блока зависят VAH / VAL.
+    open_type    open_auction_in / open_drive / open_test_drive / open_rejection_reverse /
+                 open_auction_out (пусто: нет опоры)
+    open_dir     up / down (у Open-Auction пусто)
+    trigger      что сделало день кандидатом в Open-Test-Drive: va / a_extreme / range;
+                 a_blurred — за диапазоном экстремум A пробит без касания границы диапазона
+    c1030        цена в 10:30 (закрытие блока B)
+    ib_break     пробой IB по тренду в 10:30–11:30
+    open_zone    above_range / above_value / in_value / below_value / below_range
+    open_accept  True: A и B торговались на общих уровнях внутри зоны открытия (принятие)
 
 Запуск: python3 scripts/07_classify_opens.py   (после 02 и 06)
 """
@@ -38,7 +36,8 @@ def main() -> int:
     off = (m.index.hour * 60 + m.index.minute - (9 * 60 + 30)).to_numpy()
     m = m.assign(off=off)
     day_min = {d: (g["low"].to_numpy(), g["high"].to_numpy(), g["close"].to_numpy(),
-                   int((g["off"] < C.IB_PERIODS * C.PERIOD_MIN).sum()), g["open"].iloc[0])
+                   int((g["off"] < C.PERIOD_MIN).sum()), int((g["off"] < C.IB_PERIODS * C.PERIOD_MIN).sum()),
+                   g["open"].iloc[0])
                for d, g in m.groupby("date")}
     per = pd.read_parquet(C.DERIVED / "periods_30m.parquet")
     per = per[(per.session == "RTH") & (per.period < C.IB_PERIODS)]
@@ -50,7 +49,7 @@ def main() -> int:
         df = daily.merge(comp[["date", "ref_source", "ref_vah", "ref_val", "ref_high", "ref_low"]], on="date")
         rows = []
         for b in df.itertuples(index=False):
-            lo, hi, cl, n_ib, open_ = day_min[b.date]
+            lo, hi, cl, n_a, n_ib, open_ = day_min[b.date]
             r = {"date": b.date.date(), "open": open_, "ib_high": hi[:n_ib].max(), "ib_low": lo[:n_ib].min()}
             refs = {
                 "day": (b.prev_ref_valid, b.prev_vah, b.prev_val, b.prev_high, b.prev_low),
@@ -58,19 +57,19 @@ def main() -> int:
             }
             for sfx, (ok, vah, val, high, low) in refs.items():
                 if not ok:
-                    r.update({f"open_type_{sfx}": "", f"open_dir_{sfx}": "", f"open_test_level_{sfx}": np.nan,
-                              f"first_leg_{sfx}": np.nan, f"first_leg_ambiguous_{sfx}": np.nan,
+                    r.update({f"open_type_{sfx}": "", f"open_dir_{sfx}": "", f"trigger_{sfx}": "",
+                              f"c1030_{sfx}": np.nan, f"ib_break_{sfx}": np.nan,
                               f"open_zone_{sfx}": "", f"open_accept_{sfx}": np.nan})
                     continue
-                res = OT.classify(lo, hi, cl, open_, vah, val, n_ib)
+                res = OT.classify(lo, hi, cl, open_, vah, val, high, low, n_a, n_ib)
                 z, z_lo, z_hi = OT.zone(open_, val, vah, low, high)
                 (a_lo, b_lo), (a_hi, b_hi) = ab[b.date]
                 r.update({
                     f"open_type_{sfx}": res["open_type"],
                     f"open_dir_{sfx}": res["open_dir"],
-                    f"open_test_level_{sfx}": res["open_test_level"],
-                    f"first_leg_{sfx}": res["first_leg"],
-                    f"first_leg_ambiguous_{sfx}": res["ambiguous"],
+                    f"trigger_{sfx}": res["trigger"],
+                    f"c1030_{sfx}": res["c1030"],
+                    f"ib_break_{sfx}": res["ib_break"],
                     f"open_zone_{sfx}": z,
                     f"open_accept_{sfx}": OT.accepted(z_lo, z_hi, a_lo, a_hi, b_lo, b_hi),
                 })

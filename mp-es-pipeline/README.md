@@ -42,7 +42,7 @@ mp/profile.py          профиль: TPO и объём по строкам, PO
 mp/rows.py             расписание размера блока по неделям (fixed и adaptive)
 mp/composite.py        дневные композиты: перекрытие VA и проверка формы
 mp/daytype.py          тип дня (Mind Over Markets, гл. 2)
-mp/opentype.py         тип открытия и зона открытия (гл. 4)
+mp/opentype.py         точка и тип открытия (гл. 4, правила трейдера от 22.09)
 scripts/01_build_periods.py     → periods_30m.parquet
 scripts/02_build_profiles.py    → row_schedule.csv, mp_daily_fixed.csv, mp_daily_adaptive.csv
 scripts/03_print_day.py         ASCII-профиль дня для сверки с терминалом
@@ -50,7 +50,7 @@ scripts/04_build_weekly_monthly.py  → rolls.csv, mp_weekly_{fixed,adaptive}.cs
 scripts/05_classify_days.py         → mp_daytype_{fixed,adaptive}.csv
 scripts/06_build_day_composites.py  → mp_composite_{fixed,adaptive}.csv
 scripts/07_classify_opens.py        → mp_open_{fixed,adaptive}.csv
-scripts/11_test_zone_types.py       тесты 1.1 и 1.2 → results.json в workspace/Market Profile/Opening & Day Types
+scripts/11_test_open_matrix.py      тест 1 (точка открытия × тип открытия → тип дня) → results.json в workspace
 scripts/1x_test_*.py            по скрипту на тест, появляются по мере тестов
 data/derived/          производные файлы (коммитятся, ~7 МБ)
 ../workspace/Market Profile/  страницы тестов (test.md + results.json)
@@ -193,7 +193,7 @@ Excess / single prints = не меньше 2 блоков в обоих режи
 
 ### `mp_open_{fixed,adaptive}.csv`, одна строка на RTH-день
 
-`open, or_high, or_low, r20` и для опоры «вчера» (`_day`) и «композит» (`_comp`): `open_type, open_dir, orr_tested_va, open_zone, open_accept`. Правила: [PROFILE_RULES.md](PROFILE_RULES.md), раздел 7.
+`open, ib_high, ib_low` и для опоры «вчера» (`_day`) и «композит» (`_comp`): `open_type, open_dir, trigger, c1030, ib_break, open_zone, open_accept`. Правила: [PROFILE_RULES.md](PROFILE_RULES.md), раздел 7.
 
 ### Прочее
 
@@ -234,6 +234,7 @@ Excess / single prints = не меньше 2 блоков в обоих режи
 | 2026-09-19 | Типы открытия по гл. 4: граница = диапазон первых 5 минут, окно = первый час, драйв ≥ 0.25 × R20 (у Open-Drive в пределах A), тест Open-Test-Drive = VAH / VAL опоры. Тип открытия и зона открытия (5 уровней + принятие) хранятся раздельно |
 | 2026-09-21 | Дни ролла больше не исключаются: вчерашние уровни и композит сдвигаются на спред между контрактами в момент переключения |
 | 2026-09-21 | Тесты 1.1 и 1.2 (зона открытия → тип дня / тип открытия): описательная статистика, 4 варианта × 2 половины истории |
+| 2026-09-22 | Типы открытия по двум переменным трейдера: точка открытия и что цена сделала в первый час относительно своей границы VA (раздел 7 PROFILE_RULES). Тест 1 «точка открытия × тип открытия → тип дня» заменил 1.1 и 1.2 |
 | 2026-09-21 | Аудит 1.1–1.2: границы VA обрезаны по реальному диапазону; симметричное правило для неоднозначной первой минуты; опора при композите меньше 2 дней = вчерашний день; дыры в данных 2014 (`DATA_HOLES`) |
 | 2026-09-21 | Trend: one-timeframe от выхода за IB; Double-Distribution без узкого IB; типы открытия только по точке открытия, VA и IB на весь день |
 | 2026-09-19 | Объёмный профиль приближённый (объём минуты поровну по диапазону). Точный `trades` не покупаем, пока тест не потребует |
