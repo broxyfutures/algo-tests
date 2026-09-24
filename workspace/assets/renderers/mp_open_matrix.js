@@ -5,7 +5,7 @@
 (function(){
   const D = window.DATA, M = D.meta;
   const KEY = 'mp-open-matrix-' + D.test;
-  const S = {m:'f', c:'0', z:'5', p:'all', v:'pct', sel:'_all'};
+  const S = {m:'f', c:'0', z:'5', p:'all', v:'pct', sel:'_all', hs:'row'};
   try{ Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); }catch(e){}
   const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} };
   const f1 = v => Number.isFinite(v) ? v.toFixed(1) : '';
@@ -32,7 +32,17 @@
 .res tr.om-row{cursor:pointer}
 .res tr.om-sel td{background:var(--surface-2)}
 .res tr.om-zone td{border-top:1px solid var(--border-2)}
-.res tr.om-sub td.state{padding-left:26px;font-weight:500;letter-spacing:.02em}`;
+.res tr.om-sub td.state{padding-left:26px;font-weight:500;letter-spacing:.02em}
+.om-heat{overflow-x:auto}
+table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-width:640px}
+.om-hm th{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);font-weight:500;padding:6px 8px;text-align:center;vertical-align:bottom;line-height:1.4}
+.om-hm th.om-rowh{text-align:left;white-space:nowrap;text-transform:none;font-size:12px;letter-spacing:.02em;color:var(--t2);padding-right:12px}
+.om-hm th .om-n{display:block;color:var(--t4);letter-spacing:.06em}
+.om-hm td{padding:9px 10px;text-align:center;border-radius:3px;min-width:74px;font-variant-numeric:tabular-nums}
+.om-hm td.om-base{background:var(--surface-2)!important;color:var(--t2)!important}
+.om-hm .om-colsel{outline:1px solid var(--border-hi);outline-offset:-1px}
+.om-scale{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:11px;color:var(--t3);font-family:var(--sans)}
+.om-scale .om-bar{height:10px;width:190px;border-radius:2px}`;
   document.head.appendChild(st);
   const slot = i => `var(--z${i})`;
   function pie(title, parts){
@@ -79,6 +89,7 @@
       ctl('Зоны', seg([['5', '5 зон'], ['3', '3 группы']], S.z, v => upd('z', v))),
       ctl('Период', seg([['all', '2010–2026'], ['a', '2010–2018'], ['b', '2019–2026']], S.p, v => upd('p', v))),
       ctl('Показать', seg([['pct', '% дней'], ['n', 'дни']], S.v, v => upd('v', v))),
+      ctl('Шкала карты', seg([['row', 'по строке'], ['all', 'общая']], S.hs, v => upd('hs', v))),
     );
     const R = rowsNow();
     const zk = r => S.z === '3' ? TO3[r.z5] : r.z5;
@@ -145,11 +156,70 @@
     document.getElementById('om-dirs').innerHTML = `<div class="om-wrap">${q}</tbody></table></div>${pie2}</div>`;
     document.querySelectorAll('#om-types tr[data-k], #om-dirs tr[data-k]').forEach(tr => tr.addEventListener('click', () => upd('sel', tr.dataset.k)));
 
+    // тепловая карта: тип дня (Y) × тип открытия (X) внутри выбранной зоны
+    const hz = selRow.zone || null;
+    const cols = OT.map(([o, name]) => ({o, name, g: G[(hz ? hz : '_zoneless') + '|' + o]}))
+      .filter(c => hz ? !!c.g : true);
+    const colsOut = hz ? cols : OT.map(([o, name]) => {
+      const g = {n: 0, t: {}};
+      ZL.forEach(([z]) => { const x = G[z + '|' + o]; if (!x) return; g.n += x.n; DT.forEach(t => { g.t[t[0]] = (g.t[t[0]] || 0) + (x.t[t[0]] || 0); }); });
+      return {o, name, g};
+    }).filter(c => c.g.n);
+    const val = (c, t) => (c.g.t[t] || 0) / c.g.n * 100;
+    const rowMax = {}, rowMin = {};
+    DT.forEach(t => {
+      const v = colsOut.map(c => val(c, t[0]));
+      rowMax[t[0]] = Math.max(...v, 0.1); rowMin[t[0]] = Math.min(...v, rowMax[t[0]]);
+    });
+    const mxAll = Math.max(...DT.map(t => rowMax[t[0]]), 1);
+    // «по строке»: минимум строки синий, максимум розовый; «общая»: 0 → максимум карты
+    const norm = (p, t) => S.hs === 'row'
+      ? (rowMax[t] - rowMin[t] < 1e-9 ? 0.5 : (p - rowMin[t]) / (rowMax[t] - rowMin[t]))
+      : p / mxAll;
+    const cs = getComputedStyle(document.documentElement);
+    const rgb = v => (cs.getPropertyValue(v).trim() || '#888').replace('#', '').match(/../g).map(x => parseInt(x, 16));
+    const LO = rgb('--up'), HI = rgb('--dn'), BG = rgb('--surface');
+    // относительная яркость sRGB (WCAG) и контраст двух цветов
+    const relLum = v => v.reduce((s, x, i) => {
+      const u = x / 255, l = u <= 0.03928 ? u / 12.92 : Math.pow((u + 0.055) / 1.055, 2.4);
+      return s + [0.2126, 0.7152, 0.0722][i] * l;
+    }, 0);
+    const contrast = (a, b) => {
+      const l1 = relLum(a), l2 = relLum(b);
+      return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+    };
+    const INK_D = [11, 11, 11], INK_L = [255, 255, 255];
+    const paint = t => {
+      const a = 0.12 + 0.88 * t;
+      const c = LO.map((l, i) => Math.round(l + (HI[i] - l) * t));
+      // цвет цифр по фактическому цвету ячейки: подложка просвечивает через прозрачность
+      const eff = c.map((x, i) => a * x + (1 - a) * BG[i]);
+      const ink = contrast(eff, INK_D) >= contrast(eff, INK_L) ? INK_D : INK_L;
+      return `background:rgba(${c[0]},${c[1]},${c[2]},${a.toFixed(3)});color:rgb(${ink.join(',')})`;
+    };
+    let hm = `<table class="om-hm"><thead><tr><th class="om-rowh">Тип дня \\ тип открытия</th><th>все дни<span class="om-n">${(hz ? G[hz + '|*'] : G._all).n}</span></th>` +
+      colsOut.map(c => `<th class="${selRow.k === (hz || '') + '|' + c.o ? 'om-colsel' : ''}">${c.name.replace('Open-', 'O-')}<span class="om-n">${c.g.n}</span></th>`).join('') + '</tr></thead><tbody>';
+    const baseG = hz ? G[hz + '|*'] : G._all;
+    DT.forEach(t => {
+      hm += `<tr><th class="om-rowh">${t[1]}</th><td class="om-base">${f1((baseG.t[t[0]] || 0) / baseG.n * 100)}%</td>` +
+        colsOut.map(c => {
+          const p = val(c, t[0]);
+          return `<td style="${paint(norm(p, t[0]))}" title="${t[1]} · ${c.name}: ${f1(p)}% (${c.g.t[t[0]] || 0} из ${c.g.n})">${f1(p)}%</td>`;
+        }).join('') + '</tr>';
+    });
+    const g1 = `rgb(${HI.join(',')})`;
+    hm += `</tbody></table><div class="om-scale"><span class="om-bar" style="background:linear-gradient(90deg, rgba(${LO.join(',')},.12), ${g1})"></span>` +
+      `<span>${S.hs === 'row' ? 'синий — реже всего в строке, розовый — чаще всего (шкала своя у каждого типа дня)' : `общая шкала 0% → ${f1(mxAll)}%: синий — реже, розовый — чаще`}</span></div>`;
+    document.getElementById('om-heat').innerHTML = `<div class="om-heat">${hm}</div>`;
+    const sub = document.getElementById('om-heat-sub');
+    if (sub) sub.textContent = (hz ? selRow.label.startsWith('Open') ? (S.z === '3' ? Z3 : Z5).find(z => z[0] === hz)[1] : selName : 'все зоны') + ' · колонка = 100%';
+
     const blk = S.m === 'f' ? 'фиксированный блок 2 пт' : 'адаптивный блок';
     const ref = S.c === '0' ? 'опора = вчерашний день' : 'опора = композит (от 2 дней, иначе вчерашний день)';
     document.getElementById('om-note').textContent = `${blk} · ${ref} · ${S.p === 'all' ? '2010–2026' : S.p === 'a' ? '2010–2018' : '2019–2026'}. ` +
       `«% зоны» — доля дней зоны с этим типом открытия. Под процентом типа дня — разница с базовой частотой (все дни) в процентных пунктах. ` +
-      `Во второй таблице — доля дней строки с этим типом дня по тренду точки открытия и против (для «внутри VA» — вверх и вниз). Кольцо показывает выбранную строку: кликни по строке, чтобы переключить.`;
+      `Во второй таблице — доля дней строки с этим типом дня по тренду точки открытия и против (для «внутри VA» — вверх и вниз). Тепловая карта и кольцо показывают выбранную строку: кликни по строке таблицы, чтобы переключить.`;
   }
   render();
+  new MutationObserver(render).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
 })();
