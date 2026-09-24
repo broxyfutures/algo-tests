@@ -25,22 +25,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import pandas as pd  # noqa: E402
 
 import config as C  # noqa: E402
+from mp.codes import DAY_CODE, DAY_TYPES, DIR, OPEN_CODE, OPEN_TYPES, ZONE_CODE, ZONES  # noqa: E402
 
 OUT = C.ROOT.parent / "workspace" / "Market Profile" / "Opening & Day Types" / "1 Точка открытия × тип открытия → тип дня"
-
-ZONES = [["ar", "выше диапазона"], ["av", "выше VA, в диапазоне"], ["iv", "внутри VA"],
-         ["bv", "ниже VA, в диапазоне"], ["br", "ниже диапазона"]]
-ZONE_CODE = {"above_range": "ar", "above_value": "av", "in_value": "iv", "below_value": "bv", "below_range": "br"}
-OPEN_TYPES = [["oai", "Open-Auction внутри VA"], ["od", "Open-Drive"], ["otd", "Open-Test-Drive"],
-              ["orr", "Open-Rejection-Reverse"], ["oao", "Open-Auction вне VA"]]
-OPEN_CODE = {"open_auction_in": "oai", "open_drive": "od", "open_test_drive": "otd",
-             "open_rejection_reverse": "orr", "open_auction_out": "oao"}
-DAY_TYPES = [["nm", "Normal", False], ["nt", "Nontrend", False], ["nv", "Normal Variation", True],
-             ["tr", "Trend", True], ["dd", "Double-Distribution Trend", True],
-             ["nc", "Neutral-Center", False], ["ne", "Neutral-Extreme", True]]
-DAY_CODE = {"normal": "nm", "nontrend": "nt", "normal_variation": "nv", "trend": "tr",
-            "double_distribution_trend": "dd", "neutral_center": "nc", "neutral_extreme": "ne"}
-DIR = {"up": "u", "down": "d", "": ""}
 
 
 def load(mode: str) -> pd.DataFrame:

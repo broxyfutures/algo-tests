@@ -16,7 +16,12 @@ test.md = frontmatter (плоские key: value и списки «- item») + �
   cot_pa_tables  таблицы 3×5 (нужен results.json от scripts/06_export_results.py);
   mp_zone_table  зона открытия × тип (архивные тесты 1.1 и 1.2, results.json заморожен);
   mp_open_matrix точка открытия × тип открытия → тип дня (results.json от mp-es-pipeline/scripts/11_test_open_matrix.py);
-  cot_yesno      вопрос да/нет у границ индекса (results.json от 08_export_yesno.py).
+  cot_yesno      вопрос да/нет у границ индекса (results.json от 08_export_yesno.py);
+  mp_chart       смотрелка профилей и композитов без таблиц (данные от 12_export_chart.py).
+
+Ключи рендерера: mount — блок в разделе «Результаты», pre — карточка над тестом,
+extra — карточка после, js — инлайн-скрипт с window.DATA, js_extra — дополнительные
+скрипты, data_js — файл данных из assets/data, подключается тегом <script defer>.
 
 Запуск:  python3 build.py
 """
@@ -34,7 +39,7 @@ FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?'
          'family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap">')
 
 VERDICT_CLASS = {"прошло": "pass", "не прошло": "fail", "частично": "part"}
-STATUS_CLASS = {"завершён": "pass", "закрыт": "dim", "заменён": "dim", "в работе": "part"}
+STATUS_CLASS = {"завершён": "pass", "закрыт": "dim", "заменён": "dim", "в работе": "part", "инструмент": "mid"}
 
 # ставится в <head> до подключения style.css, чтобы выбранная тема
 # применилась ещё до первой отрисовки страницы (без вспышки не той темы)
@@ -329,12 +334,29 @@ def mount_mp_open_matrix(meta: dict) -> str:
             '<p class="note" id="om-note"></p>')
 
 
+def mount_mp_chart(meta: dict) -> str:
+    return '<div class="mpc" id="mpc"></div>'
+
+
+def pre_mp_chart(meta: dict) -> str:
+    return card("Профили и композиты",
+                mount_mp_chart(meta),
+                "исходники теста: выбери строку в таблице или ячейку тепловой карты — эти дни подсветятся")
+
+
+def mount_mp_chart_page(meta: dict) -> str:
+    return '<div class="mpc" id="mpc" data-own="mode,ref,filter"></div>'
+
+
 RENDERERS = {
     "markdown": {"mount": None, "extra": None, "js": None, "needs_results": False},
     "cot_pa_tables": {"mount": mount_cot_pa_tables, "extra": extra_cot_pa_tables, "js": "cot_pa_tables.js", "needs_results": True},
     "cot_yesno": {"mount": mount_cot_yesno, "extra": None, "js": "cot_yesno.js", "needs_results": True},
     "mp_zone_table": {"mount": mount_mp_zone_table, "extra": None, "js": "mp_zone_table.js", "needs_results": True},
-    "mp_open_matrix": {"mount": mount_mp_open_matrix, "extra": None, "js": "mp_open_matrix.js", "needs_results": True},
+    "mp_open_matrix": {"mount": mount_mp_open_matrix, "extra": None, "js": "mp_open_matrix.js", "needs_results": True,
+                       "pre": pre_mp_chart, "js_extra": ["mp_chart.js"], "data_js": "mp_chart_data.js"},
+    "mp_chart": {"mount": mount_mp_chart_page, "extra": None, "js": None, "needs_results": False,
+                 "js_extra": ["mp_chart.js"], "data_js": "mp_chart_data.js"},
 }
 
 
@@ -354,6 +376,8 @@ def render_test(folder: Path, depth: int, crumbs: list[str]) -> tuple[str, dict]
 
     title = meta.get("title") or folder.name
     parts = [props_html(meta)]
+    if r.get("pre"):
+        parts.append(r["pre"](meta))
     has_results_section = False
     for head, content in split_sections(body):
         inner = md_to_html(content) if content else ""
@@ -370,10 +394,15 @@ def render_test(folder: Path, depth: int, crumbs: list[str]) -> tuple[str, dict]
         if r["extra"]:
             parts.append(r["extra"](meta))
 
-    scripts = ""
+    sc = []
+    if r.get("data_js"):
+        sc.append(f'<script src="{rel(depth)}assets/data/{r["data_js"]}" defer></script>')
     if r["js"]:
         js = (WS / "assets" / "renderers" / r["js"]).read_text(encoding="utf-8")
-        scripts = f"<script>window.DATA = {results_text};</script>\n<script>\n{js}\n</script>"
+        sc.append(f"<script>window.DATA = {results_text};</script>\n<script>\n{js}\n</script>")
+    for name in r.get("js_extra", []):
+        sc.append("<script>\n" + (WS / "assets" / "renderers" / name).read_text(encoding="utf-8") + "\n</script>")
+    scripts = "\n".join(sc)
     meta_html = ""
     if not r["js"]:
         bits = []

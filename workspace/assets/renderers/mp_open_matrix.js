@@ -5,7 +5,7 @@
 (function(){
   const D = window.DATA, M = D.meta;
   const KEY = 'mp-open-matrix-' + D.test;
-  const S = {m:'f', c:'0', z:'5', p:'all', v:'pct', sel:'_all', hs:'row'};
+  const S = {m:'f', c:'0', z:'5', p:'all', v:'pct', sel:'_all', hs:'row', cell:''};
   try{ Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); }catch(e){}
   const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} };
   const f1 = v => Number.isFinite(v) ? v.toFixed(1) : '';
@@ -23,7 +23,16 @@
 :root[data-theme="light"] .om-viz{--z1:#2a78d6;--z2:#eb6834;--z3:#1baf7a;--z4:#eda100;--z5:#e87ba4;--z6:#008300;--z7:#4a3aa7;--z0:#b4b2a9}
 .om-wrap{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
 .om-wrap .twrap{flex:1 1 600px;min-width:0}
-.om-pie{flex:0 0 230px;font-family:var(--sans);font-size:12px;color:var(--t2)}
+.om-pie{flex:0 0 340px;font-family:var(--sans);font-size:12px;color:var(--t2)}
+.om-pie svg{overflow:visible}
+.om-pie .om-lead{stroke:var(--t4);fill:none;stroke-width:1}
+.om-pie .om-lab{font-family:var(--sans);font-size:9.5px;fill:var(--t2)}
+.om-pie .om-lab tspan{fill:var(--t1)}
+.om-stat{margin-top:14px;border-top:1px solid var(--border);padding-top:10px}
+.om-stat table{border-collapse:collapse;width:100%;font-size:11.5px}
+.om-stat td{padding:2px 0;vertical-align:top}
+.om-stat td:first-child{color:var(--t3);padding-right:10px}
+.om-stat td:last-child{text-align:right;color:var(--t1);font-family:var(--mono)}
 .om-pie .om-pt{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin:2px 0 8px;line-height:1.5}
 .om-pie ul{list-style:none;margin:10px 0 0;padding:0}
 .om-pie li{display:flex;align-items:center;gap:8px;padding:2px 0}
@@ -41,27 +50,80 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
 .om-hm td{padding:9px 10px;text-align:center;border-radius:3px;min-width:74px;font-variant-numeric:tabular-nums}
 .om-hm td.om-base{background:var(--surface-2)!important;color:var(--t2)!important}
 .om-hm .om-colsel{outline:1px solid var(--border-hi);outline-offset:-1px}
+.om-hm tbody td[data-k]{cursor:pointer}
+.om-hm td.om-cellsel{outline:2px solid var(--t1);outline-offset:-2px}
 .om-scale{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:11px;color:var(--t3);font-family:var(--sans)}
 .om-scale .om-bar{height:10px;width:190px;border-radius:2px}`;
   document.head.appendChild(st);
   const slot = i => `var(--z${i})`;
-  function pie(title, parts){
+  // короткие имена для подписей у секторов: длинные не помещаются рядом с кольцом
+  const SHORT = {'Double-Distribution Trend':'DD-Trend', 'Normal Variation':'Normal Var.',
+                 'Neutral-Center':'Neutral-C', 'Neutral-Extreme':'Neutral-E',
+                 'Open-Auction внутри VA':'O-A в VA', 'Open-Auction вне VA':'O-A вне VA',
+                 'Open-Drive':'O-Drive', 'Open-Test-Drive':'O-T-Drive', 'Open-Rejection-Reverse':'O-R-R',
+                 'по тренду точки открытия':'по тренду', 'против тренда':'против',
+                 'без направления':'без напр.'};
+  function pie(title, parts, extra){
     const tot = parts.reduce((a, p) => a + p.value, 0);
-    const R = 80, r = 50, cx = 100, cy = 100;
-    let a0 = -Math.PI / 2, arcs = '';
+    const R = 66, r = 40, cx = 165, cy = 108;
+    const P = (rad, ang) => [cx + rad * Math.cos(ang), cy + rad * Math.sin(ang)];
+    const xy = (rad, ang) => P(rad, ang).map(v => v.toFixed(2)).join(' ');
+    let a0 = -Math.PI / 2, arcs = '', labs = [];
     parts.forEach(p => {
       if (!p.value) return;
-      const f = p.value / tot, a1 = a0 + f * 2 * Math.PI, big = f > 0.5 ? 1 : 0;
-      const P = (rad, ang) => `${(cx + rad * Math.cos(ang)).toFixed(2)} ${(cy + rad * Math.sin(ang)).toFixed(2)}`;
+      const f = p.value / tot, a1 = a0 + f * 2 * Math.PI, big = f > 0.5 ? 1 : 0, mid = (a0 + a1) / 2;
       const d = f >= 0.9999
-        ? `M${P(R, a0)} A${R} ${R} 0 1 1 ${P(R, a0 + Math.PI)} A${R} ${R} 0 1 1 ${P(R, a0)} M${P(r, a0)} A${r} ${r} 0 1 0 ${P(r, a0 + Math.PI)} A${r} ${r} 0 1 0 ${P(r, a0)}Z`
-        : `M${P(R, a0)} A${R} ${R} 0 ${big} 1 ${P(R, a1)} L${P(r, a1)} A${r} ${r} 0 ${big} 0 ${P(r, a0)}Z`;
+        ? `M${xy(R, a0)} A${R} ${R} 0 1 1 ${xy(R, a0 + Math.PI)} A${R} ${R} 0 1 1 ${xy(R, a0)} M${xy(r, a0)} A${r} ${r} 0 1 0 ${xy(r, a0 + Math.PI)} A${r} ${r} 0 1 0 ${xy(r, a0)}Z`
+        : `M${xy(R, a0)} A${R} ${R} 0 ${big} 1 ${xy(R, a1)} L${xy(r, a1)} A${r} ${r} 0 ${big} 0 ${xy(r, a0)}Z`;
       arcs += `<path d="${d}" fill="${p.color}" stroke="var(--surface)" stroke-width="2" fill-rule="evenodd"><title>${p.label}: ${f1(f * 100)}% (${p.value})</title></path>`;
+      if (f >= 0.025) labs.push({f, mid, label: SHORT[p.label] || p.label});
       a0 = a1;
     });
+    // подписи разводим по вертикали внутри своей половины, чтобы не наезжали друг на друга
+    let leads = '';
+    ['r', 'l'].forEach(side => {
+      const L = labs.filter(l => (Math.cos(l.mid) >= 0 ? 'r' : 'l') === side)
+        .map(l => ({...l, y0: P(R, l.mid)[1], y: P(R + 16, l.mid)[1]}))
+        .sort((a, b) => a.y - b.y);
+      for (let i = 1; i < L.length; i++) if (L[i].y - L[i - 1].y < 13) L[i].y = L[i - 1].y + 13;
+      for (let i = L.length - 2; i >= 0; i--) if (L[i + 1].y - L[i].y < 13) L[i].y = L[i + 1].y - 13;
+      L.forEach(l => {
+        const x1 = cx + (side === 'r' ? 1 : -1) * (R + 18), x2 = x1 + (side === 'r' ? 12 : -12);
+        const [px0, py0] = P(R + 2, l.mid);
+        leads += `<polyline class="om-lead" points="${px0.toFixed(1)},${py0.toFixed(1)} ${x1.toFixed(1)},${l.y.toFixed(1)} ${x2.toFixed(1)},${l.y.toFixed(1)}"/>` +
+          `<text class="om-lab" x="${(x2 + (side === 'r' ? 4 : -4)).toFixed(1)}" y="${(l.y + 3.5).toFixed(1)}" text-anchor="${side === 'r' ? 'start' : 'end'}">${l.label} <tspan>${f1(l.f * 100)}%</tspan></text>`;
+      });
+    });
     const legend = parts.map(p => `<li><i style="background:${p.color}"></i>${p.label}<b>${tot ? f1(p.value / tot * 100) : ''}%</b></li>`).join('');
-    return `<div class="om-pie om-viz"><div class="om-pt">${title}</div><svg viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="${title}">${arcs}` +
-      `<text x="100" y="97" text-anchor="middle" fill="var(--t1)" font-size="20" font-weight="500">${tot}</text><text x="100" y="116" text-anchor="middle" fill="var(--t3)" font-size="11">дней</text></svg><ul>${legend}</ul></div>`;
+    return `<div class="om-pie om-viz"><div class="om-pt">${title}</div>` +
+      `<svg viewBox="0 0 330 216" width="330" height="216" role="img" aria-label="${title}">${arcs}${leads}` +
+      `<text x="${cx}" y="${cy - 3}" text-anchor="middle" fill="var(--t1)" font-size="19" font-weight="500">${tot}</text>` +
+      `<text x="${cx}" y="${cy + 15}" text-anchor="middle" fill="var(--t3)" font-size="10.5">дней</text></svg><ul>${legend}</ul>${extra || ''}</div>`;
+  }
+
+  // подробности по выбранной строке: считаются из данных графика (assets/data/mp_chart_data.js)
+  const med = a => { if (!a.length) return NaN; const b = a.slice().sort((x, y) => x - y), i = b.length >> 1;
+    return b.length % 2 ? b[i] : (b[i - 1] + b[i]) / 2; };
+  function stats(dates){
+    const M = window.MPCHART;
+    if (!M || !dates.length) return '';
+    if (!pie._idx) pie._idx = Object.fromEntries(M.dates.map((d, i) => [d, i]));
+    const days = dates.map(d => pie._idx[d]).filter(i => i !== undefined).map(i => M.modes[S.m].days[i]);
+    if (!days.length) return '';
+    const rng = days.map(d => d[9] - d[10]), ib = days.map(d => d[6] - d[7]);
+    const share = days.map(d => (d[6] - d[7]) / (d[9] - d[10]) * 100);
+    const cl = days.map(d => (d[11] - d[10]) / (d[9] - d[10]) * 100);
+    const up = days.filter(d => d[9] > d[6]).length, dn = days.filter(d => d[10] < d[7]).length;
+    const roll = days.filter(d => d[23] & 1).length, gap = days.filter(d => d[23] & 8).length;
+    const row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
+    return '<div class="om-stat"><table>' +
+      row('Медианный диапазон', f1(med(rng)) + ' пт') +
+      row('Медианный IB', f1(med(ib)) + ' пт · ' + f1(med(share)) + '% диапазона') +
+      row('Вышли за IB вверх', f1(up / days.length * 100) + '%') +
+      row('Вышли за IB вниз', f1(dn / days.length * 100) + '%') +
+      row('Закрытие в диапазоне', f1(med(cl)) + '% (медиана)') +
+      row('Дней ролла · после дыр', roll + ' · ' + gap) +
+      '</table></div>';
   }
 
   const hm = document.getElementById('hdr-meta');
@@ -78,7 +140,7 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
   function rowsNow(){
     const off = 1 + 4 * D.variants.indexOf(S.m + S.c);
     return D.rows.filter(r => { const y = +r[0].slice(0, 4); return S.p === 'all' || (S.p === 'a' ? y <= 2018 : y >= 2019); })
-      .map(r => ({z5: r[off], o: r[off + 1], t: r[off + 2], d: r[off + 3]}));
+      .map(r => ({date: r[0], z5: r[off], o: r[off + 1], t: r[off + 2], d: r[off + 3]}));
   }
 
   function render(){
@@ -97,7 +159,7 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
 
     // группы строк: зона целиком + зона × тип открытия
     const G = {};
-    const add = (k, r) => { const g = G[k] = G[k] || {n: 0, t: {}, side: {}}; g.n++; g.t[r.t] = (g.t[r.t] || 0) + 1;
+    const add = (k, r) => { const g = G[k] = G[k] || {n: 0, t: {}, side: {}, dates: []}; g.n++; g.t[r.t] = (g.t[r.t] || 0) + 1; g.dates.push(r.date);
       if (r.d) { const b = BIAS[r.z5]; const s = b ? (r.d === b ? '+' : '-') : (r.d === 'u' ? '^' : 'v'); g.side[r.t + s] = (g.side[r.t + s] || 0) + 1; } };
     R.forEach(r => { add('_all', r); add(zk(r) + '|*', r); add(zk(r) + '|' + r.o, r); });
     const allN = G._all ? G._all.n : 0;
@@ -127,7 +189,7 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
     });
     const sg1 = G[S.sel], selRow = order.find(o => o.k === S.sel);
     const selName = selRow.zone ? (S.z === '3' ? Z3 : Z5).find(z => z[0] === selRow.zone)[1] + (selRow.cls === 'om-sub' ? ' · ' + selRow.label : '') : 'все дни';
-    const pie1 = pie(selName, DT.map((t, i) => ({label: t[1], value: sg1.t[t[0]] || 0, color: slot(i + 1)})));
+    const pie1 = pie(selName, DT.map((t, i) => ({label: t[1], value: sg1.t[t[0]] || 0, color: slot(i + 1)})), stats(sg1.dates));
     document.getElementById('om-types').innerHTML = `<div class="om-wrap">${h}</tbody></table></div>${pie1}</div>`;
 
     // направление направленных типов дня
@@ -154,7 +216,8 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
       {label: 'без направления', value: Math.max(nDir - pa - pb, 0), color: slot(0)},
     ]);
     document.getElementById('om-dirs').innerHTML = `<div class="om-wrap">${q}</tbody></table></div>${pie2}</div>`;
-    document.querySelectorAll('#om-types tr[data-k], #om-dirs tr[data-k]').forEach(tr => tr.addEventListener('click', () => upd('sel', tr.dataset.k)));
+    document.querySelectorAll('#om-types tr[data-k], #om-dirs tr[data-k]').forEach(tr =>
+      tr.addEventListener('click', () => { S.cell = ''; upd('sel', tr.dataset.k); }));
 
     // тепловая карта: тип дня (Y) × тип открытия (X) внутри выбранной зоны
     const hz = selRow.zone || null;
@@ -203,8 +266,9 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
     DT.forEach(t => {
       hm += `<tr><th class="om-rowh">${t[1]}</th><td class="om-base">${f1((baseG.t[t[0]] || 0) / baseG.n * 100)}%</td>` +
         colsOut.map(c => {
-          const p = val(c, t[0]);
-          return `<td style="${paint(norm(p, t[0]))}" title="${t[1]} · ${c.name}: ${f1(p)}% (${c.g.t[t[0]] || 0} из ${c.g.n})">${f1(p)}%</td>`;
+          const p = val(c, t[0]), k = c.o + '|' + t[0];
+          return `<td data-k="${k}" class="${S.cell === k ? 'om-cellsel' : ''}" style="${paint(norm(p, t[0]))}" ` +
+            `title="${t[1]} · ${c.name}: ${f1(p)}% (${c.g.t[t[0]] || 0} из ${c.g.n}) — клик подсветит эти дни на графике">${f1(p)}%</td>`;
         }).join('') + '</tr>';
     });
     const g1 = `rgb(${HI.join(',')})`;
@@ -214,12 +278,32 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
     const sub = document.getElementById('om-heat-sub');
     if (sub) sub.textContent = (hz ? selRow.label.startsWith('Open') ? (S.z === '3' ? Z3 : Z5).find(z => z[0] === hz)[1] : selName : 'все зоны') + ' · колонка = 100%';
 
+    document.querySelectorAll('#om-heat td[data-k]').forEach(td =>
+      td.addEventListener('click', () => upd('cell', S.cell === td.dataset.k ? '' : td.dataset.k)));
+
+    // выбор уезжает в смотрелку профилей над тестом
+    const zoneCodes = selRow.zone
+      ? (S.z === '3' ? Z5.filter(z => TO3[z[0]] === selRow.zone).map(z => z[0]) : [selRow.zone])
+      : [];
+    const rowOpen = S.sel.includes('|') && !S.sel.endsWith('|*') ? S.sel.split('|')[1] : '';
+    const cellSel = S.cell ? S.cell.split('|') : null;
+    const open = cellSel ? cellSel[0] : rowOpen, dayType = cellSel ? cellSel[1] : '';
+    const zoneName = selRow.zone ? (S.z === '3' ? Z3 : Z5).find(z => z[0] === selRow.zone)[1] : '';
+    const bits = cellSel
+      ? [zoneName, OTN[open], DT.find(t => t[0] === dayType)[1]]
+      : [selName === 'все дни' ? '' : selName];
+    const label = bits.filter(Boolean).join(' · ') || 'все дни';
+    window.dispatchEvent(new CustomEvent('mp-selection', {detail: {
+      mode: S.m, ref: S.c, zones: zoneCodes, open, dayType, label}}));
+
     const blk = S.m === 'f' ? 'фиксированный блок 2 пт' : 'адаптивный блок';
     const ref = S.c === '0' ? 'опора = вчерашний день' : 'опора = композит (от 2 дней, иначе вчерашний день)';
     document.getElementById('om-note').textContent = `${blk} · ${ref} · ${S.p === 'all' ? '2010–2026' : S.p === 'a' ? '2010–2018' : '2019–2026'}. ` +
       `«% зоны» — доля дней зоны с этим типом открытия. Под процентом типа дня — разница с базовой частотой (все дни) в процентных пунктах. ` +
-      `Во второй таблице — доля дней строки с этим типом дня по тренду точки открытия и против (для «внутри VA» — вверх и вниз). Тепловая карта и кольцо показывают выбранную строку: кликни по строке таблицы, чтобы переключить.`;
+      `Во второй таблице — доля дней строки с этим типом дня по тренду точки открытия и против (для «внутри VA» — вверх и вниз). Тепловая карта и кольцо показывают выбранную строку: кликни по строке таблицы, чтобы переключить. Клик по ячейке карты подсвечивает эти дни на графике вверху страницы.`;
   }
   render();
+  // данные графика приезжают отдельным файлом: когда доехали — пересчитываем карточку статистики
+  if (!window.MPCHART) window.addEventListener('mpchart-data', () => render(), {once: true});
   new MutationObserver(render).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
 })();

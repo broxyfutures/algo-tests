@@ -19,11 +19,15 @@
   ref_days, ref_high, ref_low, ref_poc, ref_vah, ref_val
   open_location_ref           открытие относительно опоры: above_range / above_value / in_value / below_value / below_range
 
+Рядом пишется mp_comp_profile_{mode}.json: гистограмма TPO каждого композита от 2 дней
+(тот же P.build, что и comp_poc/vah/val) — из неё график на сайте рисует склеенный профиль.
+
 Тумблер off = опора всегда вчерашний день (prev_* в mp_daily_*.csv).
 Тумблер on  = ref_* отсюда: композит, если он открыт и в нём не меньше 2 дней, иначе вчерашний день.
 
 Запуск: python3 scripts/06_build_day_composites.py   (после 02 и 05)
 """
+import json
 import sys
 from pathlib import Path
 
@@ -59,6 +63,7 @@ def main() -> int:
         dtype = pd.read_csv(C.DERIVED / f"mp_daytype_{mode}.csv", parse_dates=["date"])
         daily = daily.merge(dtype[["date", "day_type"]], on="date", how="left")
         rows = []
+        comp_blocks = {}          # comp_id → блоки композита в его финальном виде (для графика)
         comp_lo = comp_hi = None  # массивы блоков открытого композита
         comp_id, comp_start, comp_days = 0, None, 0
         state = None              # состояние композита после предыдущего дня
@@ -123,6 +128,7 @@ def main() -> int:
                 "comp_val": cs["val"],
             }
             r.update(after)
+            comp_blocks[comp_id] = (comp_lo, comp_hi, row)
             prev_date = b.date.date()
             state = {
                 "_start": comp_start,
@@ -143,6 +149,18 @@ def main() -> int:
         out = C.DERIVED / f"mp_composite_{mode}.csv"
         df.to_csv(out, index=False, float_format="%.2f")
 
+        # профили композитов от 2 дней: гистограмма TPO в финальном виде (для графика на сайте)
+        final = df.groupby("comp_id")["comp_days"].max()
+        prof = {}
+        for cid, days in final.items():
+            if days < 2:
+                continue
+            clo, chi, row = comp_blocks[cid]
+            pr = P.build(clo, chi, row)
+            prof[int(cid)] = {"r": row, "b": int(pr.base), "c": [int(x) for x in pr.counts]}
+        pout = C.DERIVED / f"mp_comp_profile_{mode}.json"
+        pout.write_text(json.dumps(prof, separators=(",", ":")), encoding="utf-8")
+
         lengths = df.groupby("comp_id")["comp_days"].max()
         print(f"\n[{mode}] композитов: {len(lengths)}, из них от 2 дней: {int((lengths >= 2).sum())}, "
               f"от 3 дней: {int((lengths >= 3).sum())}, самый длинный: {int(lengths.max())} дн.")
@@ -154,7 +172,7 @@ def main() -> int:
               f"POC не в центре {int(((sk.poc_pos < C.COMP_POC_POS[0]) | (sk.poc_pos > C.COMP_POC_POS[1])).sum())}, "
               f"VA несимметрична {int((sk.va_sym < C.COMP_VA_SYM).sum())})")
         print("  опора дня:", df["ref_source"].value_counts().to_dict())
-        print(f"  записано: {out.name}")
+        print(f"  записано: {out.name}, профилей композитов от 2 дней: {len(prof)} → {pout.name}")
     return 0
 
 

@@ -122,6 +122,7 @@ a:hover{text-decoration:underline}
 .pill.fail{border-color:var(--t4);color:var(--t3)}
 .pill.part{border-color:var(--t3);color:var(--t2)}
 .pill.dim{border-color:var(--border-2);color:var(--t3)}
+.pill.mid{border-color:var(--dn);color:var(--dn)}
 
 /* results table */
 .twrap{overflow-x:auto;border:1px solid var(--border);border-radius:3px}
