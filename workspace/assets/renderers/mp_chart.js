@@ -4,6 +4,11 @@
 // Монтируется в <div class="mpc" id="mpc" data-own="…">. data-own="mode,ref,filter" — страница
 // без теста: график сам показывает переключатели блока, опоры и фильтры. Без data-own график
 // встроен в тест и слушает событие mp-selection (его шлёт mp_open_matrix.js).
+//
+// Профиль собирается прямо здесь из цен блоков, поэтому высоту строки можно задать любую
+// (поле «высота строки, тиков»). POC и value area считаются тем же правилом, что в пайплайне
+// (mp/profile.py): POC — строка с максимумом TPO, при равенстве ближайшая к центру; VA — 68 %
+// по две строки от POC, границы обрезаны по high / low.
 (function(){
   if (window.MPChart) return;
   const ST = document.createElement('style');
@@ -11,7 +16,7 @@
 .mpc{font-family:var(--sans)}
 .mpc .mpc-stage{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-top:12px}
 .mpc .mpc-stage:fullscreen{border-radius:0;border:0}
-.mpc canvas{display:block;width:100%;cursor:crosshair;touch-action:none}
+.mpc canvas{display:block;width:100%;cursor:grab;touch-action:none}
 .mpc canvas.drag{cursor:grabbing}
 .mpc .mpc-tip{position:absolute;pointer-events:none;z-index:3;min-width:210px;max-width:290px;padding:9px 11px;background:var(--bg);border:1px solid var(--border-2);border-radius:4px;font-size:11.5px;line-height:1.55;color:var(--t2);box-shadow:0 6px 22px rgba(0,0,0,.45);opacity:0;transition:opacity .08s}
 :root[data-theme="light"] .mpc .mpc-tip{box-shadow:0 6px 22px rgba(0,0,0,.14)}
@@ -25,20 +30,59 @@
 .mpc .mpc-bar .gap{flex:1 1 auto}
 .mpc .mpc-btn{font:inherit;font-size:11px;padding:4px 9px;background:var(--surface-2);color:var(--t2);border:1px solid var(--border-2);border-radius:3px;cursor:pointer}
 .mpc .mpc-btn:hover{color:var(--t1);border-color:var(--border-hi)}
-.mpc .mpc-btn[aria-pressed="true"]{background:var(--up-bg-2);color:var(--t1);border-color:var(--up)}
+.mpc .mpc-num{font:inherit;font-size:11px;width:54px;padding:3px 6px;background:var(--surface-2);color:var(--t1);border:1px solid var(--border-2);border-radius:3px;font-family:var(--mono)}
 .mpc .mpc-date{font:inherit;font-size:11px;padding:3px 6px;background:var(--surface-2);color:var(--t2);border:1px solid var(--border-2);border-radius:3px;font-family:var(--mono)}
+.mpc .mpc-row{display:flex;align-items:center;gap:7px}
+.mpc .mpc-row span{font-size:11px;color:var(--t3);font-family:var(--mono)}
 .mpc .mpc-sel{font-family:var(--mono);color:var(--t2)}
 .mpc .mpc-sel b{color:var(--t1);font-weight:500}
 .mpc .mpc-hint{margin-top:8px;font-size:11px;color:var(--t3);line-height:1.6}
-.mpc .mpc-load{padding:40px 0;text-align:center;color:var(--t3);font-size:12px}
-.mpc .mpc-key{display:inline-flex;align-items:center;gap:5px;margin-right:12px}
-.mpc .mpc-key i{width:11px;height:11px;border-radius:2px;display:inline-block}`;
+.mpc .mpc-load{padding:40px 0;text-align:center;color:var(--t3);font-size:12px}`;
   document.head.appendChild(ST);
 
   const A_Z = 'ABCDEFGHIJKLM';
-  const AXW = 62, BOT = 38, TOP = 10, GAP = 8, MAXB = 13;
+  const TICK = 0.25, VA_SHARE = 0.68;
+  const AXW = 62, BOT = 38, TOP = 10, MAXB = 13;
   const LADDER = [0.25, 0.5, 1, 2, 2.5, 5, 10, 20, 25, 50, 100, 200, 400, 500, 1000];
   const MONO = "'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+  // поля дня в выгрузке
+  const F = {row:0, bl:1, poc:2, vah:3, val:4, ibh:5, ibl:6, o:7, h:8, l:9, c:10,
+             dt:11, dd:12, z0:13, t0:14, z1:15, t1:16, ref0:17, ref1:18, cid:19, cact:20, cdays:21, flags:22};
+
+  // ---------------------------------------------------------------- профиль из цен блоков
+  // те же правила, что в mp/profile.py: строка = floor(price / row), сетка привязана к нулю
+  function build(lows, highs, row){
+    const li = lows.map(v => Math.floor(v / row + 1e-9)), hj = highs.map(v => Math.floor(v / row + 1e-9));
+    const base = Math.min(...li), top = Math.max(...hj);
+    const rows = Array.from({length: top - base + 1}, () => []);
+    li.forEach((l, k) => { for (let r = l; r <= hj[k]; r++) rows[r - base].push(k); });
+    return {base, row, rows, counts: rows.map(r => r.length)};
+  }
+  function pocIndex(c){
+    let mx = -1; c.forEach(v => { if (v > mx) mx = v; });
+    const mid = (c.length - 1) / 2;
+    let best = 0, bd = Infinity;
+    c.forEach((v, i) => { if (v === mx){ const d = Math.abs(i - mid); if (d < bd){ bd = d; best = i; } } });
+    return best;
+  }
+  function valueArea(c, poc){
+    const n = c.length, sum = c.reduce((a, b) => a + b, 0), target = VA_SHARE * sum;
+    const part = (a, b) => c.slice(Math.max(a, 0), b).reduce((x, y) => x + y, 0);
+    let lo = poc, hi = poc, acc = c[poc];
+    while (acc < target - 1e-9 && (lo > 0 || hi < n - 1)){
+      const up = hi < n - 1 ? part(hi + 1, hi + 3) : -1;
+      const dn = lo > 0 ? part(lo - 2, lo) : -1;
+      if (up >= dn){ acc += Math.max(up, 0); hi = Math.min(hi + 2, n - 1); }
+      if (dn >= up){ acc += Math.max(dn, 0); lo = Math.max(lo - 2, 0); }
+    }
+    return [lo, hi];
+  }
+  function levels(p, hiP, loP){
+    const ip = pocIndex(p.counts), [vlo, vhi] = valueArea(p.counts, ip);
+    return {poc: (p.base + ip) * p.row,
+            vah: Math.min((p.base + vhi + 1) * p.row, hiP),
+            val: Math.max((p.base + vlo) * p.row, loP)};
+  }
 
   function mount(root){
     const own = (root.dataset.own || '').split(',').filter(Boolean);
@@ -46,9 +90,9 @@
     const D = window.MPCHART;
     const ZN = Object.fromEntries(D.zones), ON = Object.fromEntries(D.open_types);
     const TN = Object.fromEntries(D.day_types.map(t => [t[0], t[1]]));
-    const KEY = 'mp-chart-v1';
-    const S = {m:'f', c:'0', view:'both', split:0, comp:0, ref:1, hl:1, only:0, w:190, i0:0, pz:1, py:.5,
-               hgt:560, fz:'', fo:'', ft:''};
+    const KEY = 'mp-chart-v2';
+    const S = {m:'f', c:'0', view:'both', split:0, comp:0, hl:1, only:0, w:150, i0:0, pz:1, py:.5,
+               hgt:560, ticks:0, fz:'', fo:'', ft:''};
     try{ Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); }catch(e){}
     const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} };
 
@@ -62,232 +106,250 @@
     let C = {};
     function readColors(){
       const cs = getComputedStyle(document.documentElement);
-      const v = n => cs.getPropertyValue(n).trim();
-      const rgb = n => { const h = v(n).replace('#',''); const f = h.length === 3 ? h.split('').map(c=>c+c) : h.match(/../g);
+      const rgb = n => { const h = cs.getPropertyValue(n).trim().replace('#',''); const f = h.length === 3 ? h.split('').map(c=>c+c) : h.match(/../g);
         return f ? f.map(x => parseInt(x,16)) : [128,128,128]; };
       C = {up: rgb('--up'), dn: rgb('--dn'), t1: rgb('--t1'), t2: rgb('--t2'), t3: rgb('--t3'),
-           t4: rgb('--t4'), bd: rgb('--border'), bd2: rgb('--border-2'), sf: rgb('--surface'), sf2: rgb('--surface-2')};
+           t4: rgb('--t4'), bd: rgb('--border'), bd2: rgb('--border-2'), sf: rgb('--surface')};
     }
     const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 
     // ---------------------------------------------------------------- данные и выбор
     const md = () => D.modes[S.m];
     const day = i => md().days[i];
-    const zoneOf = d => S.c === '0' ? d[14] : d[16];
-    const typeOf = d => S.c === '0' ? d[15] : d[17];
-    const refOf  = d => S.c === '0' ? d[18] : d[19];
+    const zoneOf = d => S.c === '0' ? d[F.z0] : d[F.z1];
+    const typeOf = d => S.c === '0' ? d[F.t0] : d[F.t1];
+    const refOf  = d => S.c === '0' ? d[F.ref0] : d[F.ref1];
     let sel = {zones:[], open:'', dt:'', label:''};   // что подсвечиваем (приходит из таблицы теста)
+    const nTest = D.modes.f.days.filter(d => !(d[F.flags] & 16)).length;
+
+    // высота строки: своя (в тиках) либо та, с которой считался пайплайн
+    const rowOf = d => S.ticks ? S.ticks * TICK : d[F.row];
+    let cache = new Map(), cacheKey = '';
+    function syncCache(){
+      const k = S.m + '|' + S.ticks;
+      if (k !== cacheKey){ cache = new Map(); cacheKey = k; }
+    }
+    function dayProfile(i){
+      const hit = cache.get('d' + i); if (hit) return hit;
+      const d = day(i), row = rowOf(d), bl = d[F.bl], lows = [], highs = [];
+      for (let k = 0; k < bl.length; k += 2){ lows.push(d[F.l] + bl[k] * TICK); highs.push(d[F.l] + bl[k+1] * TICK); }
+      const p = build(lows, highs, row);
+      p.lv = S.ticks ? levels(p, d[F.h], d[F.l]) : {poc: d[F.poc], vah: d[F.vah], val: d[F.val]};
+      cache.set('d' + i, p);
+      return p;
+    }
+    function compProfile(id){
+      const hit = cache.get('c' + id); if (hit) return hit;
+      const m = md().comps[id], lows = [], highs = [];
+      m.d.forEach((j, n) => { const d = day(j), bl = d[F.bl], sh = m.sh[n];
+        for (let k = 0; k < bl.length; k += 2){ lows.push(d[F.l] + bl[k] * TICK + sh); highs.push(d[F.l] + bl[k+1] * TICK + sh); } });
+      const row = S.ticks ? S.ticks * TICK : day(m.d[m.d.length - 1])[F.row];
+      const p = build(lows, highs, row);
+      p.hi = Math.max(...highs); p.lo = Math.min(...lows);
+      p.lv = S.ticks ? levels(p, p.hi, p.lo) : {poc: m.poc, vah: m.vah, val: m.val};
+      cache.set('c' + id, p);
+      return p;
+    }
 
     function matches(i){
       const d = day(i);
-      if (d[23] & 16) return false;                       // день не в статистике теста
+      if (d[F.flags] & 16) return false;                  // день не в статистике теста
       const f = owns('filter') ? {zones: S.fz ? [S.fz] : [], open:S.fo, dt:S.ft} : sel;
       if (!f.zones.length && !f.open && !f.dt) return true;
       return (!f.zones.length || f.zones.includes(zoneOf(d)))
-        && (!f.open || typeOf(d) === f.open) && (!f.dt || d[12] === f.dt);
+        && (!f.open || typeOf(d) === f.open) && (!f.dt || d[F.dt] === f.dt);
     }
     const anyFilter = () => owns('filter') ? !!(S.fz || S.fo || S.ft) : !!(sel.zones.length || sel.open || sel.dt);
 
-    const nTest = D.modes.f.days.filter(d => !(d[23] & 16)).length;
     // колонки: дни и (если включено) склеенные профили композитов после последнего дня-участника
     let cols = [];
-    function build(){
+    function build_cols(){
       const n = md().days.length, comps = md().comps, hide = S.only && anyFilter();
       const last = {};
       if (S.comp) for (const id in comps) last[comps[id].d[comps[id].d.length - 1]] = id;
       cols = [];
       for (let i = 0; i < n; i++){
         const ok = matches(i);
-        if (!hide || ok) cols.push({t:'d', i, on:ok});
-        if (last[i] !== undefined && (!hide || ok)) cols.push({t:'c', id:last[i], on:comps[last[i]].d.some(matches)});
+        if (hide && !ok) continue;
+        cols.push({t:'d', i, on:ok});
+        if (last[i] !== undefined) cols.push({t:'c', id:last[i], on:comps[last[i]].d.some(matches)});
       }
     }
 
     // ---------------------------------------------------------------- геометрия
-    let W = 0, H = 0, view = [], lo = 0, hi = 1, fitLo = 0, fitHi = 1, fsize = 10;
+    let W = 0, H = 0, view = [], lo = 0, hi = 1, fitLo = 0, fitHi = 1, fsize = 10, colW = 150;
     const Y = p => TOP + (hi - p) / (hi - lo) * (H - TOP - BOT);
     const P = y => hi - (y - TOP) / (H - TOP - BOT) * (hi - lo);
 
+    // колонка композита шире дневной: в его строке десятки TPO, иначе блоки сливаются
+    const widthOf = c => c && c.t === 'c'
+      ? S.w * Math.min(Math.max(md().comps[c.id].d.length / 2, 1), 3) : S.w;
+
     function layout(){
-      const r = stage.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
+      const r = stage.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
       W = Math.max(320, Math.round(r.width));
-      H = Math.max(260, Math.round(document.fullscreenElement === stage ? r.height : (S.hgt || 520)));
+      H = Math.max(260, Math.round(document.fullscreenElement === stage ? r.height : (S.hgt || 560)));
       cv.width = W * dpr; cv.height = H * dpr; cv.style.height = H + 'px';
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const plotW = W - AXW;
-      const k = Math.max(1, Math.floor(plotW / S.w));
-      S.i0 = Math.max(0, Math.min(S.i0, cols.length - k));
-      view = cols.slice(Math.round(S.i0), Math.round(S.i0) + k);
+      colW = S.w;
+      // лента едет свободно: i0 дробный, за край можно уехать на пол-экрана
+      const k = plotW / colW;
+      S.i0 = Math.max(-k / 2, Math.min(S.i0, cols.length - k / 2));
+      const first = Math.floor(S.i0), frac = S.i0 - first;
+      view = [];
+      let x = -frac * widthOf(cols[first]);
+      for (let idx = first; idx < cols.length && x < plotW; idx++){
+        if (idx < 0){ x += colW; continue; }
+        const w = widthOf(cols[idx]);
+        view.push(Object.assign({x, w}, cols[idx]));
+        x += w;
+      }
       let a = Infinity, b = -Infinity;
       view.forEach(c => {
-        if (c.t === 'd'){ const d = day(c.i); a = Math.min(a, d[10]); b = Math.max(b, d[9]);
-          // в кадр берём VA опоры, но не весь её диапазон: иначе строки профиля становятся тонкими
-          if (S.ref){ const rf = refOf(d); if (rf){ a = Math.min(a, rf[2]); b = Math.max(b, rf[1]); } } }
-        else { const m = md().comps[c.id]; a = Math.min(a, m.lo); b = Math.max(b, m.hi); }
+        if (c.x + c.w < 0 || c.x > plotW) return;
+        if (c.t === 'd'){ const d = day(c.i); a = Math.min(a, d[F.l]); b = Math.max(b, d[F.h]); }
+        else { const p = compProfile(c.id); a = Math.min(a, p.lo); b = Math.max(b, p.hi); }
       });
       if (!isFinite(a)){ a = 0; b = 1; }
       const pad = Math.max((b - a) * 0.04, 1);
-      // fitLo…fitHi — весь кадр по цене; S.pz увеличивает цену, S.py двигает окно по вертикали
       fitLo = a - pad; fitHi = b + pad;
       const span = (fitHi - fitLo) / S.pz, mid = fitLo + (fitHi - fitLo) * S.py;
-      lo = Math.max(fitLo, Math.min(mid - span / 2, fitHi - span));
+      lo = Math.max(fitLo - span / 2, Math.min(mid - span / 2, fitHi - span / 2));
       hi = lo + span;
     }
 
+    // отступы внутри колонки: слева плашка IB и стрелка открытия, справа стрелка закрытия
+    const pads = w => (w = w || colW) < 34 ? [3, 3] : [Math.min(17, w * 0.2), Math.min(9, w * 0.12)];
+
     // ---------------------------------------------------------------- отрисовка
     function draw(){
-      readColors(); layout();
+      readColors(); syncCache(); layout();
+      const plotW = W - AXW;
       ctx.clearRect(0, 0, W, H);
       ctx.fillStyle = rgba(C.sf, 1); ctx.fillRect(0, 0, W, H);
-      const plotW = W - AXW, colW = plotW / Math.max(view.length, 1);
-      const cellW = (colW - GAP) / MAXB;
-      // буквы рисуем, если ячейка и строка достаточного размера; размер шрифта подбираем под них
-      const rowPx = view.reduce((m, c) => c.t === 'd' ? Math.min(m, day(c.i)[0] / (hi - lo) * (H - TOP - BOT)) : m, 99);
-      const letters = cellW >= 5.5 && rowPx >= 5.5;
-      fsize = Math.max(6, Math.min(12, Math.floor(Math.min(cellW * 1.25, rowPx * 1.15))));
 
-      // ценовая сетка
       const step = LADDER.find(s => (hi - lo) / s <= 14) || 2000;
-      ctx.font = '10.5px ' + MONO;
-      ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+      ctx.font = '10.5px ' + MONO; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
       for (let p = Math.ceil(lo / step) * step; p <= hi; p += step){
-        const y = Y(p);
+        const y = Math.round(Y(p)) + .5;
         ctx.strokeStyle = rgba(C.bd, 1); ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(0, Math.round(y) + .5); ctx.lineTo(plotW, Math.round(y) + .5); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(plotW, y); ctx.stroke();
         ctx.fillStyle = rgba(C.t3, 1); ctx.fillText(p.toFixed(step < 1 ? 2 : 0), plotW + 8, y);
       }
-      ctx.strokeStyle = rgba(C.bd2, 1);
+
+      const [padL, padR] = pads();
+      const cellW = (colW - padL - padR) / MAXB;   // ячейка дневной колонки
+      const rowPx = view.reduce((m, c) => c.t === 'd' ? Math.min(m, rowOf(day(c.i)) / (hi - lo) * (H - TOP - BOT)) : m, 99);
+      const letters = cellW >= 5.5 && rowPx >= 5.5 && S.view !== 'blocks';
+      fsize = Math.max(6, Math.min(12, Math.floor(Math.min(cellW * 1.25, rowPx * 1.15))));
+
+      ctx.save();
+      ctx.beginPath(); ctx.rect(0, 0, plotW, H - BOT); ctx.clip();
+      view.forEach(c => { if (c.x + c.w < 0 || c.x > plotW) return;
+        c.t === 'd' ? drawDay(c, cellW, letters) : drawComp(c); });
+      ctx.restore();
+
+      drawAxis();
+      ctx.strokeStyle = rgba(C.bd2, 1); ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(plotW + .5, 0); ctx.lineTo(plotW + .5, H); ctx.stroke();
-
-      if (S.comp) view.forEach((c, k) => { if (c.t === 'd') return; drawCompBand(c, k, colW); });
-      view.forEach((c, k) => c.t === 'd' ? drawDay(c, k * colW, colW, cellW, letters) : drawComp(c, k * colW, colW, cellW, letters));
-      drawAxis(colW);
-      if (hover >= 0 && hover < view.length) drawCross(hover, colW);
+      if (hover) drawCross();
     }
 
-    // полоса дней одного композита под колонками
-    function drawCompBand(c, k, colW){
-      const m = md().comps[c.id];
-      let a = -1, b = -1;
-      view.forEach((v, j) => { if (v.t === 'd' && m.d.includes(v.i)){ if (a < 0) a = j; b = j; } });
-      if (a < 0) return;
-      ctx.fillStyle = rgba(C.t2, c.on ? .06 : .03);
-      ctx.fillRect(a * colW, TOP, (b - a + 1) * colW, H - TOP - BOT);
-      ctx.strokeStyle = rgba(C.t3, c.on ? .5 : .2); ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(a * colW + 2, TOP + 4.5); ctx.lineTo((b + 1) * colW - 2, TOP + 4.5); ctx.stroke();
+    function hline(x0, w, price, color, width){
+      const y = Math.round(Y(price)) + .5;
+      ctx.strokeStyle = color; ctx.lineWidth = width || 1;
+      ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + w, y); ctx.stroke();
+    }
+    function arrow(x, y, dir, color){
+      ctx.fillStyle = color; ctx.beginPath();
+      ctx.moveTo(x, y); ctx.lineTo(x - dir * 6, y - 4); ctx.lineTo(x - dir * 6, y + 4);
+      ctx.closePath(); ctx.fill();
     }
 
-    // строки профиля дня: для каждой строки — какие блоки её прошли
-    function rowsOf(pr, n){
-      let mx = 0;
-      for (let k = 1; k < pr.length; k += 2) mx = Math.max(mx, pr[k]);
-      const out = Array.from({length: mx + 1}, () => []);
-      for (let k = 0; k < n; k++) for (let r = pr[2*k]; r <= pr[2*k+1]; r++) out[r].push(k);
-      return out;
-    }
-
-    function drawDay(c, x0, colW, cellW, letters){
-      const d = day(c.i), row = d[0], base = d[1], pr = d[2], n = pr.length / 2;
-      const dim = S.hl && anyFilter() && !c.on;
-      const hue = d[13] === 'd' ? C.dn : C.up;
-      const aBase = dim ? .18 : 1;
-      const x = x0 + GAP / 2, inner = colW - GAP;
-      const yTop = p => Y(p + row), yBot = p => Y(p);
-
-      // подложка value area на всю ширину колонки
-      ctx.fillStyle = rgba(hue, .07 * aBase);
-      ctx.fillRect(x0, Y(d[4]), colW, Y(d[5]) - Y(d[4]));
-
-      // опорные уровни (вчера или композит)
-      const rf = refOf(d);
-      if (S.ref && rf){
-        ctx.save(); ctx.setLineDash([2, 3]); ctx.lineWidth = 1;
-        ctx.strokeStyle = rgba(C.t3, .75 * aBase);
-        [rf[1], rf[2]].forEach(p => { const y = Math.round(Y(p)) + .5; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + colW, y); ctx.stroke(); });
-        ctx.strokeStyle = rgba(C.t4, .9 * aBase);
-        [rf[3], rf[4]].forEach(p => { const y = Math.round(Y(p)) + .5; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + colW, y); ctx.stroke(); });
-        ctx.restore();
-      }
-
-      const cw = Math.max(cellW - 1, 1);
-      const cell = (k, r) => { const yt = yTop((base + r) * row), h = Math.max(yBot((base + r) * row) - yt - 1, 1);
-        return [x + k * cellW, yt, cw, h]; };
-      const poc = Math.round(d[3] / row) - base;
-      const inVA = r => { const pc = (base + r + .5) * row; return pc > d[5] && pc < d[4]; };
+    function drawDay(c, cellW, letters){
+      const d = day(c.i), p = dayProfile(c.i), row = p.row, x0 = c.x;
+      const dim = S.hl && anyFilter() && !c.on, a = dim ? .2 : 1;
+      const hue = d[F.dd] === 'd' ? C.dn : C.up;
+      const [padL, padR] = pads(), x = x0 + padL, cw = Math.max(cellW - 1, 1);
+      const yTop = r => Y((p.base + r + 1) * row), hRow = r => Math.max(Y((p.base + r) * row) - yTop(r) - 1, 1);
 
       if (S.split){
-        // блоки по отдельности: A, B, C… своими диапазонами
+        // каждый 30-минутный блок отдельным диапазоном, буква в каждой строке блока
+        const bl = d[F.bl], n = bl.length / 2;
         for (let k = 0; k < n; k++){
-          const yt = yTop((base + pr[2*k+1]) * row), yb = yBot((base + pr[2*k]) * row);
-          ctx.fillStyle = rgba(hue, (S.view === 'letters' ? .10 : .34) * aBase);
-          ctx.fillRect(x + k * cellW, yt, cw, Math.max(yb - yt, 1));
-          if (letters && S.view !== 'blocks' && yb - yt >= fsize + 2){
-            ctx.fillStyle = rgba(C.t1, .95 * aBase); ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-            ctx.font = fsize + 'px ' + MONO;
-            ctx.fillText(A_Z[k], x + k * cellW + cw / 2, yt + 2);
+          const l = Math.floor((d[F.l] + bl[2*k] * TICK) / row + 1e-9) - p.base;
+          const h = Math.floor((d[F.l] + bl[2*k+1] * TICK) / row + 1e-9) - p.base;
+          if (S.view !== 'letters'){
+            ctx.fillStyle = rgba(hue, .3 * a);
+            ctx.beginPath();
+            for (let r = l; r <= h; r++) ctx.rect(x + k * cellW, yTop(r), cw, hRow(r));
+            ctx.fill();
+          }
+          if (letters){
+            ctx.fillStyle = rgba(C.t1, .95 * a); ctx.font = fsize + 'px ' + MONO;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            for (let r = l; r <= h; r++) ctx.fillText(A_Z[k], x + k * cellW + cw / 2, yTop(r) + hRow(r) / 2 + .5);
           }
         }
       } else {
-        const rows = rowsOf(pr, n);
         if (S.view !== 'letters'){
-          // заливка тремя пачками: обычные строки, строки VA, строка POC
-          const paint = (test, alpha) => { ctx.beginPath();
-            rows.forEach((ks, r) => { if (!test(r)) return; ks.forEach((k, j) => { const [a,b,w,h] = cell(j, r); ctx.rect(a, b, w, h); }); });
-            ctx.fillStyle = rgba(hue, alpha * aBase); ctx.fill(); };
-          paint(r => r !== poc && !inVA(r), .22);
-          paint(r => r !== poc && inVA(r), .40);
-          paint(r => r === poc, .62);
+          ctx.beginPath();
+          p.rows.forEach((ks, r) => ks.forEach((k, j) => ctx.rect(x + j * cellW, yTop(r), cw, hRow(r))));
+          ctx.fillStyle = rgba(hue, .3 * a); ctx.fill();
         }
-        if (letters && S.view !== 'blocks'){
+        if (letters){
+          ctx.fillStyle = rgba(C.t1, .95 * a); ctx.font = fsize + 'px ' + MONO;
           ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          ctx.font = fsize + 'px ' + MONO;
-          ctx.fillStyle = rgba(C.t1, .95 * aBase);
-          rows.forEach((ks, r) => { const [ , yt, , h] = cell(0, r);
-            ks.forEach((k, j) => ctx.fillText(A_Z[k], x + j * cellW + cw / 2, yt + h / 2 + .5)); });
+          p.rows.forEach((ks, r) => ks.forEach((k, j) => ctx.fillText(A_Z[k], x + j * cellW + cw / 2, yTop(r) + hRow(r) / 2 + .5)));
         }
       }
 
-      // POC, IB, открытие и закрытие
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = rgba(hue, .95 * aBase);
-      let y = Math.round(Y((base + poc + .5) * row)) + .5;
-      ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + colW, y); ctx.stroke();
-      ctx.save(); ctx.setLineDash([4, 3]); ctx.strokeStyle = rgba(C.t3, .9 * aBase);
-      [d[6], d[7]].forEach(p => { const yy = Math.round(Y(p)) + .5; ctx.beginPath(); ctx.moveTo(x0 + 1, yy); ctx.lineTo(x0 + colW - 1, yy); ctx.stroke(); });
-      ctx.restore();
-      ctx.fillStyle = rgba(C.t1, .9 * aBase);
-      ctx.fillRect(x0 + 1, Y(d[8]) - 1, 5, 2);                    // открытие слева
-      ctx.fillRect(x0 + colW - 6, Y(d[11]) - 1, 5, 2);            // закрытие справа
+      // только границы: диапазон дня, value area, POC
+      hline(x0, colW, d[F.h], rgba(C.t3, .5 * a));
+      hline(x0, colW, d[F.l], rgba(C.t3, .5 * a));
+      hline(x0, colW, p.lv.vah, rgba(hue, .6 * a));
+      hline(x0, colW, p.lv.val, rgba(hue, .6 * a));
+      hline(x0, colW, p.lv.poc + row / 2, rgba(hue, .95 * a), 1.6);
+
+      if (colW >= 34){
+        // плашка начального баланса и стрелки открытия / закрытия RTH
+        ctx.fillStyle = rgba(C.t1, .8 * a);
+        ctx.fillRect(x0 + 3, Y(d[F.ibh]), 4, Math.max(Y(d[F.ibl]) - Y(d[F.ibh]), 2));
+        arrow(x0 + padL - 2, Y(d[F.o]), 1, rgba(C.t1, .85 * a));
+        arrow(x0 + colW - padR + 2, Y(d[F.c]), -1, rgba(C.t1, .85 * a));
+      }
     }
 
-    function drawComp(c, x0, colW, cellW, letters){
-      const m = md().comps[c.id], row = m.r, base = m.b;
-      const dim = S.hl && anyFilter() && !c.on, a = dim ? .18 : 1;
-      const mx = Math.max(...m.c), x = x0 + GAP / 2, inner = colW - GAP;
-      ctx.fillStyle = rgba(C.t2, .05 * a);
-      ctx.fillRect(x0, Y(m.vah), colW, Y(m.val) - Y(m.vah));
+    function drawComp(c){
+      const m = md().comps[c.id], p = compProfile(c.id), row = p.row, x0 = c.x, colW = c.w;
+      const dim = S.hl && anyFilter() && !c.on, a = dim ? .2 : 1;
+      const [padL, padR] = pads(colW), x = x0 + padL;
+      const mx = Math.max(...p.counts);
+      const cellW = (colW - padL - padR) / mx, cw = Math.max(cellW - (cellW > 2.2 ? 1 : .35), .8);
       ctx.beginPath();
-      m.c.forEach((v, r) => {
-        if (!v) return;
-        const yt = Y((base + r + 1) * row), h = Math.max(Y((base + r) * row) - yt - 1, 1);
-        ctx.rect(x, yt, Math.max(inner * v / mx, 1), h);
+      p.counts.forEach((v, r) => {
+        const yt = Y((p.base + r + 1) * row), h = Math.max(Y((p.base + r) * row) - yt - 1, 1);
+        for (let j = 0; j < v; j++) ctx.rect(x + j * cellW, yt, cw, h);
       });
-      ctx.fillStyle = rgba(C.t2, .5 * a); ctx.fill();
-      ctx.strokeStyle = rgba(C.t1, .8 * a); ctx.lineWidth = 1;
-      const y = Math.round(Y(m.poc + row / 2)) + .5;
-      ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + colW, y); ctx.stroke();
+      ctx.fillStyle = rgba(C.t2, .45 * a); ctx.fill();
+      hline(x0, colW, p.hi, rgba(C.t3, .5 * a));
+      hline(x0, colW, p.lo, rgba(C.t3, .5 * a));
+      hline(x0, colW, p.lv.vah, rgba(C.t2, .6 * a));
+      hline(x0, colW, p.lv.val, rgba(C.t2, .6 * a));
+      hline(x0, colW, p.lv.poc + row / 2, rgba(C.t1, .8 * a), 1.6);
     }
 
-    function drawAxis(colW){
-      const y0 = H - BOT;
-      ctx.fillStyle = rgba(C.sf, 1); ctx.fillRect(0, y0, W - AXW, BOT);
+    function drawAxis(){
+      const y0 = H - BOT, plotW = W - AXW;
+      ctx.fillStyle = rgba(C.sf, 1); ctx.fillRect(0, y0, plotW, BOT);
       ctx.strokeStyle = rgba(C.bd2, 1); ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(0, y0 + .5); ctx.lineTo(W - AXW, y0 + .5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, y0 + .5); ctx.lineTo(plotW, y0 + .5); ctx.stroke();
       ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.font = '10.5px ' + MONO;
       const every = colW < 34 ? Math.ceil(34 / colW) : 1;
       view.forEach((c, k) => {
-        const cx = k * colW + colW / 2;
+        const cx = c.x + c.w / 2;
+        if (cx < 0 || cx > plotW) return;
         if (c.t === 'c'){
           ctx.fillStyle = rgba(C.t3, 1);
           ctx.fillText('композит', cx, y0 + 6);
@@ -300,23 +362,23 @@
         ctx.fillText(D.dates[c.i].slice(8) + '.' + D.dates[c.i].slice(5, 7), cx, y0 + 6);
         if (colW >= 58){
           ctx.fillStyle = rgba(dim ? C.t4 : C.t3, 1);
-          ctx.fillText((typeOf(d) || '—').toUpperCase() + ' · ' + (d[12] || '—').toUpperCase(), cx, y0 + 19);
+          ctx.fillText((typeOf(d) || '—').toUpperCase() + ' · ' + (d[F.dt] || '—').toUpperCase(), cx, y0 + 19);
         }
       });
     }
 
-    function drawCross(k, colW){
+    function drawCross(){
+      const plotW = W - AXW;
       ctx.save();
       ctx.strokeStyle = rgba(C.t3, .8); ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
-      ctx.strokeRect(Math.round(k * colW) + .5, TOP, Math.round(colW), H - TOP - BOT);
+      ctx.strokeRect(Math.round(hover.x) + .5, TOP, Math.round(hover.w), H - TOP - BOT);
       if (my > TOP && my < H - BOT){
         const y = Math.round(my) + .5;
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W - AXW, y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(plotW, y); ctx.stroke();
         ctx.setLineDash([]);
-        const p = P(my), txt = p.toFixed(2);
-        ctx.fillStyle = rgba(C.t1, 1); ctx.fillRect(W - AXW, y - 8, AXW, 16);
+        ctx.fillStyle = rgba(C.t1, 1); ctx.fillRect(plotW, y - 8, AXW, 16);
         ctx.fillStyle = rgba(C.sf, 1); ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-        ctx.fillText(txt, W - AXW + 8, y);
+        ctx.fillText(P(my).toFixed(2), plotW + 8, y);
       }
       ctx.restore();
     }
@@ -326,27 +388,29 @@
     const FLAG = [[1,'ролл'], [2,'уходящий контракт'], [4,'укороченный день'], [8,'после дыры в данных'], [16,'не в статистике теста']];
     function cardHTML(c){
       if (c.t === 'c'){
-        const m = md().comps[c.id];
+        const m = md().comps[c.id], p = compProfile(c.id);
         return `<b>Композит ${c.id}</b> · ${m.d.length} дн.<div class="k">${D.dates[m.d[0]]} → ${D.dates[m.d[m.d.length-1]]}</div>` +
-          `<table><tr><td>POC</td><td>${f2(m.poc)}</td></tr><tr><td>VA</td><td>${f2(m.val)} – ${f2(m.vah)}</td></tr>` +
-          `<tr><td>Диапазон</td><td>${f2(m.lo)} – ${f2(m.hi)}</td></tr></table>`;
+          `<table><tr><td>POC</td><td>${f2(p.lv.poc)}</td></tr><tr><td>VA</td><td>${f2(p.lv.val)} – ${f2(p.lv.vah)}</td></tr>` +
+          `<tr><td>Диапазон</td><td>${f2(p.lo)} – ${f2(p.hi)}</td></tr>` +
+          `<tr><td>Строка</td><td>${p.row} пт</td></tr></table>`;
       }
-      const d = day(c.i), date = D.dates[c.i];
+      const d = day(c.i), p = dayProfile(c.i), date = D.dates[c.i];
       const wd = ['вс','пн','вт','ср','чт','пт','сб'][new Date(date + 'T12:00:00Z').getUTCDay()];
-      const fl = FLAG.filter(f => d[23] & f[0]).map(f => f[1]);
-      const dirName = {u:'вверх', d:'вниз', '':'—'}[d[13]];
-      const cAct = ['начал композит', 'добавлен в композит', 'пропущен: форма', 'пропущен: тип дня'][d[21]];
+      const fl = FLAG.filter(f => d[F.flags] & f[0]).map(f => f[1]);
+      const dirName = {u:'вверх', d:'вниз', '':'—'}[d[F.dd]];
+      const cAct = ['начал композит', 'добавлен в композит', 'пропущен: форма', 'пропущен: тип дня'][d[F.cact]];
+      const rf = refOf(d);
       return `<b>${date}</b> <span class="k">${wd}</span><table>` +
-        `<tr><td>Тип дня</td><td><b>${TN[d[12]] || '—'}</b> ${dirName}</td></tr>` +
+        `<tr><td>Тип дня</td><td><b>${TN[d[F.dt]] || '—'}</b> ${dirName}</td></tr>` +
         `<tr><td>Точка открытия</td><td>${ZN[zoneOf(d)] || '—'}</td></tr>` +
         `<tr><td>Тип открытия</td><td><b>${ON[typeOf(d)] || '—'}</b></td></tr>` +
-        `<tr><td>POC</td><td>${f2(d[3])}</td></tr>` +
-        `<tr><td>VA</td><td>${f2(d[5])} – ${f2(d[4])}</td></tr>` +
-        `<tr><td>IB</td><td>${f2(d[7])} – ${f2(d[6])} (${(d[6]-d[7]).toFixed(2)} пт)</td></tr>` +
-        `<tr><td>OHLC</td><td>${f2(d[8])} · ${f2(d[9])} · ${f2(d[10])} · ${f2(d[11])}</td></tr>` +
-        `<tr><td>Опора</td><td>${refOf(d) ? `VA ${f2(refOf(d)[2])} – ${f2(refOf(d)[1])}, POC ${f2(refOf(d)[0])}` : '—'}</td></tr>` +
-        `<tr><td>Композит</td><td>${d[20]} · ${cAct} · ${d[22]} дн.</td></tr>` +
-        `<tr><td>Блок</td><td>${d[0]} пт, ${d[2].length/2} блоков</td></tr>` +
+        `<tr><td>POC</td><td>${f2(p.lv.poc)}</td></tr>` +
+        `<tr><td>VA</td><td>${f2(p.lv.val)} – ${f2(p.lv.vah)}</td></tr>` +
+        `<tr><td>IB</td><td>${f2(d[F.ibl])} – ${f2(d[F.ibh])} (${(d[F.ibh]-d[F.ibl]).toFixed(2)} пт)</td></tr>` +
+        `<tr><td>OHLC</td><td>${f2(d[F.o])} · ${f2(d[F.h])} · ${f2(d[F.l])} · ${f2(d[F.c])}</td></tr>` +
+        `<tr><td>Опора</td><td>${rf ? `VA ${f2(rf[2])} – ${f2(rf[1])}, POC ${f2(rf[0])}` : '—'}</td></tr>` +
+        `<tr><td>Композит</td><td>${d[F.cid]} · ${cAct} · ${d[F.cdays]} дн.</td></tr>` +
+        `<tr><td>Строка</td><td>${p.row} пт${S.ticks ? ' (своя)' : ''}, ${d[F.bl].length/2} блоков</td></tr>` +
         (fl.length ? `<tr><td>Флаги</td><td>${fl.join(', ')}</td></tr>` : '') + '</table>';
     }
 
@@ -359,7 +423,25 @@
     }
     function ctl(label, node){ const w = document.createElement('div'); w.className = 'ctl';
       const l = document.createElement('span'); l.className = 'ctl-label'; l.textContent = label; w.append(l, node); return w; }
-    const upd = (k, v) => { S[k] = v; save(); build(); controls(); draw(); };
+    const upd = (k, v) => { S[k] = v; save(); build_cols(); controls(); draw(); };
+
+    function rowInput(){
+      const wrap = document.createElement('div'); wrap.className = 'mpc-row';
+      const inp = document.createElement('input');
+      inp.type = 'number'; inp.min = 1; inp.max = 400; inp.step = 1; inp.className = 'mpc-num';
+      inp.value = S.ticks || Math.round((S.m === 'f' ? 2 : day(md().days.length - 1)[F.row]) / TICK);
+      inp.placeholder = 'как в режиме';
+      const note = document.createElement('span');
+      const show = () => { const t = S.ticks || +inp.value;
+        note.textContent = S.ticks ? `тиков = ${(t * TICK).toFixed(2)} пт` : `тиков · сейчас блок пайплайна`; };
+      const apply = () => { const v = Math.max(1, Math.min(400, Math.round(+inp.value || 0))); upd('ticks', v); };
+      inp.addEventListener('change', apply);
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') apply(); });
+      const rst = document.createElement('button'); rst.className = 'mpc-btn'; rst.textContent = 'как в режиме';
+      rst.addEventListener('click', () => upd('ticks', 0));
+      show(); wrap.append(inp, note); if (S.ticks) wrap.append(rst);
+      return wrap;
+    }
 
     function controls(){
       const host = root.querySelector('#mpc-ctl'); host.innerHTML = '';
@@ -367,10 +449,10 @@
         ctl('Блок', seg([['f','Фикс. 2 пт'], ['a','Адаптивный']], S.m, v => upd('m', v))),
         ctl('Опора', seg([['0','Вчерашний день'], ['1','Композит']], S.c, v => upd('c', v))));
       host.append(
+        ctl('Высота строки', rowInput()),
         ctl('Вид', seg([['both','Буквы + блоки'], ['letters','Только буквы'], ['blocks','Только блоки']], S.view, v => upd('view', v))),
         ctl('Профиль', seg([[0,'Слитный'], [1,'По блокам A-B-C']], S.split, v => upd('split', v))),
-        ctl('Композиты', seg([[0,'Скрыть'], [1,'Показать']], S.comp, v => upd('comp', v))),
-        ctl('Уровни опоры', seg([[0,'Скрыть'], [1,'Показать']], S.ref, v => upd('ref', v))));
+        ctl('Композиты', seg([[0,'Скрыть'], [1,'Показать']], S.comp, v => upd('comp', v))));
       if (owns('filter')) host.append(
         ctl('Точка открытия', seg([['','Все']].concat(D.zones.map(z => [z[0], z[1]])), S.fz, v => upd('fz', v))),
         ctl('Тип открытия', seg([['','Все']].concat(D.open_types.map(o => [o[0], o[1].replace('Open-','O-')])), S.fo, v => upd('fo', v))),
@@ -387,25 +469,27 @@
       const b = root.querySelector('#mpc-bar'); b.innerHTML = '';
       const btn = (t, title, cb) => { const e = document.createElement('button'); e.className = 'mpc-btn';
         e.textContent = t; e.title = title; e.addEventListener('click', cb); return e; };
-      const step = k => { S.i0 = Math.max(0, Math.min(S.i0 + k, cols.length - 1)); save(); draw(); };
-      b.append(btn('−', 'Уменьшить', () => { S.w = Math.max(24, S.w / 1.3); save(); draw(); }),
-               btn('+', 'Увеличить', () => { S.w = Math.min(240, S.w * 1.3); save(); draw(); }),
-               btn('←', 'Назад', () => step(-Math.max(1, view.length - 1))),
-               btn('→', 'Вперёд', () => step(Math.max(1, view.length - 1))),
+      const page = () => Math.max(1, Math.floor((W - AXW) / colW) - 1);
+      const step = k => { S.i0 += k; save(); draw(); };
+      b.append(btn('−', 'Уменьшить', () => { S.w = Math.max(18, S.w / 1.3); save(); draw(); }),
+               btn('+', 'Увеличить', () => { S.w = Math.min(280, S.w * 1.3); save(); draw(); }),
+               btn('←', 'Назад', () => step(-page())),
+               btn('→', 'Вперёд', () => step(page())),
                btn('в конец', 'К последнему дню', () => { S.i0 = cols.length; save(); draw(); }));
       if (anyFilter()) b.append(btn('след. выбранный ⇥', 'Перейти к следующему подсвеченному дню', () => {
-        const from = Math.round(S.i0) + 1;
+        const from = Math.ceil(S.i0) + 1;
         let k = cols.findIndex((c, j) => j >= from && c.on);
         if (k < 0) k = cols.findIndex(c => c.on);
         if (k >= 0){ S.i0 = Math.max(0, k - 1); save(); draw(); }
       }));
       const dt = document.createElement('input');
       dt.type = 'date'; dt.className = 'mpc-date'; dt.min = D.from; dt.max = D.to;
-      dt.value = view.length && view[0].t === 'd' ? D.dates[view[0].i] : D.to;
+      const firstDay = view.find(c => c.t === 'd');
+      dt.value = firstDay ? D.dates[firstDay.i] : D.to;
       dt.addEventListener('change', () => {
         const i = D.dates.indexOf(dt.value);
         if (i < 0) return;
-        let k = cols.findIndex(c => c.t === 'd' && c.i >= i);
+        const k = cols.findIndex(c => c.t === 'd' && c.i >= i);
         if (k >= 0){ S.i0 = k; save(); draw(); }
       });
       b.append(dt, btn(document.fullscreenElement === stage ? 'выйти' : 'на весь экран', 'Fullscreen',
@@ -419,33 +503,29 @@
       info.innerHTML = `подсветка: <b>${selName}</b> · ${on} из ${nTest} дней в статистике`;
       b.append(info);
       root.querySelector('#mpc-hint').textContent =
-        'Тянуть мышью — двигать ленту (при масштабе цены ×2 и больше — и по вертикали), колесо — прокрутка, ' +
-        '⌘/Ctrl + колесо — масштаб по дням, колесо над ценовой шкалой — масштаб по цене, наведение — карточка дня. ' +
-        (!lettersNow() ? 'Буквы появятся, если увеличить масштаб или высоту окна. ' : '') +
-        'Пунктир — IB, серые линии — VA и границы диапазона опоры, жирная линия — POC.';
+        'Тянуть мышью — двигать график в любую сторону, колесо — прокрутка, ⌘/Ctrl + колесо — масштаб по дням, ' +
+        'колесо над ценовой шкалой — масштаб по цене. Линиями отмечены только POC, границы value area и границы ' +
+        'диапазона дня; слева плашка первого часа (IB), стрелки — открытие и закрытие RTH.';
     }
-    const lettersNow = () => ((W - AXW) / Math.max(view.length, 1) - GAP) / MAXB >= 5.5
-      && view.reduce((m, c) => c.t === 'd' ? Math.min(m, day(c.i)[0] / (hi - lo) * (H - TOP - BOT)) : m, 99) >= 5.5;
 
     // ---------------------------------------------------------------- мышь
-    let hover = -1, my = -1, drag = null;
+    let hover = null, my = -1, drag = null;
+    const colAt = x => view.find(c => x >= c.x && x < c.x + c.w) || null;
     cv.addEventListener('mousemove', e => {
       const r = cv.getBoundingClientRect(), x = e.clientX - r.left;
       my = e.clientY - r.top;
       if (drag){
-        const colW = (W - AXW) / Math.max(view.length, 1);
-        S.i0 = Math.max(0, Math.min(drag.i + (drag.x - x) / colW, cols.length - 1));
-        if (S.pz > 1 && fitHi > fitLo){
+        S.i0 = drag.i + (drag.x - x) / colW;
+        if (fitHi > fitLo){
           const dp = (my - drag.y) * (hi - lo) / (H - TOP - BOT) / (fitHi - fitLo);
-          S.py = Math.max(0, Math.min(drag.p + dp, 1));
+          S.py = Math.max(-.5, Math.min(drag.p + dp, 1.5));
         }
+        tip.classList.remove('on'); hover = null;
         draw(); return;
       }
-      const colW = (W - AXW) / Math.max(view.length, 1);
-      const k = x < W - AXW ? Math.floor(x / colW) : -1;
-      hover = k;
-      if (k >= 0 && k < view.length){
-        tip.innerHTML = cardHTML(view[k]);
+      hover = x < W - AXW ? colAt(x) : null;
+      if (hover){
+        tip.innerHTML = cardHTML(hover);
         tip.classList.add('on');
         const tw = tip.offsetWidth, th = tip.offsetHeight;
         tip.style.left = Math.min(Math.max(x + 16, 4), W - tw - 6) + 'px';
@@ -453,9 +533,10 @@
       } else tip.classList.remove('on');
       draw();
     });
-    cv.addEventListener('mouseleave', () => { hover = -1; my = -1; tip.classList.remove('on'); draw(); });
+    cv.addEventListener('mouseleave', () => { hover = null; my = -1; tip.classList.remove('on'); draw(); });
     cv.addEventListener('mousedown', e => { const r = cv.getBoundingClientRect();
-      drag = {x: e.clientX - r.left, y: e.clientY - r.top, i: S.i0, p: S.py}; cv.classList.add('drag'); tip.classList.remove('on'); });
+      drag = {x: e.clientX - r.left, y: e.clientY - r.top, i: S.i0, p: S.py};
+      cv.classList.add('drag'); tip.classList.remove('on'); });
     window.addEventListener('mouseup', () => { if (drag){ drag = null; cv.classList.remove('drag'); save(); } });
     cv.addEventListener('wheel', e => {
       e.preventDefault();
@@ -463,10 +544,10 @@
       if (e.altKey || rx > W - AXW){
         S.pz = Math.max(1, Math.min(8, S.pz * (e.deltaY < 0 ? 1.12 : 1 / 1.12)));
       } else if (e.ctrlKey || e.metaKey){
-        S.w = Math.max(24, Math.min(240, S.w * (e.deltaY < 0 ? 1.12 : 1 / 1.12)));
+        S.w = Math.max(18, Math.min(280, S.w * (e.deltaY < 0 ? 1.12 : 1 / 1.12)));
       } else {
         const d = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) / 40;
-        S.i0 = Math.max(0, Math.min(S.i0 + d * (e.shiftKey ? 5 : 1), cols.length - 1));
+        S.i0 += d * (e.shiftKey ? 5 : 1);
       }
       save(); draw();
     }, {passive: false});
@@ -477,18 +558,17 @@
     // выбор из таблицы теста
     window.addEventListener('mp-selection', e => {
       const x = e.detail || {};
-      if (x.mode) S.m = x.mode;
+      if (x.mode && x.mode !== S.m){ S.m = x.mode; cache = new Map(); cacheKey = ''; }
       if (x.ref) S.c = x.ref;
       sel = {zones: x.zones || [], open: x.open || '', dt: x.dayType || '', label: x.label || ''};
-      build(); controls(); draw();
+      build_cols(); controls(); draw();
     });
 
-    build();
-    S.i0 = S.i0 || Math.max(0, cols.length - 12);
+    build_cols();
+    S.i0 = S.i0 || Math.max(0, cols.length - 8);
     controls(); draw();
-    // для проверки отрисовки из консоли: состояние и пересчёт цены в пиксели
-    window.MPChart.debug = () => ({S, view, lo, hi, W, H, cols: cols.length, Y, P, sel,
-                                   colW: (W - AXW) / Math.max(view.length, 1), AXW, TOP, BOT, GAP, MAXB});
+    window.MPChart.debug = () => ({S, view, lo, hi, W, H, colW, cols: cols.length, Y, P, sel,
+                                   AXW, TOP, BOT, MAXB, pads: pads(), dayProfile, compProfile, levels, build});
   }
 
   window.MPChart = {mount};

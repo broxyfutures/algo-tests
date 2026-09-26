@@ -10,10 +10,11 @@
   window.MPCHART = {built, from, to, dates:[...], zones, open_types, day_types,
                     modes: {f: {days, comps}, a: {days, comps}}}
 
-  день = [ row, base, pr, poc, vah, val, ibh, ibl, open, high, low, close,
+  день = [ row, bl, poc, vah, val, ibh, ibl, open, high, low, close,
            dt, dd, z0, t0, z1, t1, ref0, ref1, cid, cact, cdays, flags ]
-    pr    [lo0,hi0, lo1,hi1, ...] индексы строк блоков A…M относительно base;
-          цена строки i = (base + i) * row — та же сетка, что в mp/profile.py
+    row   высота строки этого режима в пайплайне (график умеет рисовать любой другой)
+    bl    [lo0,hi0, lo1,hi1, ...] — low и high блоков A…M в тиках (0.25) от low дня;
+          точные цены, поэтому профиль пересобирается под любую высоту строки
     dt    код типа дня, dd направление ('u' / 'd' / '')
     z0/t0 точка и тип открытия при опоре «вчерашний день», z1/t1 — при опоре «композит»
     ref0  [poc, vah, val, high, low] вчерашнего профиля (в день ролла уже со сдвигом),
@@ -22,8 +23,9 @@
           cdays длина композита после этого дня
     flags биты: 1 ролл · 2 уходящий контракт · 4 укороченный день · 8 день после дыры в данных ·
           16 день не входит в статистику теста 1
-  comps[id] = {s: индекс первого дня, d: [индексы дней-участников], r, b, c: [TPO по строкам],
-               poc, vah, val, hi, lo}   — только композиты от 2 дней
+  comps[id] = {s: индекс первого дня, d: [индексы дней-участников],
+               sh: [сдвиг цен каждого дня на роллы внутри композита],
+               poc, vah, val, hi, lo}   — только композиты от 2 дней; профиль график собирает сам
 
 Запуск: python3 scripts/12_export_chart.py   (после 05, 06 и 07)
 """
@@ -84,9 +86,8 @@ def main() -> int:
         for i, b in enumerate(daily[mode].itertuples(index=False)):
             lo, hi = by_day[b.date]
             row = float(b.row)
-            li, hj = P.row_of(lo, row), P.row_of(hi, row)
-            base = int(li.min())
-            pr = [int(x) for pair in zip(li - base, hj - base) for x in pair]
+            # цены блоков в тиках от low дня: из них график собирает профиль с любой строкой
+            bl = [int(round((x - b.low) / C.TICK)) for pair in zip(lo, hi) for x in pair]
 
             t, o, c = dtype[mode].loc[b.date], opens[mode].loc[b.date], comps[mode].loc[b.date]
             # сверка с профилем из пайплайна: POC пересчитанного профиля должен совпасть
@@ -96,7 +97,7 @@ def main() -> int:
             flags = (1 * bool(b.roll_day) + 2 * bool(b.expiring_contract) + 4 * bool(b.half_day)
                      + 8 * bool(b.after_data_hole) + 16 * (not in_test[i]))
             days.append([
-                row, base, pr,
+                row, bl,
                 num(b.poc), num(b.vah), num(b.val), num(b.ib_high), num(b.ib_low),
                 num(b.open), num(b.high), num(b.low), num(b.close),
                 DAY_CODE[t.day_type], DIR[t.day_dir],
@@ -110,19 +111,20 @@ def main() -> int:
                 members.setdefault(int(c.comp_id), []).append(i)
 
         cc = {}
+        idx_of = {d: i for i, d in enumerate(dates)}
         for cid, p in cprof[mode].items():
-            counts = np.array(p["c"], dtype=float)
-            pf = P.Profile(p["b"], counts, p["r"])
-            ip = P.poc_index(pf)
-            vlo, vhi = P.value_area(pf, ip)
-            mem = members[int(cid)]
+            mem = [idx_of[d] for d in p["d"]]
+            # профиль композита в его финальном виде — проверка, что сборка из дней сходится
+            lows = np.concatenate([by_day[daily[mode].date.iloc[j]][0] + sh for j, sh in zip(mem, p["sh"])])
+            highs = np.concatenate([by_day[daily[mode].date.iloc[j]][1] + sh for j, sh in zip(mem, p["sh"])])
+            row = float(daily[mode].row.iloc[mem[-1]])
+            st = P.tpo_stats(lows, highs, row)
+            src = comps[mode].iloc[mem[-1]]
+            assert abs(st["poc"] - src.comp_poc) < 1e-6 and abs(st["vah"] - src.comp_vah) < 1e-6, f"композит {cid}: профиль не сошёлся"
             cc[cid] = {
-                "s": mem[0], "d": mem, "r": p["r"], "b": p["b"], "c": p["c"],
-                "poc": round(pf.price(ip), 2),
-                "vah": round(min(pf.price(vhi) + p["r"], max(daily[mode].high.iloc[j] for j in mem)), 2),
-                "val": round(max(pf.price(vlo), min(daily[mode].low.iloc[j] for j in mem)), 2),
-                "hi": round(max(daily[mode].high.iloc[j] for j in mem), 2),
-                "lo": round(min(daily[mode].low.iloc[j] for j in mem), 2),
+                "s": mem[0], "d": mem, "sh": p["sh"],
+                "poc": num(st["poc"]), "vah": num(st["vah"]), "val": num(st["val"]),
+                "hi": round(float(highs.max()), 2), "lo": round(float(lows.min()), 2),
             }
         out[MODE_KEY[mode]] = {"days": days, "comps": cc}
         print(f"[{mode}] дней {len(days)}, композитов от 2 дней {len(cc)}")
