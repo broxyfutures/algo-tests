@@ -747,7 +747,8 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
         `<tr><td>VA</td><td>${f2(p.lv.val)} – ${f2(p.lv.vah)}</td></tr>` +
         `<tr><td>IB</td><td>${f2(d[F.ibl])} – ${f2(d[F.ibh])} (${(d[F.ibh]-d[F.ibl]).toFixed(2)} пт)</td></tr>` +
         `<tr><td>OHLC</td><td>${f2(d[F.o])} · ${f2(d[F.h])} · ${f2(d[F.l])} · ${f2(d[F.c])}</td></tr>` +
-        `<tr><td>Опора</td><td>${rf ? `VA ${f2(rf[2])} – ${f2(rf[1])}, POC ${f2(rf[0])}` : '—'}</td></tr>` +
+        `<tr><td>Опора VA</td><td>${rf ? `${f2(rf[2])} – ${f2(rf[1])}, POC ${f2(rf[0])}` : '—'}</td></tr>` +
+        `<tr><td>Опора диапазон</td><td>${rf ? `${f2(rf[4])} – ${f2(rf[3])}` : '—'}</td></tr>` +
         `<tr><td>Композит</td><td>${d[F.cid]} · ${cAct} · ${d[F.cdays]} дн.</td></tr>` +
         `<tr><td>Строка</td><td>${p.row} пт${S.ticks ? ' (своя)' : ''}, ${d[F.bl].length/2} блоков</td></tr>` +
         (fl.length ? `<tr><td>Флаги</td><td>${fl.join(', ')}</td></tr>` : '') + '</table>';
@@ -845,11 +846,20 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
         'Тянуть мышью по графику — двигать ленту, по шкале дат — растягивать и сжимать дни, по ценовой шкале — ' +
         'растягивать и сжимать цену. Колесо — масштаб по дням (над ценовой шкалой или с Alt — по цене), Shift + колесо — ' +
         'прокрутка. Линиями отмечены только POC, границы value area и границы диапазона дня; слева плашка первого часа ' +
-        '(IB), стрелки — открытие и закрытие RTH.';
+        '(IB), стрелки — открытие и закрытие RTH. Карточка дня — наведение с зажатым Ctrl или Cmd.';
     }
 
     // ---------------------------------------------------------------- мышь
-    let hover = null, my = -1, drag = null;
+    let hover = null, mx = -1, my = -1, drag = null, modKey = false;
+    // карточка дня всплывает только при зажатом Ctrl (или Cmd): иначе закрывает профиль
+    function showTip(){
+      if (!hover || !modKey || drag){ tip.classList.remove('on'); return; }
+      tip.innerHTML = cardHTML(hover);
+      tip.classList.add('on');
+      const tw = tip.offsetWidth, th = tip.offsetHeight;
+      tip.style.left = Math.min(Math.max(mx + 16, 4), W - tw - 6) + 'px';
+      tip.style.top = Math.min(Math.max(my - th / 2, 4), H - th - 6) + 'px';
+    }
     const colAt = x => view.find(c => x >= c.x && x < c.x + c.w) || null;
     // где курсор: на ценовой шкале, на шкале дат или на самом графике
     const zoneAt = (x, y) => x > W - AXW ? 'price' : (y > H - BOT ? 'time' : 'plot');
@@ -863,7 +873,7 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
     }
     cv.addEventListener('mousemove', e => {
       const r = cv.getBoundingClientRect(), x = e.clientX - r.left;
-      my = e.clientY - r.top;
+      mx = x; my = e.clientY - r.top; modKey = e.ctrlKey || e.metaKey;
       if (drag){
         if (drag.zone === 'time'){
           // тянем шкалу дат: вправо — растянуть дни, влево — сжать
@@ -884,16 +894,15 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
       const z = zoneAt(x, my);
       cv.style.cursor = z === 'price' ? 'ns-resize' : z === 'time' ? 'ew-resize' : '';
       hover = z === 'plot' ? colAt(x) : null;
-      if (hover){
-        tip.innerHTML = cardHTML(hover);
-        tip.classList.add('on');
-        const tw = tip.offsetWidth, th = tip.offsetHeight;
-        tip.style.left = Math.min(Math.max(x + 16, 4), W - tw - 6) + 'px';
-        tip.style.top = Math.min(Math.max(my - th / 2, 4), H - th - 6) + 'px';
-      } else tip.classList.remove('on');
+      showTip();
       draw();
     });
-    cv.addEventListener('mouseleave', () => { hover = null; my = -1; tip.classList.remove('on'); draw(); });
+    cv.addEventListener('mouseleave', () => { hover = null; mx = my = -1; tip.classList.remove('on'); draw(); });
+    // Ctrl нажали или отпустили, пока мышь стоит на месте
+    const modNow = e => { const on = e.ctrlKey || e.metaKey; if (on !== modKey){ modKey = on; showTip(); } };
+    window.addEventListener('keydown', modNow);
+    window.addEventListener('keyup', modNow);
+    window.addEventListener('blur', () => { modKey = false; tip.classList.remove('on'); });
     cv.addEventListener('mousedown', e => { const r = cv.getBoundingClientRect();
       const x = e.clientX - r.left, y = e.clientY - r.top;
       drag = {x, y, zone: zoneAt(x, y), i: S.i0, p: S.py, w: S.w, pz: S.pz};
