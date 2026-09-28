@@ -10,7 +10,7 @@
 <header class="hdr"><div><h1>График профилей</h1><div class="sub">ES · дневные TPO-профили и композиты, 2010-06-07 → 2026-09-15</div></div><div class="meta" id="hdr-meta"><div>Обновлено <b>2026-09-28</b></div></div></header>
 <section class="card"><table class="kv"><tr><td>Статус</td><td><span class="pill mid">инструмент</span></td></tr><tr><td>Вердикт</td><td><span class="pill ">—</span> <span class="sans" style="margin-left:8px">Смотрелка исходников: те же профили, по которым считаются тесты</span></td></tr><tr><td>Инструмент</td><td><span class="sans">ES · дневные TPO-профили и композиты, 2010-06-07 → 2026-09-15</span></td></tr><tr><td>Даты</td><td>создан 2026-09-24 · обновлён 2026-09-28</td></tr><tr><td>Источник</td><td><span class="sans">mp-es-pipeline/scripts/12_export_chart.py, данные из mp_daily / mp_daytype / mp_open / mp_composite</span></td></tr><tr><td>ID</td><td><code>mp-chart</code></td></tr></table></section>
 <section class="card"><h2 class="card-title">Что это</h2><div class="prose"><p>Те самые профили, которые участвуют в тестах, нарисованные один в один по выгрузке пайплайна: буквы TPO по 30-минутным блокам, value area, POC, IB, уровни опоры и склеенные композиты. Ничего не пересчитывается на странице — цифры те же, что в таблицах тестов.</p></div></section>
-<section class="card"><h2 class="card-title">Как читать</h2><div class="prose"><div class="twrap"><table class="plain md"><thead><tr><th>Элемент</th><th>Что значит</th></tr></thead><tbody><tr><td>Буквы A…M</td><td>30-минутные блоки RTH: A = 09:30–10:00, M = 15:30–16:00</td></tr><tr><td>Тон колонки</td><td>синий — день закрылся выше открытия, розовый — ниже</td></tr><tr><td>Сплошная жирная линия</td><td>POC, единственная сплошная на графике</td></tr><tr><td>Пунктир в тон профиля</td><td>границы value area 68 %</td></tr><tr><td>Серый пунктир</td><td>границы диапазона дня, high и low</td></tr><tr><td>Плашка слева</td><td>первый час, initial balance: видно, насколько далеко день ушёл за него</td></tr><tr><td>Стрелки по краям</td><td>слева открытие RTH, справа закрытие, каждая на своём уровне</td></tr><tr><td>Широкая серая колонка</td><td>композит: склеенный профиль нескольких дней, теми же блоками, рисуется после последнего дня-участника</td></tr></tbody></table></div>
+<section class="card"><h2 class="card-title">Как читать</h2><div class="prose"><div class="twrap"><table class="plain md"><thead><tr><th>Элемент</th><th>Что значит</th></tr></thead><tbody><tr><td>Буквы A…M</td><td>30-минутные блоки RTH: A = 09:30–10:00, M = 15:30–16:00</td></tr><tr><td>Тон колонки</td><td>синий — день закрылся выше открытия, розовый — ниже</td></tr><tr><td>Жирная линия</td><td>POC</td></tr><tr><td>Две линии в тон профиля</td><td>границы value area 68 %</td></tr><tr><td>Серый пунктир</td><td>границы диапазона дня, high и low</td></tr><tr><td>Плашка слева</td><td>первый час, initial balance: видно, насколько далеко день ушёл за него</td></tr><tr><td>Стрелки по краям</td><td>слева открытие RTH, справа закрытие, каждая на своём уровне</td></tr><tr><td>Широкая серая колонка</td><td>композит: склеенный профиль нескольких дней, теми же блоками, рисуется после последнего дня-участника</td></tr></tbody></table></div>
 <p>Больше на графике ничего не отмечено — всё остальное в карточке дня по наведению.</p></div></section>
 <section class="card"><h2 class="card-title">Высота строки</h2><div class="prose"><p>Поле «высота строки» принимает количество тиков: <strong>4 тика = 1 пункт</strong>, 8 тиков = 2 пункта. Профиль пересобирается в браузере из цен 30-минутных блоков, POC и value area пересчитываются тем же правилом, что в пайплайне. Кнопка «как в режиме» возвращает блок, с которым считалась статистика: 2 пункта в фиксированном режиме, адаптивный блок этой недели в адаптивном.</p>
 <p>Типы дня и типы открытия в подсветке и в карточке остаются от блока пайплайна: они заморожены и от высоты строки на графике не зависят.</p></div></section>
@@ -277,7 +277,7 @@
       if (hover) drawCross();
     }
 
-    // сплошной рисуется только POC, остальные уровни пунктиром
+    // сплошные — POC и границы value area; границы диапазона дня пунктиром
     function hline(x0, w, price, color, width, solid){
       const y = Math.round(Y(price)) + .5;
       ctx.save();
@@ -333,8 +333,8 @@
       // только границы: диапазон дня, value area, POC
       hline(x0, colW, d[F.h], rgba(C.t3, .5 * a));
       hline(x0, colW, d[F.l], rgba(C.t3, .5 * a));
-      hline(x0, colW, p.lv.vah, rgba(hue, .6 * a));
-      hline(x0, colW, p.lv.val, rgba(hue, .6 * a));
+      hline(x0, colW, p.lv.vah, rgba(hue, .6 * a), 1, true);
+      hline(x0, colW, p.lv.val, rgba(hue, .6 * a), 1, true);
       hline(x0, colW, p.lv.poc + row / 2, rgba(hue, .95 * a), 1.6, true);
 
       if (colW >= 34){
@@ -360,8 +360,8 @@
       ctx.fillStyle = rgba(C.t2, .45 * a); ctx.fill();
       hline(x0, colW, p.hi, rgba(C.t3, .5 * a));
       hline(x0, colW, p.lo, rgba(C.t3, .5 * a));
-      hline(x0, colW, p.lv.vah, rgba(C.t2, .6 * a));
-      hline(x0, colW, p.lv.val, rgba(C.t2, .6 * a));
+      hline(x0, colW, p.lv.vah, rgba(C.t2, .6 * a), 1, true);
+      hline(x0, colW, p.lv.val, rgba(C.t2, .6 * a), 1, true);
       hline(x0, colW, p.lv.poc + row / 2, rgba(C.t1, .8 * a), 1.6, true);
     }
 
@@ -532,7 +532,7 @@
         'Тянуть мышью по графику — двигать ленту, по шкале дат — растягивать и сжимать дни, по ценовой шкале — ' +
         'растягивать и сжимать цену. Колесо — масштаб по дням (над ценовой шкалой или с Alt — по цене), Shift + колесо — ' +
         'прокрутка. Линиями отмечены только POC, границы value area и границы диапазона дня; слева плашка первого часа ' +
-        '(IB), стрелки — открытие и закрытие RTH. Сплошная линия только у POC, остальные уровни пунктиром. ' +
+        '(IB), стрелки — открытие и закрытие RTH. Границы диапазона дня пунктиром, POC и границы value area сплошные. ' +
         'Карточка дня — наведение с зажатым Ctrl или Cmd.';
     }
 

@@ -254,7 +254,7 @@
       if (hover) drawCross();
     }
 
-    // сплошной рисуется только POC, остальные уровни пунктиром
+    // сплошные — POC и границы value area; границы диапазона дня пунктиром
     function hline(x0, w, price, color, width, solid){
       const y = Math.round(Y(price)) + .5;
       ctx.save();
@@ -310,8 +310,8 @@
       // только границы: диапазон дня, value area, POC
       hline(x0, colW, d[F.h], rgba(C.t3, .5 * a));
       hline(x0, colW, d[F.l], rgba(C.t3, .5 * a));
-      hline(x0, colW, p.lv.vah, rgba(hue, .6 * a));
-      hline(x0, colW, p.lv.val, rgba(hue, .6 * a));
+      hline(x0, colW, p.lv.vah, rgba(hue, .6 * a), 1, true);
+      hline(x0, colW, p.lv.val, rgba(hue, .6 * a), 1, true);
       hline(x0, colW, p.lv.poc + row / 2, rgba(hue, .95 * a), 1.6, true);
 
       if (colW >= 34){
@@ -337,8 +337,8 @@
       ctx.fillStyle = rgba(C.t2, .45 * a); ctx.fill();
       hline(x0, colW, p.hi, rgba(C.t3, .5 * a));
       hline(x0, colW, p.lo, rgba(C.t3, .5 * a));
-      hline(x0, colW, p.lv.vah, rgba(C.t2, .6 * a));
-      hline(x0, colW, p.lv.val, rgba(C.t2, .6 * a));
+      hline(x0, colW, p.lv.vah, rgba(C.t2, .6 * a), 1, true);
+      hline(x0, colW, p.lv.val, rgba(C.t2, .6 * a), 1, true);
       hline(x0, colW, p.lv.poc + row / 2, rgba(C.t1, .8 * a), 1.6, true);
     }
 
@@ -509,7 +509,7 @@
         'Тянуть мышью по графику — двигать ленту, по шкале дат — растягивать и сжимать дни, по ценовой шкале — ' +
         'растягивать и сжимать цену. Колесо — масштаб по дням (над ценовой шкалой или с Alt — по цене), Shift + колесо — ' +
         'прокрутка. Линиями отмечены только POC, границы value area и границы диапазона дня; слева плашка первого часа ' +
-        '(IB), стрелки — открытие и закрытие RTH. Сплошная линия только у POC, остальные уровни пунктиром. ' +
+        '(IB), стрелки — открытие и закрытие RTH. Границы диапазона дня пунктиром, POC и границы value area сплошные. ' +
         'Карточка дня — наведение с зажатым Ctrl или Cmd.';
     }
 
