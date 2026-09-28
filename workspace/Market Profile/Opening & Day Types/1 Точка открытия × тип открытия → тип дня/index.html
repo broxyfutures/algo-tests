@@ -803,7 +803,6 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
         ctl('Тип дня', seg([['','Все']].concat(D.day_types.map(t => [t[0], t[1].replace('Double-Distribution ','DD-')])), S.ft, v => upd('ft', v))));
       host.append(
         ctl('Высота', seg([[420,'Ниже'], [560,'Обычная'], [760,'Выше']], S.hgt, v => upd('hgt', v))),
-        ctl('Масштаб цены', seg([[1,'По кадру'], [2,'×2'], [3,'×3'], [5,'×5']], S.pz, v => upd('pz', v))),
         ctl('Подсветка', seg([[1,'Выбранные ярче'], [0,'Выкл']], S.hl, v => upd('hl', v))),
         ctl('Лента', seg([[0,'Все дни'], [1,'Только выбранные']], S.only, v => upd('only', v))));
       bar();
@@ -820,6 +819,7 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
                btn('←', 'Назад', () => step(-page())),
                btn('→', 'Вперёд', () => step(page())),
                btn('в конец', 'К последнему дню', () => { S.i0 = cols.length; save(); draw(); }));
+      if (Math.abs(S.pz - 1) > .01) b.append(btn('цена по кадру', 'Вернуть масштаб цены к кадру', () => { S.pz = 1; S.py = .5; save(); draw(); bar(); }));
       if (anyFilter()) b.append(btn('след. выбранный ⇥', 'Перейти к следующему подсвеченному дню', () => {
         const from = Math.ceil(S.i0) + 1;
         let k = cols.findIndex((c, j) => j >= from && c.on);
@@ -869,7 +869,7 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
     // где курсор: на ценовой шкале, на шкале дат или на самом графике
     const zoneAt = (x, y) => x > W - AXW ? 'price' : (y > H - BOT ? 'time' : 'plot');
     const clampW = v => Math.max(18, Math.min(280, v));
-    const clampPz = v => Math.max(1, Math.min(8, v));
+    const clampPz = v => Math.max(.35, Math.min(8, v));   // масштаб цены задаётся только шкалой
     // масштаб по дням вокруг курсора: колонка под мышью остаётся на месте
     function zoomX(f, x){
       const before = S.i0 + x / colW;
@@ -894,6 +894,7 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
           }
         }
         tip.classList.remove('on'); hover = null;
+        if (drag.zone === 'price') bar();
         draw(); return;
       }
       const z = zoneAt(x, my);
@@ -922,7 +923,7 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
       if (e.shiftKey){
         S.i0 += (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) / 40;
       } else if (e.altKey || zoneAt(rx, ry) === 'price'){
-        S.pz = clampPz(S.pz * f);
+        S.pz = clampPz(S.pz * f); bar();
       } else {
         zoomX(f, Math.min(rx, W - AXW));
       }

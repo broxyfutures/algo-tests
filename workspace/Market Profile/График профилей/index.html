@@ -14,7 +14,7 @@
 <p>Больше на графике ничего не отмечено — всё остальное в карточке дня по наведению.</p></div></section>
 <section class="card"><h2 class="card-title">Высота строки</h2><div class="prose"><p>Поле «высота строки» принимает количество тиков: <strong>4 тика = 1 пункт</strong>, 8 тиков = 2 пункта. Профиль пересобирается в браузере из цен 30-минутных блоков, POC и value area пересчитываются тем же правилом, что в пайплайне. Кнопка «как в режиме» возвращает блок, с которым считалась статистика: 2 пункта в фиксированном режиме, адаптивный блок этой недели в адаптивном.</p>
 <p>Типы дня и типы открытия в подсветке и в карточке остаются от блока пайплайна: они заморожены и от высоты строки на графике не зависят.</p></div></section>
-<section class="card"><h2 class="card-title">Управление</h2><div class="prose"><div class="twrap"><table class="plain md"><thead><tr><th>Действие</th><th>Что делает</th></tr></thead><tbody><tr><td>Тянуть мышью по графику</td><td>двигать ленту в любую сторону: и по времени, и по цене</td></tr><tr><td>Тянуть по шкале дат внизу</td><td>растягивать и сжимать дни, как в терминале</td></tr><tr><td>Тянуть по ценовой шкале справа</td><td>растягивать и сжимать цену</td></tr><tr><td>Колесо</td><td>масштаб по дням, вокруг курсора</td></tr><tr><td>Колесо над ценовой шкалой или Alt + колесо</td><td>масштаб по цене</td></tr><tr><td>Shift + колесо</td><td>прокрутка по дням</td></tr><tr><td>Наведение с Ctrl или Cmd</td><td>карточка дня со всеми числами</td></tr></tbody></table></div>
+<section class="card"><h2 class="card-title">Управление</h2><div class="prose"><div class="twrap"><table class="plain md"><thead><tr><th>Действие</th><th>Что делает</th></tr></thead><tbody><tr><td>Тянуть мышью по графику</td><td>двигать ленту в любую сторону: и по времени, и по цене</td></tr><tr><td>Тянуть по шкале дат внизу</td><td>растягивать и сжимать дни, как в терминале</td></tr><tr><td>Тянуть по ценовой шкале справа</td><td>растягивать и сжимать цену: масштаб остаётся таким, каким ты его поставил</td></tr><tr><td>Колесо</td><td>масштаб по дням, вокруг курсора</td></tr><tr><td>Колесо над ценовой шкалой или Alt + колесо</td><td>масштаб по цене</td></tr><tr><td>Кнопка «цена по кадру»</td><td>появляется, когда масштаб цены уведён, и возвращает его к кадру</td></tr><tr><td>Shift + колесо</td><td>прокрутка по дням</td></tr><tr><td>Наведение с Ctrl или Cmd</td><td>карточка дня со всеми числами</td></tr></tbody></table></div>
 <p>Фильтры «точка открытия / тип открытия / тип дня» подсвечивают дни, которые попали бы в соответствующую ячейку теста 1; кнопка «только выбранные» сжимает ленту до них. «По блокам A-B-C» показывает каждый 30-минутный блок отдельным диапазоном, как свечки.</p></div></section>
 <section class="card"><h2 class="card-title">Результаты</h2><div class="prose"><div class="mpc" id="mpc" data-own="mode,ref,filter"></div></div></section>
 <div class="foot">Тесты / Market Profile / График профилей</div>
@@ -485,7 +485,6 @@
         ctl('Тип дня', seg([['','Все']].concat(D.day_types.map(t => [t[0], t[1].replace('Double-Distribution ','DD-')])), S.ft, v => upd('ft', v))));
       host.append(
         ctl('Высота', seg([[420,'Ниже'], [560,'Обычная'], [760,'Выше']], S.hgt, v => upd('hgt', v))),
-        ctl('Масштаб цены', seg([[1,'По кадру'], [2,'×2'], [3,'×3'], [5,'×5']], S.pz, v => upd('pz', v))),
         ctl('Подсветка', seg([[1,'Выбранные ярче'], [0,'Выкл']], S.hl, v => upd('hl', v))),
         ctl('Лента', seg([[0,'Все дни'], [1,'Только выбранные']], S.only, v => upd('only', v))));
       bar();
@@ -502,6 +501,7 @@
                btn('←', 'Назад', () => step(-page())),
                btn('→', 'Вперёд', () => step(page())),
                btn('в конец', 'К последнему дню', () => { S.i0 = cols.length; save(); draw(); }));
+      if (Math.abs(S.pz - 1) > .01) b.append(btn('цена по кадру', 'Вернуть масштаб цены к кадру', () => { S.pz = 1; S.py = .5; save(); draw(); bar(); }));
       if (anyFilter()) b.append(btn('след. выбранный ⇥', 'Перейти к следующему подсвеченному дню', () => {
         const from = Math.ceil(S.i0) + 1;
         let k = cols.findIndex((c, j) => j >= from && c.on);
@@ -551,7 +551,7 @@
     // где курсор: на ценовой шкале, на шкале дат или на самом графике
     const zoneAt = (x, y) => x > W - AXW ? 'price' : (y > H - BOT ? 'time' : 'plot');
     const clampW = v => Math.max(18, Math.min(280, v));
-    const clampPz = v => Math.max(1, Math.min(8, v));
+    const clampPz = v => Math.max(.35, Math.min(8, v));   // масштаб цены задаётся только шкалой
     // масштаб по дням вокруг курсора: колонка под мышью остаётся на месте
     function zoomX(f, x){
       const before = S.i0 + x / colW;
@@ -576,6 +576,7 @@
           }
         }
         tip.classList.remove('on'); hover = null;
+        if (drag.zone === 'price') bar();
         draw(); return;
       }
       const z = zoneAt(x, my);
@@ -604,7 +605,7 @@
       if (e.shiftKey){
         S.i0 += (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) / 40;
       } else if (e.altKey || zoneAt(rx, ry) === 'price'){
-        S.pz = clampPz(S.pz * f);
+        S.pz = clampPz(S.pz * f); bar();
       } else {
         zoomX(f, Math.min(rx, W - AXW));
       }
