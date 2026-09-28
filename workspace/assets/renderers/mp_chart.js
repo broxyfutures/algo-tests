@@ -96,9 +96,10 @@
     const D = window.MPCHART;
     const ZN = Object.fromEntries(D.zones), ON = Object.fromEntries(D.open_types);
     const TN = Object.fromEntries(D.day_types.map(t => [t[0], t[1]]));
-    const KEY = 'mp-chart-v2';
-    const S = {m:'f', c:'0', view:'both', split:0, comp:0, hl:1, only:0, w:150, i0:0, pz:1, py:.5,
-               hgt:560, ticks:0, fz:'', fo:'', ft:''};
+    const KEY = 'mp-chart-v3';
+    // man = 1: окно цены задано трейдером и живёт в ценах, при прокрутке не пересчитывается
+    const S = {m:'f', c:'0', view:'both', split:0, comp:0, hl:1, only:0, w:150, i0:0,
+               man:0, plo:0, phi:0, hgt:560, ticks:0, fz:'', fo:'', ft:''};
     try{ Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); }catch(e){}
     const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} };
 
@@ -222,9 +223,13 @@
       if (!isFinite(a)){ a = 0; b = 1; }
       const pad = Math.max((b - a) * 0.04, 1);
       fitLo = a - pad; fitHi = b + pad;
-      const span = (fitHi - fitLo) / S.pz, mid = fitLo + (fitHi - fitLo) * S.py;
-      lo = Math.max(fitLo - span / 2, Math.min(mid - span / 2, fitHi - span / 2));
-      hi = lo + span;
+      if (S.man && S.phi > S.plo){
+        lo = S.plo; hi = S.phi;
+        // видимые дни ушли из окна целиком (перепрыгнули на другой год) — вернуть кадр
+        if (fitHi < lo || fitLo > hi){ lo = S.plo = fitLo; hi = S.phi = fitHi; }
+      } else {
+        lo = fitLo; hi = fitHi;
+      }
     }
 
     // отступы внутри колонки: слева плашка IB и стрелка открытия, справа стрелка закрытия
@@ -501,7 +506,7 @@
                btn('←', 'Назад', () => step(-page())),
                btn('→', 'Вперёд', () => step(page())),
                btn('в конец', 'К последнему дню', () => { S.i0 = cols.length; save(); draw(); }));
-      if (Math.abs(S.pz - 1) > .01) b.append(btn('цена по кадру', 'Вернуть масштаб цены к кадру', () => { S.pz = 1; S.py = .5; save(); draw(); bar(); }));
+      if (S.man) b.append(btn('цена по кадру', 'Вернуть автоподбор масштаба цены по видимым дням', () => { S.man = 0; save(); draw(); bar(); }));
       if (anyFilter()) b.append(btn('след. выбранный ⇥', 'Перейти к следующему подсвеченному дню', () => {
         const from = Math.ceil(S.i0) + 1;
         let k = cols.findIndex((c, j) => j >= from && c.on);
@@ -531,7 +536,9 @@
       root.querySelector('#mpc-hint').textContent =
         'Тянуть мышью по графику — двигать ленту, по шкале дат — растягивать и сжимать дни, по ценовой шкале — ' +
         'растягивать и сжимать цену. Колесо — масштаб по дням (над ценовой шкалой или с Alt — по цене), Shift + колесо — ' +
-        'прокрутка. Линиями отмечены только POC, границы value area и границы диапазона дня; слева плашка первого часа ' +
+        'прокрутка. ' +
+        (S.man ? 'Масштаб цены твой: при прокрутке шкала стоит на месте, кнопка «цена по кадру» вернёт автоподбор. '
+               : 'Масштаб цены подбирается по видимым дням, пока ты не задашь свой. ') + 'Линиями отмечены только POC, границы value area и границы диапазона дня; слева плашка первого часа ' +
         '(IB), стрелки — открытие и закрытие RTH. Границы диапазона дня пунктиром, POC и границы value area сплошные. ' +
         'Карточка дня — наведение с зажатым Ctrl или Cmd.';
     }
@@ -551,7 +558,12 @@
     // где курсор: на ценовой шкале, на шкале дат или на самом графике
     const zoneAt = (x, y) => x > W - AXW ? 'price' : (y > H - BOT ? 'time' : 'plot');
     const clampW = v => Math.max(18, Math.min(280, v));
-    const clampPz = v => Math.max(.35, Math.min(8, v));   // масштаб цены задаётся только шкалой
+    // масштаб цены задаётся только трейдером: шкалой, колесом над ней или вертикальным перетаскиванием
+    const goManual = () => { if (!S.man){ S.man = 1; S.plo = lo; S.phi = hi; } };
+    const setSpan = (center, span) => {
+      span = Math.max(1, Math.min(20000, span));
+      S.plo = center - span / 2; S.phi = center + span / 2;
+    };
     // масштаб по дням вокруг курсора: колонка под мышью остаётся на месте
     function zoomX(f, x){
       const before = S.i0 + x / colW;
@@ -567,12 +579,16 @@
           S.w = clampW(drag.w * Math.exp((x - drag.x) / 220));
         } else if (drag.zone === 'price'){
           // тянем ценовую шкалу: вверх — растянуть цену, вниз — сжать
-          S.pz = clampPz(drag.pz * Math.exp((drag.y - my) / 220));
+          S.man = 1;
+          setSpan((drag.lo + drag.hi) / 2, (drag.hi - drag.lo) / Math.exp((drag.y - my) / 220));
         } else {
           S.i0 = drag.i + (drag.x - x) / colW;
-          if (fitHi > fitLo){
-            const dp = (my - drag.y) * (hi - lo) / (H - TOP - BOT) / (fitHi - fitLo);
-            S.py = Math.max(-.5, Math.min(drag.p + dp, 1.5));
+          const dy = my - drag.y;
+          // вертикальное движение двигает цену и фиксирует окно; горизонтальное его не трогает
+          if (S.man || Math.abs(dy) > 6){
+            S.man = 1;
+            const d = dy * (drag.hi - drag.lo) / (H - TOP - BOT);
+            S.plo = drag.lo + d; S.phi = drag.hi + d;
           }
         }
         tip.classList.remove('on'); hover = null;
@@ -593,7 +609,7 @@
     window.addEventListener('blur', () => { modKey = false; tip.classList.remove('on'); });
     cv.addEventListener('mousedown', e => { const r = cv.getBoundingClientRect();
       const x = e.clientX - r.left, y = e.clientY - r.top;
-      drag = {x, y, zone: zoneAt(x, y), i: S.i0, p: S.py, w: S.w, pz: S.pz};
+      drag = {x, y, zone: zoneAt(x, y), i: S.i0, w: S.w, lo, hi};
       if (drag.zone === 'plot') cv.classList.add('drag');
       tip.classList.remove('on'); });
     window.addEventListener('mouseup', () => { if (drag){ drag = null; cv.classList.remove('drag'); save(); } });
@@ -605,7 +621,7 @@
       if (e.shiftKey){
         S.i0 += (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) / 40;
       } else if (e.altKey || zoneAt(rx, ry) === 'price'){
-        S.pz = clampPz(S.pz * f); bar();
+        goManual(); setSpan((S.plo + S.phi) / 2, (S.phi - S.plo) / f); bar();
       } else {
         zoomX(f, Math.min(rx, W - AXW));
       }
