@@ -254,10 +254,14 @@
       if (hover) drawCross();
     }
 
-    function hline(x0, w, price, color, width){
+    // сплошной рисуется только POC, остальные уровни пунктиром
+    function hline(x0, w, price, color, width, solid){
       const y = Math.round(Y(price)) + .5;
+      ctx.save();
+      if (!solid) ctx.setLineDash([4, 3]);
       ctx.strokeStyle = color; ctx.lineWidth = width || 1;
       ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + w, y); ctx.stroke();
+      ctx.restore();
     }
     function arrow(x, y, dir, color){
       ctx.fillStyle = color; ctx.beginPath();
@@ -308,7 +312,7 @@
       hline(x0, colW, d[F.l], rgba(C.t3, .5 * a));
       hline(x0, colW, p.lv.vah, rgba(hue, .6 * a));
       hline(x0, colW, p.lv.val, rgba(hue, .6 * a));
-      hline(x0, colW, p.lv.poc + row / 2, rgba(hue, .95 * a), 1.6);
+      hline(x0, colW, p.lv.poc + row / 2, rgba(hue, .95 * a), 1.6, true);
 
       if (colW >= 34){
         // плашка начального баланса и стрелки открытия / закрытия RTH: приглушены, чтобы не спорить с профилем
@@ -335,7 +339,7 @@
       hline(x0, colW, p.lo, rgba(C.t3, .5 * a));
       hline(x0, colW, p.lv.vah, rgba(C.t2, .6 * a));
       hline(x0, colW, p.lv.val, rgba(C.t2, .6 * a));
-      hline(x0, colW, p.lv.poc + row / 2, rgba(C.t1, .8 * a), 1.6);
+      hline(x0, colW, p.lv.poc + row / 2, rgba(C.t1, .8 * a), 1.6, true);
     }
 
     function drawAxis(){
@@ -505,7 +509,8 @@
         'Тянуть мышью по графику — двигать ленту, по шкале дат — растягивать и сжимать дни, по ценовой шкале — ' +
         'растягивать и сжимать цену. Колесо — масштаб по дням (над ценовой шкалой или с Alt — по цене), Shift + колесо — ' +
         'прокрутка. Линиями отмечены только POC, границы value area и границы диапазона дня; слева плашка первого часа ' +
-        '(IB), стрелки — открытие и закрытие RTH. Карточка дня — наведение с зажатым Ctrl или Cmd.';
+        '(IB), стрелки — открытие и закрытие RTH. Сплошная линия только у POC, остальные уровни пунктиром. ' +
+        'Карточка дня — наведение с зажатым Ctrl или Cmd.';
     }
 
     // ---------------------------------------------------------------- мышь
