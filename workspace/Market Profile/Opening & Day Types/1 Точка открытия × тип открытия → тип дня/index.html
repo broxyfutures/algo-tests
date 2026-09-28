@@ -378,7 +378,13 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
 .mpc .mpc-sel{font-family:var(--mono);color:var(--t2)}
 .mpc .mpc-sel b{color:var(--t1);font-weight:500}
 .mpc .mpc-hint{margin-top:8px;font-size:11px;color:var(--t3);line-height:1.6}
-.mpc .mpc-load{padding:40px 0;text-align:center;color:var(--t3);font-size:12px}`;
+.mpc .mpc-load{padding:40px 0;text-align:center;color:var(--t3);font-size:12px}
+.mpc .mpc-flt{margin:2px 0 16px;padding:12px 0 0;border-top:1px solid var(--border)}
+.mpc .mpc-flt .controls{margin-bottom:0;gap:14px 18px}
+.mpc .mpc-flt-t{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:10px}
+.mpc .mpc-flt-t b{color:var(--t2);font-weight:500}
+.mpc .mpc-flt-t .mpc-reset{margin-left:10px;font:inherit;font-size:10px;letter-spacing:.06em;text-transform:none;color:var(--t3);background:none;border:none;border-bottom:1px solid var(--border-2);padding:0 0 1px;cursor:pointer}
+.mpc .mpc-flt-t .mpc-reset:hover{color:var(--t1);border-color:var(--border-hi)}`;
   document.head.appendChild(ST);
 
   const A_Z = 'ABCDEFGHIJKLM';
@@ -438,6 +444,8 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
     const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} };
 
     root.innerHTML = '<div class="controls" id="mpc-ctl"></div>' +
+      '<div class="mpc-flt" id="mpc-flt" hidden><div class="mpc-flt-t" id="mpc-flt-t"></div>' +
+      '<div class="controls" id="mpc-flt-c"></div></div>' +
       '<div class="mpc-stage" id="mpc-stage"><canvas id="mpc-cv"></canvas><div class="mpc-tip" id="mpc-tip"></div></div>' +
       '<div class="mpc-bar" id="mpc-bar"></div><div class="mpc-hint" id="mpc-hint"></div>';
     const stage = root.querySelector('#mpc-stage'), cv = root.querySelector('#mpc-cv');
@@ -797,14 +805,29 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
         ctl('Вид', seg([['both','Буквы + блоки'], ['letters','Только буквы'], ['blocks','Только блоки']], S.view, v => upd('view', v))),
         ctl('Профиль', seg([[0,'Слитный'], [1,'По блокам A-B-C']], S.split, v => upd('split', v))),
         ctl('Композиты', seg([[0,'Скрыть'], [1,'Показать']], S.comp, v => upd('comp', v))));
-      if (owns('filter')) host.append(
-        ctl('Точка открытия', seg([['','Все']].concat(D.zones.map(z => [z[0], z[1]])), S.fz, v => upd('fz', v))),
-        ctl('Тип открытия', seg([['','Все']].concat(D.open_types.map(o => [o[0], o[1].replace('Open-','O-')])), S.fo, v => upd('fo', v))),
-        ctl('Тип дня', seg([['','Все']].concat(D.day_types.map(t => [t[0], t[1].replace('Double-Distribution ','DD-')])), S.ft, v => upd('ft', v))));
       host.append(
         ctl('Высота', seg([[420,'Ниже'], [560,'Обычная'], [760,'Выше']], S.hgt, v => upd('hgt', v))),
         ctl('Подсветка', seg([[1,'Выбранные ярче'], [0,'Выкл']], S.hl, v => upd('hl', v))),
         ctl('Лента', seg([[0,'Все дни'], [1,'Только выбранные']], S.only, v => upd('only', v))));
+
+      // фильтры дней живут отдельным блоком: это не настройки вида, а выбор выборки
+      const flt = root.querySelector('#mpc-flt'), fc = root.querySelector('#mpc-flt-c');
+      flt.hidden = !owns('filter');
+      if (owns('filter')){
+        fc.innerHTML = '';
+        fc.append(
+          ctl('Точка открытия', seg([['','Все']].concat(D.zones.map(z => [z[0], z[1]])), S.fz, v => upd('fz', v))),
+          ctl('Тип открытия', seg([['','Все']].concat(D.open_types.map(o => [o[0], o[1].replace('Open-','O-')])), S.fo, v => upd('fo', v))),
+          ctl('Тип дня', seg([['','Все']].concat(D.day_types.map(t => [t[0], t[1].replace('Double-Distribution ','DD-')])), S.ft, v => upd('ft', v))));
+        const t = root.querySelector('#mpc-flt-t');
+        const on = [S.fz && ZN[S.fz], S.fo && ON[S.fo], S.ft && TN[S.ft]].filter(Boolean);
+        t.innerHTML = 'Какие дни подсветить' + (on.length ? ': <b>' + on.join(' · ') + '</b>' : '');
+        if (on.length){
+          const r = document.createElement('button'); r.className = 'mpc-reset'; r.textContent = 'сбросить';
+          r.addEventListener('click', () => { S.fz = S.fo = S.ft = ''; save(); build_cols(); controls(); draw(); });
+          t.appendChild(r);
+        }
+      }
       bar();
     }
 
