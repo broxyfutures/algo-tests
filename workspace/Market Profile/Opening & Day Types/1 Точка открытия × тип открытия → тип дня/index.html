@@ -570,14 +570,12 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
       ctx.clearRect(0, 0, W, H);
       ctx.fillStyle = rgba(C.sf, 1); ctx.fillRect(0, 0, W, H);
 
+      // только подписи на ценовой шкале: горизонтальных линий по круглым ценам нет
       const step = LADDER.find(s => (hi - lo) / s <= 14) || 2000;
       ctx.font = '10.5px ' + MONO; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
-      for (let p = Math.ceil(lo / step) * step; p <= hi; p += step){
-        const y = Math.round(Y(p)) + .5;
-        ctx.strokeStyle = rgba(C.bd, 1); ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(plotW, y); ctx.stroke();
-        ctx.fillStyle = rgba(C.t3, 1); ctx.fillText(p.toFixed(step < 1 ? 2 : 0), plotW + 8, y);
-      }
+      ctx.fillStyle = rgba(C.t3, 1);
+      for (let p = Math.ceil(lo / step) * step; p <= hi; p += step)
+        ctx.fillText(p.toFixed(step < 1 ? 2 : 0), plotW + 8, Math.round(Y(p)) + .5);
 
       const [padL, padR] = pads();
       const cellW = (colW - padL - padR) / MAXB;   // ячейка дневной колонки
@@ -654,11 +652,11 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
       hline(x0, colW, p.lv.poc + row / 2, rgba(hue, .95 * a), 1.6);
 
       if (colW >= 34){
-        // плашка начального баланса и стрелки открытия / закрытия RTH
-        ctx.fillStyle = rgba(C.t1, .8 * a);
+        // плашка начального баланса и стрелки открытия / закрытия RTH: приглушены, чтобы не спорить с профилем
+        ctx.fillStyle = rgba(C.t1, .3 * a);
         ctx.fillRect(x0 + 3, Y(d[F.ibh]), 4, Math.max(Y(d[F.ibl]) - Y(d[F.ibh]), 2));
-        arrow(x0 + padL - 2, Y(d[F.o]), 1, rgba(C.t1, .85 * a));
-        arrow(x0 + colW - padR + 2, Y(d[F.c]), -1, rgba(C.t1, .85 * a));
+        arrow(x0 + padL - 2, Y(d[F.o]), 1, rgba(C.t1, .38 * a));
+        arrow(x0 + colW - padR + 2, Y(d[F.c]), -1, rgba(C.t1, .38 * a));
       }
     }
 
@@ -844,27 +842,48 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
       info.innerHTML = `подсветка: <b>${selName}</b> · ${on} из ${nTest} дней в статистике`;
       b.append(info);
       root.querySelector('#mpc-hint').textContent =
-        'Тянуть мышью — двигать график в любую сторону, колесо — прокрутка, ⌘/Ctrl + колесо — масштаб по дням, ' +
-        'колесо над ценовой шкалой — масштаб по цене. Линиями отмечены только POC, границы value area и границы ' +
-        'диапазона дня; слева плашка первого часа (IB), стрелки — открытие и закрытие RTH.';
+        'Тянуть мышью по графику — двигать ленту, по шкале дат — растягивать и сжимать дни, по ценовой шкале — ' +
+        'растягивать и сжимать цену. Колесо — масштаб по дням (над ценовой шкалой или с Alt — по цене), Shift + колесо — ' +
+        'прокрутка. Линиями отмечены только POC, границы value area и границы диапазона дня; слева плашка первого часа ' +
+        '(IB), стрелки — открытие и закрытие RTH.';
     }
 
     // ---------------------------------------------------------------- мышь
     let hover = null, my = -1, drag = null;
     const colAt = x => view.find(c => x >= c.x && x < c.x + c.w) || null;
+    // где курсор: на ценовой шкале, на шкале дат или на самом графике
+    const zoneAt = (x, y) => x > W - AXW ? 'price' : (y > H - BOT ? 'time' : 'plot');
+    const clampW = v => Math.max(18, Math.min(280, v));
+    const clampPz = v => Math.max(1, Math.min(8, v));
+    // масштаб по дням вокруг курсора: колонка под мышью остаётся на месте
+    function zoomX(f, x){
+      const before = S.i0 + x / colW;
+      S.w = clampW(S.w * f);
+      S.i0 = before - x / S.w;
+    }
     cv.addEventListener('mousemove', e => {
       const r = cv.getBoundingClientRect(), x = e.clientX - r.left;
       my = e.clientY - r.top;
       if (drag){
-        S.i0 = drag.i + (drag.x - x) / colW;
-        if (fitHi > fitLo){
-          const dp = (my - drag.y) * (hi - lo) / (H - TOP - BOT) / (fitHi - fitLo);
-          S.py = Math.max(-.5, Math.min(drag.p + dp, 1.5));
+        if (drag.zone === 'time'){
+          // тянем шкалу дат: вправо — растянуть дни, влево — сжать
+          S.w = clampW(drag.w * Math.exp((x - drag.x) / 220));
+        } else if (drag.zone === 'price'){
+          // тянем ценовую шкалу: вверх — растянуть цену, вниз — сжать
+          S.pz = clampPz(drag.pz * Math.exp((drag.y - my) / 220));
+        } else {
+          S.i0 = drag.i + (drag.x - x) / colW;
+          if (fitHi > fitLo){
+            const dp = (my - drag.y) * (hi - lo) / (H - TOP - BOT) / (fitHi - fitLo);
+            S.py = Math.max(-.5, Math.min(drag.p + dp, 1.5));
+          }
         }
         tip.classList.remove('on'); hover = null;
         draw(); return;
       }
-      hover = x < W - AXW ? colAt(x) : null;
+      const z = zoneAt(x, my);
+      cv.style.cursor = z === 'price' ? 'ns-resize' : z === 'time' ? 'ew-resize' : '';
+      hover = z === 'plot' ? colAt(x) : null;
       if (hover){
         tip.innerHTML = cardHTML(hover);
         tip.classList.add('on');
@@ -876,19 +895,22 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
     });
     cv.addEventListener('mouseleave', () => { hover = null; my = -1; tip.classList.remove('on'); draw(); });
     cv.addEventListener('mousedown', e => { const r = cv.getBoundingClientRect();
-      drag = {x: e.clientX - r.left, y: e.clientY - r.top, i: S.i0, p: S.py};
-      cv.classList.add('drag'); tip.classList.remove('on'); });
+      const x = e.clientX - r.left, y = e.clientY - r.top;
+      drag = {x, y, zone: zoneAt(x, y), i: S.i0, p: S.py, w: S.w, pz: S.pz};
+      if (drag.zone === 'plot') cv.classList.add('drag');
+      tip.classList.remove('on'); });
     window.addEventListener('mouseup', () => { if (drag){ drag = null; cv.classList.remove('drag'); save(); } });
     cv.addEventListener('wheel', e => {
       e.preventDefault();
-      const rx = e.clientX - cv.getBoundingClientRect().left;
-      if (e.altKey || rx > W - AXW){
-        S.pz = Math.max(1, Math.min(8, S.pz * (e.deltaY < 0 ? 1.12 : 1 / 1.12)));
-      } else if (e.ctrlKey || e.metaKey){
-        S.w = Math.max(18, Math.min(280, S.w * (e.deltaY < 0 ? 1.12 : 1 / 1.12)));
+      const r = cv.getBoundingClientRect(), rx = e.clientX - r.left, ry = e.clientY - r.top;
+      // шаг мягкий: большой рывок трекпада не должен уносить пол-ленты
+      const d = Math.max(-60, Math.min(60, e.deltaY)), f = Math.exp(-d / 600);
+      if (e.shiftKey){
+        S.i0 += (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) / 40;
+      } else if (e.altKey || zoneAt(rx, ry) === 'price'){
+        S.pz = clampPz(S.pz * f);
       } else {
-        const d = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) / 40;
-        S.i0 += d * (e.shiftKey ? 5 : 1);
+        zoomX(f, Math.min(rx, W - AXW));
       }
       save(); draw();
     }, {passive: false});

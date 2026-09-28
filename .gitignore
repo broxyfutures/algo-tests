@@ -11,3 +11,4 @@ __pycache__/
 .DS_Store
 .netlify/
 **/.claude/settings.local.json
+.gstack/
