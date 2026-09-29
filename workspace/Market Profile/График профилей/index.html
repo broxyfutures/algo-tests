@@ -7,8 +7,8 @@
 <div class="theme-toggle" id="theme-toggle" role="button" tabindex="0" aria-label="Переключить тему"><span class="label" id="theme-toggle-label">Тёмная</span><div class="theme-toggle-track"><div class="theme-toggle-knob"></div></div></div>
 <div class="app">
 <nav class="crumbs"><a href="../../index.html">Тесты</a><span class="sep">/</span><a href="../index.html">Market Profile</a><span class="sep">/</span><span class="cur">График профилей</span></nav>
-<header class="hdr"><div><h1>График профилей</h1><div class="sub">ES · дневные TPO-профили и композиты, 2010-06-07 → 2026-09-15</div></div><div class="meta" id="hdr-meta"><div>Обновлено <b>2026-09-28</b></div></div></header>
-<section class="card"><table class="kv"><tr><td>Статус</td><td><span class="pill mid">инструмент</span></td></tr><tr><td>Вердикт</td><td><span class="pill ">—</span> <span class="sans" style="margin-left:8px">Смотрелка исходников: те же профили, по которым считаются тесты</span></td></tr><tr><td>Инструмент</td><td><span class="sans">ES · дневные TPO-профили и композиты, 2010-06-07 → 2026-09-15</span></td></tr><tr><td>Даты</td><td>создан 2026-09-24 · обновлён 2026-09-28</td></tr><tr><td>Источник</td><td><span class="sans">mp-es-pipeline/scripts/12_export_chart.py, данные из mp_daily / mp_daytype / mp_open / mp_composite</span></td></tr><tr><td>ID</td><td><code>mp-chart</code></td></tr></table></section>
+<header class="hdr"><div><h1>График профилей</h1><div class="sub">ES · дневные TPO-профили и композиты, 2010-06-07 → 2026-09-15</div></div><div class="meta" id="hdr-meta"><div>Обновлено <b>2026-09-29</b></div></div></header>
+<section class="card"><table class="kv"><tr><td>Статус</td><td><span class="pill mid">инструмент</span></td></tr><tr><td>Вердикт</td><td><span class="pill ">—</span> <span class="sans" style="margin-left:8px">Смотрелка исходников: те же профили, по которым считаются тесты</span></td></tr><tr><td>Инструмент</td><td><span class="sans">ES · дневные TPO-профили и композиты, 2010-06-07 → 2026-09-15</span></td></tr><tr><td>Даты</td><td>создан 2026-09-24 · обновлён 2026-09-29</td></tr><tr><td>Источник</td><td><span class="sans">mp-es-pipeline/scripts/12_export_chart.py, данные из mp_daily / mp_daytype / mp_open / mp_composite</span></td></tr><tr><td>ID</td><td><code>mp-chart</code></td></tr></table></section>
 <section class="card"><h2 class="card-title">Что это</h2><div class="prose"><p>Те самые профили, которые участвуют в тестах, нарисованные один в один по выгрузке пайплайна: буквы TPO по 30-минутным блокам, value area, POC, IB, уровни опоры и склеенные композиты. Ничего не пересчитывается на странице — цифры те же, что в таблицах тестов.</p></div></section>
 <section class="card"><h2 class="card-title">Как читать</h2><div class="prose"><div class="twrap"><table class="plain md"><thead><tr><th>Элемент</th><th>Что значит</th></tr></thead><tbody><tr><td>Буквы A…M</td><td>30-минутные блоки RTH: A = 09:30–10:00, M = 15:30–16:00</td></tr><tr><td>Тон колонки</td><td>синий — день закрылся выше открытия, розовый — ниже</td></tr><tr><td>Жирная линия</td><td>POC</td></tr><tr><td>Две линии в тон профиля</td><td>границы value area 68 %</td></tr><tr><td>Серый пунктир</td><td>границы диапазона дня, high и low</td></tr><tr><td>Плашка слева</td><td>первый час, initial balance: видно, насколько далеко день ушёл за него</td></tr><tr><td>Стрелки по краям</td><td>слева открытие RTH, справа закрытие, каждая на своём уровне</td></tr><tr><td>Широкая серая колонка</td><td>композит: склеенный профиль нескольких дней, теми же блоками, рисуется после последнего дня-участника</td></tr></tbody></table></div>
 <p>Больше на графике ничего не отмечено — всё остальное в карточке дня по наведению.</p></div></section>
@@ -16,8 +16,9 @@
 <p>Исключение одно: если уехать так далеко, что видимые дни вообще не попадают в окно (например, с 2026 года в 2010-й), кадр подбирается заново, иначе экран остался бы пустым.</p></div></section>
 <section class="card"><h2 class="card-title">Высота строки</h2><div class="prose"><p>Поле «высота строки» принимает количество тиков: <strong>4 тика = 1 пункт</strong>, 8 тиков = 2 пункта. Профиль пересобирается в браузере из цен 30-минутных блоков, POC и value area пересчитываются тем же правилом, что в пайплайне. Кнопка «как в режиме» возвращает блок, с которым считалась статистика: 2 пункта в фиксированном режиме, адаптивный блок этой недели в адаптивном.</p>
 <p>Типы дня и типы открытия в подсветке и в карточке остаются от блока пайплайна: они заморожены и от высоты строки на графике не зависят.</p></div></section>
-<section class="card"><h2 class="card-title">Управление</h2><div class="prose"><div class="twrap"><table class="plain md"><thead><tr><th>Действие</th><th>Что делает</th></tr></thead><tbody><tr><td>Тянуть мышью по графику</td><td>двигать ленту в любую сторону: и по времени, и по цене</td></tr><tr><td>Тянуть по шкале дат внизу</td><td>растягивать и сжимать дни, как в терминале</td></tr><tr><td>Тянуть по ценовой шкале справа</td><td>растягивать и сжимать цену</td></tr><tr><td>Колесо</td><td>масштаб по дням, вокруг курсора</td></tr><tr><td>Колесо над ценовой шкалой или Alt + колесо</td><td>масштаб по цене</td></tr><tr><td>Кнопка «цена по кадру»</td><td>появляется, когда масштаб задан вручную, и возвращает автоподбор</td></tr><tr><td>Shift + колесо</td><td>прокрутка по дням</td></tr><tr><td>Наведение с Ctrl или Cmd</td><td>карточка дня со всеми числами</td></tr></tbody></table></div>
-<p>Фильтры «точка открытия / тип открытия / тип дня» подсвечивают дни, которые попали бы в соответствующую ячейку теста 1; кнопка «только выбранные» сжимает ленту до них. «По блокам A-B-C» показывает каждый 30-минутный блок отдельным диапазоном, как свечки.</p></div></section>
+<section class="card"><h2 class="card-title">Управление</h2><div class="prose"><div class="twrap"><table class="plain md"><thead><tr><th>Действие</th><th>Что делает</th></tr></thead><tbody><tr><td>Тянуть мышью по графику</td><td>двигать ленту в любую сторону: и по времени, и по цене</td></tr><tr><td>Тянуть по шкале дат внизу</td><td>растягивать и сжимать дни, как в терминале</td></tr><tr><td>Тянуть по ценовой шкале справа</td><td>растягивать и сжимать цену</td></tr><tr><td>Колесо</td><td>масштаб по дням, вокруг курсора</td></tr><tr><td>Колесо над ценовой шкалой или Alt + колесо</td><td>масштаб по цене</td></tr><tr><td>Кнопка «цена по кадру»</td><td>появляется, когда масштаб задан вручную, и возвращает автоподбор</td></tr><tr><td>Shift + колесо</td><td>прокрутка по дням</td></tr><tr><td>Наведение с Ctrl или Cmd</td><td>карточка дня со всеми числами</td></tr></tbody></table></div></div></section>
+<section class="card"><h2 class="card-title">Фильтры</h2><div class="prose"><p>Три строки — точка открытия, тип открытия, тип дня — подсвечивают дни выбранной выборки. Выбирать можно <strong>сколько угодно вариантов в каждой строке</strong>: внутри строки они складываются (Trend или Normal Variation), между строками пересекаются (эти типы дня <strong>и</strong> открытие за диапазоном). «Все» сбрасывает свою строку, ссылка «сбросить» в заголовке — все три.</p>
+<p>Кнопка «только выбранные» сжимает ленту до подсвеченных дней, «По блокам A-B-C» показывает каждый 30-минутный блок отдельным диапазоном, как свечки.</p></div></section>
 <section class="card"><h2 class="card-title">Результаты</h2><div class="prose"><div class="mpc" id="mpc" data-own="mode,ref,filter"></div></div></section>
 <div class="foot">Тесты / Market Profile / График профилей</div>
 </div>
@@ -125,8 +126,10 @@
     const KEY = 'mp-chart-v3';
     // man = 1: окно цены задано трейдером и живёт в ценах, при прокрутке не пересчитывается
     const S = {m:'f', c:'0', view:'both', split:0, comp:0, hl:1, only:0, w:150, i0:0,
-               man:0, plo:0, phi:0, hgt:560, ticks:0, fz:'', fo:'', ft:''};
+               man:0, plo:0, phi:0, hgt:560, ticks:0, fz:[], fo:[], ft:[]};
     try{ Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); }catch(e){}
+    // фильтры раньше держали один код строкой — переносим в список
+    ['fz', 'fo', 'ft'].forEach(k => { if (!Array.isArray(S[k])) S[k] = S[k] ? [S[k]] : []; });
     const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} };
 
     root.innerHTML = '<div class="controls" id="mpc-ctl"></div>' +
@@ -186,15 +189,24 @@
       return p;
     }
 
+    // что подсвечиваем: свои фильтры на странице графика или выбор из таблицы теста
+    const filterNow = () => owns('filter')
+      ? {zones: S.fz, opens: S.fo, dts: S.ft}
+      : {zones: sel.zones, opens: sel.open ? [sel.open] : [], dts: sel.dt ? [sel.dt] : []};
+    const filterNames = () => { const f = filterNow();
+      return [f.zones.map(z => ZN[z]).join(', '), f.opens.map(o => ON[o]).join(', '), f.dts.map(t => TN[t]).join(', ')]
+        .filter(Boolean).join(' · '); };
+
     function matches(i){
       const d = day(i);
       if (d[F.flags] & 16) return false;                  // день не в статистике теста
-      const f = owns('filter') ? {zones: S.fz ? [S.fz] : [], open:S.fo, dt:S.ft} : sel;
-      if (!f.zones.length && !f.open && !f.dt) return true;
+      const f = filterNow();
+      if (!f.zones.length && !f.opens.length && !f.dts.length) return true;
       return (!f.zones.length || f.zones.includes(zoneOf(d)))
-        && (!f.open || typeOf(d) === f.open) && (!f.dt || d[F.dt] === f.dt);
+        && (!f.opens.length || f.opens.includes(typeOf(d)))
+        && (!f.dts.length || f.dts.includes(d[F.dt]));
     }
-    const anyFilter = () => owns('filter') ? !!(S.fz || S.fo || S.ft) : !!(sel.zones.length || sel.open || sel.dt);
+    const anyFilter = () => { const f = filterNow(); return !!(f.zones.length || f.opens.length || f.dts.length); };
 
     // колонки: дни и (если включено) склеенные профили композитов после последнего дня-участника
     let cols = [];
@@ -463,6 +475,22 @@
         b.setAttribute('aria-pressed', v === cur); b.addEventListener('click', () => cb(v)); el.appendChild(b); });
       return el;
     }
+    // мультивыбор: «Все» сбрасывает строку, остальные кнопки включаются и выключаются по одной
+    function multi(opts, cur, key){
+      const el = document.createElement('div'); el.className = 'seg';
+      const all = document.createElement('button');
+      all.textContent = 'Все'; all.setAttribute('aria-pressed', !cur.length);
+      all.addEventListener('click', () => upd(key, []));
+      el.appendChild(all);
+      opts.forEach(([v, t]) => {
+        const b = document.createElement('button'); b.textContent = t;
+        b.setAttribute('aria-pressed', cur.includes(v));
+        b.addEventListener('click', () => { const a = cur.slice(), i = a.indexOf(v);
+          i < 0 ? a.push(v) : a.splice(i, 1); upd(key, a); });
+        el.appendChild(b);
+      });
+      return el;
+    }
     function ctl(label, node){ const w = document.createElement('div'); w.className = 'ctl';
       const l = document.createElement('span'); l.className = 'ctl-label'; l.textContent = label; w.append(l, node); return w; }
     const upd = (k, v) => { S[k] = v; save(); build_cols(); controls(); draw(); };
@@ -506,15 +534,15 @@
       if (owns('filter')){
         fc.innerHTML = '';
         fc.append(
-          ctl('Точка открытия', seg([['','Все']].concat(D.zones.map(z => [z[0], z[1]])), S.fz, v => upd('fz', v))),
-          ctl('Тип открытия', seg([['','Все']].concat(D.open_types.map(o => [o[0], o[1].replace('Open-','O-')])), S.fo, v => upd('fo', v))),
-          ctl('Тип дня', seg([['','Все']].concat(D.day_types.map(t => [t[0], t[1].replace('Double-Distribution ','DD-')])), S.ft, v => upd('ft', v))));
+          ctl('Точка открытия', multi(D.zones.map(z => [z[0], z[1]]), S.fz, 'fz')),
+          ctl('Тип открытия', multi(D.open_types.map(o => [o[0], o[1].replace('Open-','O-')]), S.fo, 'fo')),
+          ctl('Тип дня', multi(D.day_types.map(t => [t[0], t[1].replace('Double-Distribution ','DD-')]), S.ft, 'ft')));
         const t = root.querySelector('#mpc-flt-t');
-        const on = [S.fz && ZN[S.fz], S.fo && ON[S.fo], S.ft && TN[S.ft]].filter(Boolean);
-        t.innerHTML = 'Какие дни подсветить' + (on.length ? ': <b>' + on.join(' · ') + '</b>' : '');
-        if (on.length){
+        const names = filterNames();
+        t.innerHTML = 'Какие дни подсветить' + (names ? ': <b>' + names + '</b>' : '');
+        if (names){
           const r = document.createElement('button'); r.className = 'mpc-reset'; r.textContent = 'сбросить';
-          r.addEventListener('click', () => { S.fz = S.fo = S.ft = ''; save(); build_cols(); controls(); draw(); });
+          r.addEventListener('click', () => { S.fz = []; S.fo = []; S.ft = []; save(); build_cols(); controls(); draw(); });
           t.appendChild(r);
         }
       }
@@ -553,9 +581,7 @@
         () => document.fullscreenElement === stage ? document.exitFullscreen() : stage.requestFullscreen()));
       const gap = document.createElement('div'); gap.className = 'gap'; b.append(gap);
       const info = document.createElement('div'); info.className = 'mpc-sel';
-      const selName = owns('filter')
-        ? [S.fz && ZN[S.fz], S.fo && ON[S.fo], S.ft && TN[S.ft]].filter(Boolean).join(' · ') || 'все дни'
-        : (sel.label || 'все дни');
+      const selName = owns('filter') ? (filterNames() || 'все дни') : (sel.label || 'все дни');
       const on = cols.filter(c => c.t === 'd' && c.on).length;
       info.innerHTML = `подсветка: <b>${selName}</b> · ${on} из ${nTest} дней в статистике`;
       b.append(info);

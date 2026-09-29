@@ -442,8 +442,10 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
     const KEY = 'mp-chart-v3';
     // man = 1: окно цены задано трейдером и живёт в ценах, при прокрутке не пересчитывается
     const S = {m:'f', c:'0', view:'both', split:0, comp:0, hl:1, only:0, w:150, i0:0,
-               man:0, plo:0, phi:0, hgt:560, ticks:0, fz:'', fo:'', ft:''};
+               man:0, plo:0, phi:0, hgt:560, ticks:0, fz:[], fo:[], ft:[]};
     try{ Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); }catch(e){}
+    // фильтры раньше держали один код строкой — переносим в список
+    ['fz', 'fo', 'ft'].forEach(k => { if (!Array.isArray(S[k])) S[k] = S[k] ? [S[k]] : []; });
     const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} };
 
     root.innerHTML = '<div class="controls" id="mpc-ctl"></div>' +
@@ -503,15 +505,24 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
       return p;
     }
 
+    // что подсвечиваем: свои фильтры на странице графика или выбор из таблицы теста
+    const filterNow = () => owns('filter')
+      ? {zones: S.fz, opens: S.fo, dts: S.ft}
+      : {zones: sel.zones, opens: sel.open ? [sel.open] : [], dts: sel.dt ? [sel.dt] : []};
+    const filterNames = () => { const f = filterNow();
+      return [f.zones.map(z => ZN[z]).join(', '), f.opens.map(o => ON[o]).join(', '), f.dts.map(t => TN[t]).join(', ')]
+        .filter(Boolean).join(' · '); };
+
     function matches(i){
       const d = day(i);
       if (d[F.flags] & 16) return false;                  // день не в статистике теста
-      const f = owns('filter') ? {zones: S.fz ? [S.fz] : [], open:S.fo, dt:S.ft} : sel;
-      if (!f.zones.length && !f.open && !f.dt) return true;
+      const f = filterNow();
+      if (!f.zones.length && !f.opens.length && !f.dts.length) return true;
       return (!f.zones.length || f.zones.includes(zoneOf(d)))
-        && (!f.open || typeOf(d) === f.open) && (!f.dt || d[F.dt] === f.dt);
+        && (!f.opens.length || f.opens.includes(typeOf(d)))
+        && (!f.dts.length || f.dts.includes(d[F.dt]));
     }
-    const anyFilter = () => owns('filter') ? !!(S.fz || S.fo || S.ft) : !!(sel.zones.length || sel.open || sel.dt);
+    const anyFilter = () => { const f = filterNow(); return !!(f.zones.length || f.opens.length || f.dts.length); };
 
     // колонки: дни и (если включено) склеенные профили композитов после последнего дня-участника
     let cols = [];
@@ -780,6 +791,22 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
         b.setAttribute('aria-pressed', v === cur); b.addEventListener('click', () => cb(v)); el.appendChild(b); });
       return el;
     }
+    // мультивыбор: «Все» сбрасывает строку, остальные кнопки включаются и выключаются по одной
+    function multi(opts, cur, key){
+      const el = document.createElement('div'); el.className = 'seg';
+      const all = document.createElement('button');
+      all.textContent = 'Все'; all.setAttribute('aria-pressed', !cur.length);
+      all.addEventListener('click', () => upd(key, []));
+      el.appendChild(all);
+      opts.forEach(([v, t]) => {
+        const b = document.createElement('button'); b.textContent = t;
+        b.setAttribute('aria-pressed', cur.includes(v));
+        b.addEventListener('click', () => { const a = cur.slice(), i = a.indexOf(v);
+          i < 0 ? a.push(v) : a.splice(i, 1); upd(key, a); });
+        el.appendChild(b);
+      });
+      return el;
+    }
     function ctl(label, node){ const w = document.createElement('div'); w.className = 'ctl';
       const l = document.createElement('span'); l.className = 'ctl-label'; l.textContent = label; w.append(l, node); return w; }
     const upd = (k, v) => { S[k] = v; save(); build_cols(); controls(); draw(); };
@@ -823,15 +850,15 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
       if (owns('filter')){
         fc.innerHTML = '';
         fc.append(
-          ctl('Точка открытия', seg([['','Все']].concat(D.zones.map(z => [z[0], z[1]])), S.fz, v => upd('fz', v))),
-          ctl('Тип открытия', seg([['','Все']].concat(D.open_types.map(o => [o[0], o[1].replace('Open-','O-')])), S.fo, v => upd('fo', v))),
-          ctl('Тип дня', seg([['','Все']].concat(D.day_types.map(t => [t[0], t[1].replace('Double-Distribution ','DD-')])), S.ft, v => upd('ft', v))));
+          ctl('Точка открытия', multi(D.zones.map(z => [z[0], z[1]]), S.fz, 'fz')),
+          ctl('Тип открытия', multi(D.open_types.map(o => [o[0], o[1].replace('Open-','O-')]), S.fo, 'fo')),
+          ctl('Тип дня', multi(D.day_types.map(t => [t[0], t[1].replace('Double-Distribution ','DD-')]), S.ft, 'ft')));
         const t = root.querySelector('#mpc-flt-t');
-        const on = [S.fz && ZN[S.fz], S.fo && ON[S.fo], S.ft && TN[S.ft]].filter(Boolean);
-        t.innerHTML = 'Какие дни подсветить' + (on.length ? ': <b>' + on.join(' · ') + '</b>' : '');
-        if (on.length){
+        const names = filterNames();
+        t.innerHTML = 'Какие дни подсветить' + (names ? ': <b>' + names + '</b>' : '');
+        if (names){
           const r = document.createElement('button'); r.className = 'mpc-reset'; r.textContent = 'сбросить';
-          r.addEventListener('click', () => { S.fz = S.fo = S.ft = ''; save(); build_cols(); controls(); draw(); });
+          r.addEventListener('click', () => { S.fz = []; S.fo = []; S.ft = []; save(); build_cols(); controls(); draw(); });
           t.appendChild(r);
         }
       }
@@ -870,9 +897,7 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
         () => document.fullscreenElement === stage ? document.exitFullscreen() : stage.requestFullscreen()));
       const gap = document.createElement('div'); gap.className = 'gap'; b.append(gap);
       const info = document.createElement('div'); info.className = 'mpc-sel';
-      const selName = owns('filter')
-        ? [S.fz && ZN[S.fz], S.fo && ON[S.fo], S.ft && TN[S.ft]].filter(Boolean).join(' · ') || 'все дни'
-        : (sel.label || 'все дни');
+      const selName = owns('filter') ? (filterNames() || 'все дни') : (sel.label || 'все дни');
       const on = cols.filter(c => c.t === 'd' && c.on).length;
       info.innerHTML = `подсветка: <b>${selName}</b> · ${on} из ${nTest} дней в статистике`;
       b.append(info);
