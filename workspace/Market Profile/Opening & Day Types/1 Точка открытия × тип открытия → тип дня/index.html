@@ -385,7 +385,11 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
 .mpc .mpc-flt-t{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:10px}
 .mpc .mpc-flt-t b{color:var(--t2);font-weight:500}
 .mpc .mpc-flt-t .mpc-reset{margin-left:10px;font:inherit;font-size:10px;letter-spacing:.06em;text-transform:none;color:var(--t3);background:none;border:none;border-bottom:1px solid var(--border-2);padding:0 0 1px;cursor:pointer}
-.mpc .mpc-flt-t .mpc-reset:hover{color:var(--t1);border-color:var(--border-hi)}`;
+.mpc .mpc-flt-t .mpc-reset:hover{color:var(--t1);border-color:var(--border-hi)}
+.mpc .mpc-test .ctl-label{color:#e5484d}
+.mpc .mpc-test .seg{border-color:#e5484d}
+.mpc .mpc-test .seg button[aria-pressed="true"]{color:#fff;background:#e5484d;box-shadow:none}
+.mpc .mpc-test-note{margin-top:8px;font-size:11px;color:#e5484d;font-family:var(--mono)}`;
   document.head.appendChild(ST);
 
   const A_Z = 'ABCDEFGHIJKLM';
@@ -441,7 +445,7 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
     const KEY = 'mp-chart-v3';
     // man = 1: окно цены задано трейдером и живёт в ценах, при прокрутке не пересчитывается
     const S = {m:'f', c:'0', view:'both', split:0, comp:0, hl:1, only:0, w:150, i0:0,
-               man:0, plo:0, phi:0, hgt:560, ticks:0, fz:'', fo:'', ft:''};
+               man:0, plo:0, phi:0, hgt:560, ticks:0, fz:'', fo:'', ft:'', test:0};
     try{ Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); }catch(e){}
     const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} };
 
@@ -449,7 +453,8 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
       '<div class="mpc-flt" id="mpc-flt" hidden><div class="mpc-flt-t" id="mpc-flt-t"></div>' +
       '<div class="controls" id="mpc-flt-c"></div></div>' +
       '<div class="mpc-stage" id="mpc-stage"><canvas id="mpc-cv"></canvas><div class="mpc-tip" id="mpc-tip"></div></div>' +
-      '<div class="mpc-bar" id="mpc-bar"></div><div class="mpc-hint" id="mpc-hint"></div>';
+      '<div class="mpc-bar" id="mpc-bar"></div><div class="mpc-test-note" id="mpc-test-note"></div>' +
+      '<div class="mpc-hint" id="mpc-hint"></div>';
     const stage = root.querySelector('#mpc-stage'), cv = root.querySelector('#mpc-cv');
     const tip = root.querySelector('#mpc-tip'), ctx = cv.getContext('2d');
 
@@ -472,6 +477,11 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
     const refOf  = d => S.c === '0' ? d[F.ref0] : d[F.ref1];
     let sel = {zones:[], open:'', dt:'', label:''};   // что подсвечиваем (приходит из таблицы теста)
     const nTest = D.modes.f.days.filter(d => !(d[F.flags] & 16)).length;
+    // диагностический слой: кандидаты в Trend по закрытию блока J (scripts/13_export_trend_test.py).
+    // В статистику не входит, живёт отдельным файлом; выключается удалением этого блока и файла.
+    const TEST = window.MPTREND_TEST || null;
+    const testSet = TEST ? new Set(TEST.days.map(x => D.dates.indexOf(x)).filter(i => i >= 0)) : null;
+    const testOn = () => !!(TEST && S.test);
 
     // высота строки: своя (в тиках) либо та, с которой считался пайплайн
     const rowOf = d => S.ticks ? S.ticks * TICK : d[F.row];
@@ -504,13 +514,14 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
 
     function matches(i){
       const d = day(i);
+      if (testOn()) return testSet.has(i);                // режим «тест»: только дни эксперимента
       if (d[F.flags] & 16) return false;                  // день не в статистике теста
       const f = owns('filter') ? {zones: S.fz ? [S.fz] : [], open:S.fo, dt:S.ft} : sel;
       if (!f.zones.length && !f.open && !f.dt) return true;
       return (!f.zones.length || f.zones.includes(zoneOf(d)))
         && (!f.open || typeOf(d) === f.open) && (!f.dt || d[F.dt] === f.dt);
     }
-    const anyFilter = () => owns('filter') ? !!(S.fz || S.fo || S.ft) : !!(sel.zones.length || sel.open || sel.dt);
+    const anyFilter = () => testOn() || (owns('filter') ? !!(S.fz || S.fo || S.ft) : !!(sel.zones.length || sel.open || sel.dt));
 
     // колонки: дни и (если включено) склеенные профили композитов после последнего дня-участника
     let cols = [];
@@ -669,6 +680,10 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
       hline(x0, colW, p.lv.val, rgba(hue, .6 * a), 1, true);
       hline(x0, colW, p.lv.poc + row / 2, rgba(hue, .95 * a), 1.6, true);
 
+      if (testSet && testSet.has(c.i)){
+        ctx.fillStyle = `rgba(229,72,77,${(dim ? .25 : .9).toFixed(2)})`;
+        ctx.fillRect(x0 + 2, TOP + 2, colW - 4, 3);
+      }
       if (colW >= 34){
         // плашка начального баланса и стрелки открытия / закрытия RTH: приглушены, чтобы не спорить с профилем
         ctx.fillStyle = rgba(C.t1, .3 * a);
@@ -816,6 +831,11 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
         ctl('Подсветка', seg([[1,'Выбранные ярче'], [0,'Выкл']], S.hl, v => upd('hl', v))),
         ctl('Лента', seg([[0,'Все дни'], [1,'Только выбранные']], S.only, v => upd('only', v))));
 
+      if (TEST && owns('filter')){
+        const w = ctl('Тест', seg([[0,'Выкл'], [1,'Показать']], S.test, v => upd('test', v)));
+        w.className = 'ctl mpc-test'; host.append(w);
+      }
+
       // фильтры дней живут отдельным блоком: это не настройки вида, а выбор выборки
       const flt = root.querySelector('#mpc-flt'), fc = root.querySelector('#mpc-flt-c');
       flt.hidden = !owns('filter');
@@ -869,12 +889,16 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;min-wid
         () => document.fullscreenElement === stage ? document.exitFullscreen() : stage.requestFullscreen()));
       const gap = document.createElement('div'); gap.className = 'gap'; b.append(gap);
       const info = document.createElement('div'); info.className = 'mpc-sel';
-      const selName = owns('filter')
+      const selName = testOn() ? 'тест: ' + TEST.name
+        : owns('filter')
         ? [S.fz && ZN[S.fz], S.fo && ON[S.fo], S.ft && TN[S.ft]].filter(Boolean).join(' · ') || 'все дни'
         : (sel.label || 'все дни');
       const on = cols.filter(c => c.t === 'd' && c.on).length;
-      info.innerHTML = `подсветка: <b>${selName}</b> · ${on} из ${nTest} дней в статистике`;
+      info.innerHTML = testOn() ? `подсветка: <b>${selName}</b> · ${on} дней` 
+        : `подсветка: <b>${selName}</b> · ${on} из ${nTest} дней в статистике`;
       b.append(info);
+      const tn = root.querySelector('#mpc-test-note');
+      if (tn) tn.textContent = testOn() ? `тест: ${TEST.name} · ${TEST.days.length} дней · ${TEST.note}` : '';
       root.querySelector('#mpc-hint').textContent =
         'Тянуть мышью по графику — двигать ленту, по шкале дат — растягивать и сжимать дни, по ценовой шкале — ' +
         'растягивать и сжимать цену. Колесо — масштаб по дням (над ценовой шкалой или с Alt — по цене), Shift + колесо — ' +

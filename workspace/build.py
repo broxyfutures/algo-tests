@@ -356,7 +356,7 @@ RENDERERS = {
     "mp_open_matrix": {"mount": mount_mp_open_matrix, "extra": None, "js": "mp_open_matrix.js", "needs_results": True,
                        "pre": pre_mp_chart, "js_extra": ["mp_chart.js"], "data_js": "mp_chart_data.js"},
     "mp_chart": {"mount": mount_mp_chart_page, "extra": None, "js": None, "needs_results": False,
-                 "js_extra": ["mp_chart.js"], "data_js": "mp_chart_data.js"},
+                 "js_extra": ["mp_chart.js"], "data_js": ["mp_chart_data.js", "mp_trend_test.js"]},
 }
 
 
@@ -395,8 +395,8 @@ def render_test(folder: Path, depth: int, crumbs: list[str]) -> tuple[str, dict]
             parts.append(r["extra"](meta))
 
     sc = []
-    if r.get("data_js"):
-        sc.append(f'<script src="{rel(depth)}assets/data/{r["data_js"]}" defer></script>')
+    for name in ([r["data_js"]] if isinstance(r.get("data_js"), str) else r.get("data_js") or []):
+        sc.append(f'<script src="{rel(depth)}assets/data/{name}" defer></script>')
     if r["js"]:
         js = (WS / "assets" / "renderers" / r["js"]).read_text(encoding="utf-8")
         sc.append(f"<script>window.DATA = {results_text};</script>\n<script>\n{js}\n</script>")
