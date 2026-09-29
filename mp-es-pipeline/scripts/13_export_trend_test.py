@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-Шаг 13 (диагностика, вне цепочки тестов). Кандидаты в Trend, если закрытие считать по блоку J.
+Шаг 13 (диагностика, вне цепочки тестов). Что будет с Trend, если закрытие мерить по блоку J.
 
-Ничего в классификаторе не меняет и в статистику не входит: скрипт только читает derived-файлы и
-выгружает список дней, которые стали бы трендовыми при обсуждаемом правиле «закрытие блока J в
-крайних 25 % диапазона, сложившегося к 14:00» — и при этом сейчас трендовыми не считаются.
+Сценарий B: закрытие блока J (13:30–14:00) в крайних 25 % **итогового диапазона дня** вместо
+закрытия блока M. Ничего в классификаторе не меняет и в статистику не входит: скрипт только читает
+derived-файлы и выгружает две группы дней — которые при таком правиле стали бы трендовыми
+(«добавятся») и которые перестали бы ими быть («отвалятся»).
 
 Выход: workspace/assets/data/mp_trend_test.js — красный тумблер «тест» на странице графика.
 Чтобы отменить эксперимент, достаточно удалить этот скрипт, файл данных и блок тумблера в
@@ -44,7 +45,7 @@ def main() -> int:
     for c in ("tf_viol_up", "tf_viol_down"):
         d[c] = pd.to_numeric(d[c])
 
-    rows = []
+    add, drop = [], []
     for r in d.itertuples():
         if r.re_up == r.re_down or r.dd:
             continue
@@ -55,42 +56,45 @@ def main() -> int:
         if len(lo) < J:
             continue
         d_lo, d_hi = lo.min(), hi.max()
-        j_lo, j_hi = lo[:J].min(), hi[:J].max()
-        pos = lambda c, a, b: (c - a) / (b - a) if b > a else 0.5  # noqa: E731
+        pos = lambda c: (c - d_lo) / (d_hi - d_lo) if d_hi > d_lo else 0.5  # noqa: E731
         z = C.TREND_CLOSE_ZONE
         ok = lambda p: p >= 1 - z if up else p <= z  # noqa: E731
-        p_j, p_m = pos(cl[J - 1], j_lo, j_hi), pos(cl[-1], d_lo, d_hi)
-        if ok(p_j) and not ok(p_m):  # прошёл бы по J, но не проходит по M — то есть новый день
-            rows.append({
-                "date": r.date.date().isoformat(),
-                "dir": "up" if up else "down",
-                "range": round(float(d_hi - d_lo), 2),
-                "range_j": round(float(j_hi - j_lo), 2),
-                "close_j_pos": round(p_j if up else 1 - p_j, 3),
-                "close_m_pos": round(p_m if up else 1 - p_m, 3),
-                "day_type": r.day_type,
-            })
+        p_j, p_m = pos(cl[J - 1]), pos(cl[-1])       # обе доли от итогового диапазона дня
+        rec = {
+            "date": r.date.date().isoformat(),
+            "dir": "up" if up else "down",
+            "range": round(float(d_hi - d_lo), 2),
+            "close_j_pos": round(p_j if up else 1 - p_j, 3),
+            "close_m_pos": round(p_m if up else 1 - p_m, 3),
+            "day_type": r.day_type,
+        }
+        if ok(p_j) and not ok(p_m):
+            add.append(rec)          # стал бы Trend: к 14:00 у края, к закрытию отошёл
+        elif ok(p_m) and not ok(p_j):
+            drop.append(rec)         # сейчас Trend, но к 14:00 у края ещё не был
 
-    t = pd.DataFrame(rows)
+    ta, td = pd.DataFrame(add), pd.DataFrame(drop)
     CSV.parent.mkdir(parents=True, exist_ok=True)
-    t.to_csv(CSV, index=False)
+    pd.concat([ta.assign(group="add"), td.assign(group="drop")]).to_csv(CSV, index=False)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "built": date.today().isoformat(),
-        "name": "кандидаты Trend по закрытию блока J",
-        "note": "день прошёл бы в Trend, если мерить закрытие по блоку J и диапазону A…J; сейчас не Trend",
-        "days": t.date.tolist(),
+        "name": "сценарий B: закрытие блока J в крайних 25 % диапазона дня",
+        "add": {"label": "добавятся", "note": "стали бы Trend: к 14:00 закрытие у края, к 16:00 отошло",
+                "days": ta.date.tolist()},
+        "drop": {"label": "отвалятся", "note": "сейчас Trend, но к 14:00 закрытие ещё не было у края",
+                 "days": td.date.tolist()},
     }
     OUT.write_text(
         "// Диагностическая выгрузка scripts/13_export_trend_test.py. В статистику не входит.\n"
         f"window.MPTREND_TEST={json.dumps(payload, ensure_ascii=False, separators=(',', ':'))};\n"
         "window.dispatchEvent(new Event('mptrend-test'));\n", encoding="utf-8")
 
-    print(f"дней-кандидатов: {len(t)} (вверх {int((t.dir == 'up').sum())} / вниз {int((t.dir == 'down').sum())})")
-    print(f"медиана закрытия по тренду: к 14:00 {t.close_j_pos.median():.0%} диапазона A…J, "
-          f"к 16:00 {t.close_m_pos.median():.0%} диапазона дня")
-    print(f"ушли к 16:00 на другую половину дня: {int((t.close_m_pos < 0.5).sum())}")
-    print(f"по годам: {t.date.str[:4].value_counts().sort_index().to_dict()}")
+    for lbl, t in (("добавятся", ta), ("отвалятся", td)):
+        print(f"{lbl}: {len(t)} дней (вверх {int((t.dir == 'up').sum())} / вниз {int((t.dir == 'down').sum())}), "
+              f"закрытие по тренду: к 14:00 {t.close_j_pos.median():.0%}, к 16:00 {t.close_m_pos.median():.0%}")
+    print(f"добавятся, ушли к 16:00 за середину дня: {int((ta.close_m_pos < 0.5).sum())}")
+    print(f"по годам (добавятся): {ta.date.str[:4].value_counts().sort_index().to_dict()}")
     print(f"\n{CSV}\n{OUT}")
     return 0
 

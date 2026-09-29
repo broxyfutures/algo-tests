@@ -138,8 +138,10 @@
     // диагностический слой: кандидаты в Trend по закрытию блока J (scripts/13_export_trend_test.py).
     // В статистику не входит, живёт отдельным файлом; выключается удалением этого блока и файла.
     const TEST = window.MPTREND_TEST || null;
-    const testSet = TEST ? new Set(TEST.days.map(x => D.dates.indexOf(x)).filter(i => i >= 0)) : null;
-    const testOn = () => !!(TEST && S.test);
+    const idxOf = list => new Set(list.map(x => D.dates.indexOf(x)).filter(i => i >= 0));
+    const testSets = TEST ? {add: idxOf(TEST.add.days), drop: idxOf(TEST.drop.days)} : null;
+    const testOn = () => !!(TEST && S.test && testSets[S.test]);
+    const testSet = () => testOn() ? testSets[S.test] : null;
 
     // высота строки: своя (в тиках) либо та, с которой считался пайплайн
     const rowOf = d => S.ticks ? S.ticks * TICK : d[F.row];
@@ -172,7 +174,7 @@
 
     function matches(i){
       const d = day(i);
-      if (testOn()) return testSet.has(i);                // режим «тест»: только дни эксперимента
+      if (testOn()) return testSet().has(i);              // режим «тест»: только дни эксперимента
       if (d[F.flags] & 16) return false;                  // день не в статистике теста
       const f = owns('filter') ? {zones: S.fz ? [S.fz] : [], open:S.fo, dt:S.ft} : sel;
       if (!f.zones.length && !f.open && !f.dt) return true;
@@ -338,7 +340,7 @@
       hline(x0, colW, p.lv.val, rgba(hue, .6 * a), 1, true);
       hline(x0, colW, p.lv.poc + row / 2, rgba(hue, .95 * a), 1.6, true);
 
-      if (testSet && testSet.has(c.i)){
+      if (testOn() && testSet().has(c.i)){
         ctx.fillStyle = `rgba(229,72,77,${(dim ? .25 : .9).toFixed(2)})`;
         ctx.fillRect(x0 + 2, TOP + 2, colW - 4, 3);
       }
@@ -490,7 +492,8 @@
         ctl('Лента', seg([[0,'Все дни'], [1,'Только выбранные']], S.only, v => upd('only', v))));
 
       if (TEST && owns('filter')){
-        const w = ctl('Тест', seg([[0,'Выкл'], [1,'Показать']], S.test, v => upd('test', v)));
+        const w = ctl('Тест', seg([[0, 'Выкл'], ['add', TEST.add.label], ['drop', TEST.drop.label]],
+                                  S.test, v => upd('test', v)));
         w.className = 'ctl mpc-test'; host.append(w);
       }
 
@@ -547,7 +550,7 @@
         () => document.fullscreenElement === stage ? document.exitFullscreen() : stage.requestFullscreen()));
       const gap = document.createElement('div'); gap.className = 'gap'; b.append(gap);
       const info = document.createElement('div'); info.className = 'mpc-sel';
-      const selName = testOn() ? 'тест: ' + TEST.name
+      const selName = testOn() ? 'тест · ' + TEST[S.test].label
         : owns('filter')
         ? [S.fz && ZN[S.fz], S.fo && ON[S.fo], S.ft && TN[S.ft]].filter(Boolean).join(' · ') || 'все дни'
         : (sel.label || 'все дни');
@@ -556,7 +559,9 @@
         : `подсветка: <b>${selName}</b> · ${on} из ${nTest} дней в статистике`;
       b.append(info);
       const tn = root.querySelector('#mpc-test-note');
-      if (tn) tn.textContent = testOn() ? `тест: ${TEST.name} · ${TEST.days.length} дней · ${TEST.note}` : '';
+      if (tn) tn.textContent = testOn()
+        ? `тест · ${TEST.name} · ${TEST[S.test].label}: ${TEST[S.test].days.length} дней — ${TEST[S.test].note}`
+        : '';
       root.querySelector('#mpc-hint').textContent =
         'Тянуть мышью по графику — двигать ленту, по шкале дат — растягивать и сжимать дни, по ценовой шкале — ' +
         'растягивать и сжимать цену. Колесо — масштаб по дням (над ценовой шкалой или с Alt — по цене), Shift + колесо — ' +
