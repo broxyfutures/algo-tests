@@ -356,7 +356,7 @@ RENDERERS = {
     "mp_open_matrix": {"mount": mount_mp_open_matrix, "extra": None, "js": "mp_open_matrix.js", "needs_results": True,
                        "pre": pre_mp_chart, "js_extra": ["mp_chart.js"], "data_js": "mp_chart_data.js"},
     "mp_chart": {"mount": mount_mp_chart_page, "extra": None, "js": None, "needs_results": False,
-                 "js_extra": ["mp_chart.js"], "data_js": ["mp_chart_data.js", "mp_trend_test.js"]},
+                 "js_extra": ["mp_chart.js"], "data_js": "mp_chart_data.js"},
 }
 
 
