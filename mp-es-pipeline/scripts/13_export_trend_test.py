@@ -4,8 +4,7 @@
 
 Сценарий B: закрытие блока J (13:30–14:00) в крайних 25 % **итогового диапазона дня** вместо
 закрытия блока M. Ничего в классификаторе не меняет и в статистику не входит: скрипт только читает
-derived-файлы и выгружает две группы дней — которые при таком правиле стали бы трендовыми
-(«добавятся») и которые перестали бы ими быть («отвалятся»).
+derived-файлы и выгружает список дней, которые были бы трендовыми при таком правиле.
 
 Выход: workspace/assets/data/mp_trend_test.js — красный тумблер «тест» на странице графика.
 Чтобы отменить эксперимент, достаточно удалить этот скрипт, файл данных и блок тумблера в
@@ -45,7 +44,7 @@ def main() -> int:
     for c in ("tf_viol_up", "tf_viol_down"):
         d[c] = pd.to_numeric(d[c])
 
-    add, drop = [], []
+    rows = []
     for r in d.itertuples():
         if r.re_up == r.re_down or r.dd:
             continue
@@ -59,42 +58,38 @@ def main() -> int:
         pos = lambda c: (c - d_lo) / (d_hi - d_lo) if d_hi > d_lo else 0.5  # noqa: E731
         z = C.TREND_CLOSE_ZONE
         ok = lambda p: p >= 1 - z if up else p <= z  # noqa: E731
-        p_j, p_m = pos(cl[J - 1]), pos(cl[-1])       # обе доли от итогового диапазона дня
-        rec = {
+        p_j, p_m = pos(cl[J - 1]), pos(cl[-1])
+        if not ok(p_j):
+            continue                     # по новому правилу это не Trend
+        rows.append({
             "date": r.date.date().isoformat(),
             "dir": "up" if up else "down",
             "range": round(float(d_hi - d_lo), 2),
             "close_j_pos": round(p_j if up else 1 - p_j, 3),
             "close_m_pos": round(p_m if up else 1 - p_m, 3),
-            "day_type": r.day_type,
-        }
-        if ok(p_j) and not ok(p_m):
-            add.append(rec)          # стал бы Trend: к 14:00 у края, к закрытию отошёл
-        elif ok(p_m) and not ok(p_j):
-            drop.append(rec)         # сейчас Trend, но к 14:00 у края ещё не был
+            "trend_now": r.day_type == "trend",
+        })
 
-    ta, td = pd.DataFrame(add), pd.DataFrame(drop)
+    t = pd.DataFrame(rows)
     CSV.parent.mkdir(parents=True, exist_ok=True)
-    pd.concat([ta.assign(group="add"), td.assign(group="drop")]).to_csv(CSV, index=False)
+    t.to_csv(CSV, index=False)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "built": date.today().isoformat(),
-        "name": "сценарий B: закрытие блока J в крайних 25 % диапазона дня",
-        "add": {"label": "добавятся", "note": "стали бы Trend: к 14:00 закрытие у края, к 16:00 отошло",
-                "days": ta.date.tolist()},
-        "drop": {"label": "отвалятся", "note": "сейчас Trend, но к 14:00 закрытие ещё не было у края",
-                 "days": td.date.tolist()},
+        "name": "Trend по новым критериям",
+        "note": "закрытие блока J (14:00) в крайних 25 % диапазона дня вместо закрытия в 16:00",
+        "days": t.date.tolist(),
     }
     OUT.write_text(
         "// Диагностическая выгрузка scripts/13_export_trend_test.py. В статистику не входит.\n"
         f"window.MPTREND_TEST={json.dumps(payload, ensure_ascii=False, separators=(',', ':'))};\n"
         "window.dispatchEvent(new Event('mptrend-test'));\n", encoding="utf-8")
 
-    for lbl, t in (("добавятся", ta), ("отвалятся", td)):
-        print(f"{lbl}: {len(t)} дней (вверх {int((t.dir == 'up').sum())} / вниз {int((t.dir == 'down').sum())}), "
-              f"закрытие по тренду: к 14:00 {t.close_j_pos.median():.0%}, к 16:00 {t.close_m_pos.median():.0%}")
-    print(f"добавятся, ушли к 16:00 за середину дня: {int((ta.close_m_pos < 0.5).sum())}")
-    print(f"по годам (добавятся): {ta.date.str[:4].value_counts().sort_index().to_dict()}")
+    now = int(t.trend_now.sum())
+    print(f"дней по новому правилу: {len(t)} (вверх {int((t.dir == 'up').sum())} / вниз {int((t.dir == 'down').sum())})")
+    print(f"   из них уже Trend сейчас: {now}, новых: {len(t) - now}")
+    print(f"   медиана закрытия по тренду: к 14:00 {t.close_j_pos.median():.0%}, к 16:00 {t.close_m_pos.median():.0%}")
+    print(f"   по годам: {t.date.str[:4].value_counts().sort_index().to_dict()}")
     print(f"\n{CSV}\n{OUT}")
     return 0
 
