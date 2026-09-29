@@ -71,10 +71,10 @@ R20_DAYS = 20
 # Типы дня (mp/daytype.py), по Mind Over Markets, гл. 2
 RE_TOL = 0.20                 # выход за IB считается, если больше 20 % ширины IB
 IB_NARROW = 0.40              # узкий IB: ширина < 0.4 × R20 (Nontrend против Normal)
-TREND_MIN_EXT = 1.0           # Trend: выход в одну сторону ≥ 1 IB
 TREND_MAX_TPO = 5             # пометка thin_profile (не условие): ни в одной строке больше 5 TPO
-TREND_MAX_VIOL = 1            # Trend: от выхода за IB до экстремума дня не больше 1 блока, зашедшего за экстремум предыдущего
-TREND_CLOSE_ZONE = 0.20       # Trend: закрытие в крайних 20 % диапазона по тренду
+TREND_TF_LOOKBACK = 2         # Trend: блок сравнивается с минимумом (максимумом) стольких предыдущих блоков
+TREND_MAX_VIOL = 0            # Trend: столько нарушений правила блоков прощается (допуск уже внутри правила)
+TREND_CLOSE_ZONE = 0.25       # Trend: закрытие в крайних 25 % диапазона по тренду
 DD_MIN_SHARE = 0.25           # Double-Distribution: в каждой области ≥ 25 % TPO
 NEUTRAL_EXTREME_ZONE = 0.20   # Neutral-Extreme: закрытие в крайних 20 % диапазона
 
