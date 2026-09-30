@@ -454,8 +454,9 @@ def render_section(folder: Path, depth: int, crumbs: list[str], children: list[d
                 f'<div class="tcard-name">{esc(m.get("title") or c["name"])}</div><div class="tcard-sub">{esc(sub)}</div></a>'
             )
         if depth == 0:
-            # плитка «+»: место под следующий инструмент (новая папка в workspace)
-            cards.append('<div class="tcard tplus" title="Новый инструмент: папка в workspace с index.md">+</div>')
+            # плитка «+»: новый проект начинается в Claude Code
+            cards.append('<a class="tcard tplus" href="https://claude.ai/code" target="_blank" rel="noopener" '
+                         'title="Новый проект в Claude Code">+</a>')
             parts.append('<div class="tools-panel"><div class="cards tools">' + "".join(cards) + "</div></div>")
         else:
             parts.append('<h2 class="cards-title">Тесты</h2>')
