@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Правила</title>
+<script>try{if(localStorage.getItem("algo-tests-theme")==="light")document.documentElement.setAttribute("data-theme","light")}catch(e){}</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../../assets/style.css"></head>
+<body>
+<div class="theme-toggle" id="theme-toggle" role="button" tabindex="0" aria-label="Переключить тему"><span class="label" id="theme-toggle-label">Тёмная</span><div class="theme-toggle-track"><div class="theme-toggle-knob"></div></div></div>
+<div class="app">
+<nav class="crumbs"><a href="../../../index.html">Algo Tests</a><span class="sep">/</span><a href="../../index.html">Market Profile</a><span class="sep">/</span><a href="../index.html">Место и тип открытия → тип дня</a><span class="sep">/</span><span class="cur">Правила</span></nav>
+<header class="hdr"><div><h1>Правила</h1></div><div class="meta" id="hdr-meta"></div></header>
+<section class="card"><h2 class="card-title">Идея</h2><div class="prose"><p>По Далтону место открытия и поведение цены в первый час уже подсказывают, каким будет день. Вопрос теста: с какой вероятностью формируется каждый тип дня при данной точке открытия и данном типе открытия.</p>
+<p>Выборка: полные дни 2010–2026, без укороченных и без дней без опоры.</p></div></section>
+<section class="card"><h2 class="card-title">Опора</h2><div class="prose"><p>VA, high и low вчерашнего профиля. Переключатель «Опора: композит»: открытый композит от 2 дней, если он есть. Переключатель «Normal Variation: исключить» убирает эти дни из выборки, остальные типы делят 100 % между собой.</p></div></section>
+<section class="card"><h2 class="card-title">Точка открытия</h2><div class="prose"><p>Цена 09:30 относительно опоры.</p>
+<div class="twrap"><table class="plain md"><thead><tr><th>Зона</th><th>Где открылись</th></tr></thead><tbody><tr><td>выше диапазона</td><td>выше вчерашнего high</td></tr><tr><td>выше VA, в диапазоне</td><td>между VAH и high</td></tr><tr><td>внутри VA</td><td>между VAL и VAH</td></tr><tr><td>ниже VA, в диапазоне</td><td>между low и VAL</td></tr><tr><td>ниже диапазона</td><td>ниже вчерашнего low</td></tr></tbody></table></div></div></section>
+<section class="card"><h2 class="card-title">Тип открытия</h2><div class="prose"><p>A = 09:30–10:00, B = 10:00–10:30, IB = A + B. Своя граница VA: VAH при открытии выше VA, VAL при открытии ниже. Касание с точностью 1 тик.</p>
+<div class="twrap"><table class="plain md"><thead><tr><th>Тип</th><th>Правило</th></tr></thead><tbody><tr><td>Open-Auction внутри VA</td><td>открылись внутри VA</td></tr><tr><td>Open-Rejection-Reverse</td><td>за 09:30–10:30 коснулись своей границы VA, и в 10:30 цена внутри VA или прошла её насквозь</td></tr><tr><td>Open-Drive</td><td>своя граница VA не тронута, и в B цена не вернулась к экстремуму A. При открытии за диапазоном: в B не дошли до вчерашнего high / low и не пробили экстремум A</td></tr><tr><td>Open-Test-Drive</td><td>был тест: касание своей границы VA, но в 10:30 цена снова на стороне открытия; или B вернулся к экстремуму A; или при открытии за диапазоном B коснулся вчерашнего high / low. И в 10:30–11:30 пробит IB по тренду</td></tr><tr><td>Open-Auction вне VA</td><td>тест был, пробоя IB нет. Или за диапазоном экстремум A пробит без касания границы диапазона</td></tr></tbody></table></div></div></section>
+<section class="card"><h2 class="card-title">Тип дня</h2><div class="prose"><p>По Mind Over Markets с правками. Выход за IB засчитывается, если он больше 20 % ширины IB.</p>
+<div class="twrap"><table class="plain md"><thead><tr><th>Тип</th><th>Правило</th></tr></thead><tbody><tr><td>Normal</td><td>выхода за IB нет, IB не узкий</td></tr><tr><td>Nontrend</td><td>выхода за IB нет, IB узкий: меньше 0.4 медианного диапазона 20 дней</td></tr><tr><td>Normal Variation</td><td>выход в одну сторону, всё остальное</td></tr><tr><td>Trend</td><td>выход в одну сторону. На блоках A…J ни один блок не ушёл за минимум (при тренде вниз максимум) двух предыдущих. Закрытие в крайних 25 % диапазона по тренду</td></tr><tr><td>Double-Distribution Trend</td><td>выход в одну сторону, внутри профиля single prints от 2 строк, по обе стороны не меньше 25 % TPO</td></tr><tr><td>Neutral-Center</td><td>выход в обе стороны, закрытие не у края</td></tr><tr><td>Neutral-Extreme</td><td>выход в обе стороны, закрытие в крайних 20 % диапазона</td></tr></tbody></table></div></div></section>
+</div>
+
+<script>
+(function(){
+  var KEY = 'algo-tests-theme';
+  var el = document.getElementById('theme-toggle');
+  var label = document.getElementById('theme-toggle-label');
+  if (!el) return;
+  function sync(){
+    var light = document.documentElement.getAttribute('data-theme') === 'light';
+    label.textContent = light ? 'Светлая' : 'Тёмная';
+  }
+  function flip(){
+    var light = document.documentElement.getAttribute('data-theme') === 'light';
+    if (light) document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', 'light');
+    try { localStorage.setItem(KEY, light ? 'dark' : 'light'); } catch(e){}
+    sync();
+  }
+  sync();
+  el.addEventListener('click', flip);
+  el.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
+})();
+</script>
+</body></html>

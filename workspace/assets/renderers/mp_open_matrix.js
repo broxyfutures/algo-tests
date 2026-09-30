@@ -10,9 +10,11 @@
   const D = window.DATA, M = D.meta;
   const KEY = 'mp-open-matrix-' + D.test + '-v2';
   // nv: 1 учитывать Normal Variation, 0 исключить из выборки
-  const S = {m:'f', c:'0', from:'', to:'', ticks:8, cz:'av', co:'od', nv:1};
+  // cz / co: выбранные точки и типы открытия, пустой список = любые
+  const S = {m:'f', c:'0', from:'', to:'', ticks:8, cz:['av'], co:['od'], nv:1};
   try{ Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); }catch(e){}
   if (!['f', 'a', 'x'].includes(S.m)) S.m = 'f';
+  ['cz', 'co'].forEach(k => { if (!Array.isArray(S[k])) S[k] = !S[k] || S[k] === '*' ? [] : [S[k]]; });
   const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} };
   const f1 = v => Number.isFinite(v) ? v.toFixed(1) : '';
   const sg = v => (v > 0 ? '+' : '') + f1(v);
@@ -68,6 +70,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
 .om-sel-o:last-child{border-bottom:none}
 .om-sel-o:hover{color:var(--t1);background:var(--surface-2)}
 .om-sel-o.on{color:var(--t1);font-weight:600}
+.om-ck{display:inline-block;width:12px;margin-right:8px;color:var(--up);font-weight:700}
 .om-eqres{font-size:11px;color:var(--t3);letter-spacing:.04em}
 .om-eqres b{color:var(--t1);font-weight:600}
 .om-sbar{display:flex;height:30px;gap:2px;margin-top:14px}
@@ -368,20 +371,29 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
       ticks: S.m === 'x' ? S.ticks : 0})); }catch(e){}
   }
 
-  // ================================================================ выпадающий выбор в стиле COT Report
-  function dropdown(label, opts, cur, cb){
-    const w = document.createElement('div'); w.className = 'om-sel';
+  // ================================================================ выпадающий мультивыбор в стиле COT Report
+  // пустой список = «любые»; список остаётся открытым, пока щёлкаешь по вариантам
+  let openDD = '';
+  function multiDropdown(key, label, anyName, opts, cur, cb){
+    const w = document.createElement('div'); w.className = 'om-sel' + (openDD === key ? ' open' : '');
     const t = document.createElement('button'); t.type = 'button'; t.className = 'om-sel-t';
-    t.innerHTML = `<small>${label}</small>${esc((opts.find(o => o[0] === cur) || opts[0])[1])}`;
+    const names = opts.filter(o => cur.includes(o[0])).map(o => o[1]);
+    t.innerHTML = `<small>${label}</small>${esc(!names.length ? anyName : names.length === 1 ? names[0] : names.length + ' выбрано')}`;
+    if (names.length > 1) t.title = names.join(', ');
     const dd = document.createElement('div'); dd.className = 'om-sel-dd';
-    opts.forEach(([v, n]) => { const o = document.createElement('div'); o.className = 'om-sel-o' + (v === cur ? ' on' : ''); o.textContent = n;
-      o.addEventListener('click', e => { e.stopPropagation(); w.classList.remove('open'); cb(v); }); dd.appendChild(o); });
-    t.addEventListener('click', e => { e.stopPropagation(); const was = w.classList.contains('open');
+    const item = (v, n, on) => { const o = document.createElement('div'); o.className = 'om-sel-o' + (on ? ' on' : '');
+      o.innerHTML = `<span class="om-ck">${on ? '✓' : ''}</span>${esc(n)}`;
+      o.addEventListener('click', e => { e.stopPropagation(); openDD = key;
+        cb(v === '*' ? [] : cur.includes(v) ? cur.filter(x => x !== v) : cur.concat(v)); });
+      dd.appendChild(o); };
+    item('*', anyName, !cur.length);
+    opts.forEach(([v, n]) => item(v, n, cur.includes(v)));
+    t.addEventListener('click', e => { e.stopPropagation(); const was = openDD === key; openDD = was ? '' : key;
       document.querySelectorAll('.om-sel.open').forEach(x => x.classList.remove('open')); if (!was) w.classList.add('open'); });
     w.append(t, dd);
     return w;
   }
-  document.addEventListener('click', () => document.querySelectorAll('.om-sel.open').forEach(x => x.classList.remove('open')));
+  document.addEventListener('click', () => { openDD = ''; document.querySelectorAll('.om-sel.open').forEach(x => x.classList.remove('open')); });
 
   // ================================================================ страница
   function render(){
@@ -416,18 +428,21 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
 
     // ---------------------------------------------------------------- калькулятор: точка + тип открытия = тип дня
     const box = calc.querySelector('.om-calc');
-    const opens = S.cz === 'iv' ? ['oai'] : S.cz === '*' ? OT.map(o => o[0]) : OT.map(o => o[0]).filter(o => o !== 'oai');
-    if (S.co !== '*' && !opens.includes(S.co)) S.co = opens.length === 1 ? opens[0] : '*';
-    const sel = R.filter(r => (S.cz === '*' || r.z5 === S.cz) && (S.co === '*' || r.o === S.co));
+    // типы открытия, возможные при выбранных точках: внутри VA только Open-Auction внутри VA, вне VA остальные
+    const inV = S.cz.includes('iv'), outV = S.cz.some(z => z !== 'iv');
+    const opens = OT.map(o => o[0]).filter(o => !S.cz.length || (o === 'oai' ? inV : outV));
+    S.co = S.co.filter(o => opens.includes(o));
+    const sel = R.filter(r => (!S.cz.length || S.cz.includes(r.z5)) && (!S.co.length || S.co.includes(r.o)));
     const cs = count(sel);
-    const title = [S.cz === '*' ? 'любая точка' : ZN[S.cz], S.co === '*' ? 'любой тип открытия' : OTN[S.co]].join(' · ');
+    const title = [S.cz.length ? S.cz.map(z => ZN[z]).join(', ') : 'любая точка',
+                   S.co.length ? S.co.map(o => OTN[o]).join(', ') : 'любой тип открытия'].join(' · ');
     box.innerHTML = '<div class="om-lab0">Калькулятор</div><div class="om-eq"></div><div class="om-out"></div>';
     const eqRes = document.createElement('span'); eqRes.className = 'om-eqres';
     eqRes.innerHTML = sel.length ? `<b>тип дня</b> · ${sel.length} дней${R.length ? ' · ' + f1(sel.length / R.length * 100) + '% выборки' : ''}` : '<b>тип дня</b> · нет таких дней';
     const op = t => { const e = document.createElement('span'); e.className = 'om-op'; e.textContent = t; return e; };
     box.querySelector('.om-eq').append(
-      dropdown('Точка открытия', [['*', 'любая']].concat(D.zones.map(([z, n]) => [z, n])), S.cz, v => upd('cz', v)), op('+'),
-      dropdown('Тип открытия', [['*', 'любой']].concat(opens.map(o => [o, OTN[o]])), S.co, v => upd('co', v)), op('='), eqRes);
+      multiDropdown('z', 'Точка открытия', 'любая', D.zones.map(([z, n]) => [z, n]), S.cz, v => upd('cz', v)), op('+'),
+      multiDropdown('o', 'Тип открытия', 'любой', opens.map(o => [o, OTN[o]]), S.co, v => upd('co', v)), op('='), eqRes);
     if (sel.length){
       const ranked = types.map(t => ({...t, n: cs[t.code] || 0})).map(t => ({...t, p: t.n / sel.length * 100, d: t.n / sel.length * 100 - base(t.code)}))
         .sort((a, b) => b.n - a.n || base(b.code) - base(a.code));

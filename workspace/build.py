@@ -230,16 +230,13 @@ def crumbs_html(crumbs: list[str], depth: int) -> str:
     return '<nav class="crumbs">' + '<span class="sep">/</span>'.join(parts) + "</nav>"
 
 
-def page_shell(title: str, sub: str, crumbs: list[str], depth: int, body: str, meta_html: str = "", scripts: str = "",
-               hdr_btn: str = "", after_hdr: str = "") -> str:
+def page_shell(title: str, sub: str, crumbs: list[str], depth: int, body: str, meta_html: str = "", scripts: str = "") -> str:
     # корень: та же шапка, что на остальных страницах, без крошек и чуть крупнее
     head = (
         ("" if depth == 0 else f"{crumbs_html(crumbs, depth)}\n")
         + f'<header class="hdr{" hdr-root" if depth == 0 else ""}"><div><h1>{esc(title)}</h1>'
         + (f'<div class="sub">{esc(sub)}</div>' if sub else "")
-        + hdr_btn
-        + f'</div><div class="meta" id="hdr-meta">{meta_html}</div></header>\n'
-        + after_hdr)
+        + f'</div><div class="meta" id="hdr-meta">{meta_html}</div></header>\n')
     return (
         f"<!doctype html>\n<html lang=\"ru\"><head><meta charset=\"utf-8\">"
         f"<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
@@ -373,7 +370,7 @@ def scripts_html(r: dict, depth: int, results_text: str | None) -> str:
     return "\n".join(sc)
 
 
-def render_test(folder: Path, depth: int, crumbs: list[str]) -> tuple[str, dict]:
+def render_test(folder: Path, depth: int, crumbs: list[str], children: list[dict] | None = None) -> tuple[str, dict]:
     meta, body = parse_frontmatter((folder / "test.md").read_text(encoding="utf-8"))
     rname = meta.get("renderer", "markdown")
     if rname not in RENDERERS:
@@ -394,17 +391,8 @@ def render_test(folder: Path, depth: int, crumbs: list[str]) -> tuple[str, dict]
         parts.append(r["pre"](meta))
     has_results_section = False
     mount_in = meta.get("mount_in", "Результаты")   # в какой блок вставить интерактив
-    # header_fold: блок, который прячется за кнопкой в шапке и раскрывается панелью под ней
-    hfold = meta.get("header_fold") or ""
-    hdr_btn = after_hdr = ""
     for head, content in split_sections(body):
         inner = md_to_html(content) if content else ""
-        if hfold and head == hfold:
-            hdr_btn = (f'<button class="hdr-btn" type="button" aria-expanded="false" aria-controls="hdr-panel" '
-                       f'onclick="var p=document.getElementById(\'hdr-panel\'),o=p.hidden;p.hidden=!o;'
-                       f'this.setAttribute(\'aria-expanded\',o)">{esc(head)}</button>')
-            after_hdr = f'<section class="card hdr-panel" id="hdr-panel" hidden><div class="prose">{inner}</div></section>\n'
-            continue
         if head == mount_in and r["mount"]:
             has_results_section = True
             inner += r["mount"](meta)
@@ -420,8 +408,9 @@ def render_test(folder: Path, depth: int, crumbs: list[str]) -> tuple[str, dict]
 
     scripts = scripts_html(r, depth, results_text)
     meta_html = ""
-    html = page_shell(title, meta.get("instrument", ""), crumbs, depth, "\n".join(p for p in parts if p), meta_html, scripts,
-                      hdr_btn, after_hdr)
+    if children:                                    # вложенные страницы теста (правила): плитками внизу
+        parts.append('<div class="cards">' + "".join(tile(c, "Страница") for c in children) + "</div>")
+    html = page_shell(title, meta.get("instrument", ""), crumbs, depth, "\n".join(p for p in parts if p), meta_html, scripts)
     return html, meta
 
 
@@ -443,34 +432,33 @@ def render_section(folder: Path, depth: int, crumbs: list[str], children: list[d
             inner += r["mount"](meta)
             mounted = True
         parts.append(card(head, inner, collapsed=head in fold))
-    if r["mount"] and not mounted:                  # интерактив без текста: отдельной карточкой сверху
-        parts.insert(0, card(None, r["mount"](meta)))
-    if children:
-        cards = []
-        for c in children:
-            m = c["meta"]
-            if c["is_test"]:
-                kind, sub = "Тест", m.get("summary") or ""
-            else:
-                n = c["n_children"]
-                kind = "Инструмент"
-                sub = m.get("summary") or ""
-                sub += (" · " if sub else "") + (plural(n, "тест", "теста", "тестов") if n else "тестов пока нет")
-            cards.append(
-                f'<a class="tcard" href="{child_href(c["name"])}"><div class="tcard-kind">{kind}</div>'
-                f'<div class="tcard-name">{esc(m.get("title") or c["name"])}</div><div class="tcard-sub">{esc(sub)}</div></a>'
-            )
-        if depth == 0:
-            # плитка «+»: новый проект начинается в Claude Code
-            cards.append('<a class="tcard tplus" href="https://claude.ai/code" target="_blank" rel="noopener" '
-                         'title="Новый проект в Claude Code">+</a>')
-            parts.append('<div class="tools-panel"><div class="cards tools">' + "".join(cards) + "</div></div>")
-        else:
-            parts.append('<h2 class="cards-title">Тесты</h2>')
-            parts.append('<div class="cards">' + "".join(cards) + "</div>")
-    elif not r["mount"]:
-        parts.append('<div class="empty">Пока пусто.</div>')
+    if depth == 0:
+        # главная: плитки инструментов и «+» (новый проект начинается в Claude Code)
+        cards = [tile(c, "Инструмент") for c in children]
+        cards.append('<a class="tcard tplus" href="https://claude.ai/code" target="_blank" rel="noopener" '
+                     'title="Новый проект в Claude Code">+</a>')
+        parts.append('<div class="tools-panel"><div class="cards tools">' + "".join(cards) + "</div></div>")
+    else:
+        # страница инструмента: сначала тесты отдельной плиткой, потом чарт; заголовки как h1 страницы
+        if children:
+            parts.insert(0, '<section class="card"><h2 class="sec-title">Тесты</h2><div class="cards">'
+                         + "".join(tile(c, "Тест" if c["is_test"] else "Раздел") for c in children) + "</div></section>")
+        if r["mount"] and not mounted:
+            parts.append(f'<section class="card"><h2 class="sec-title">Чарт</h2>{r["mount"](meta)}</section>')
+        if not children and not r["mount"]:
+            parts.append('<div class="empty">Пока пусто.</div>')
     return page_shell(title, meta.get("subtitle", ""), crumbs, depth, "\n".join(parts), "", scripts_html(r, depth, None)), meta
+
+
+def tile(c: dict, kind: str) -> str:
+    """Плитка дочерней страницы. У инструмента в подписи число тестов."""
+    m = c["meta"]
+    sub = m.get("summary") or ""
+    if kind == "Инструмент":
+        n = c["n_children"]
+        sub += (" · " if sub else "") + (plural(n, "тест", "теста", "тестов") if n else "тестов пока нет")
+    return (f'<a class="tcard" href="{child_href(c["name"])}"><div class="tcard-kind">{kind}</div>'
+            f'<div class="tcard-name">{esc(m.get("title") or c["name"])}</div><div class="tcard-sub">{esc(sub)}</div></a>')
 
 
 def plural(n: int, one: str, few: str, many: str) -> str:
@@ -480,16 +468,16 @@ def plural(n: int, one: str, few: str, many: str) -> str:
 
 def walk(folder: Path, depth: int, crumbs: list[str], written: list[tuple[Path, int]]) -> dict:
     is_test = (folder / "test.md").exists()
+    subs = sorted(
+        [p for p in folder.iterdir() if p.is_dir() and not p.name.startswith(".") and p.name not in SKIP_DIRS],
+        key=lambda p: p.name.lower(),
+    )
+    children = [walk(p, depth + 1, crumbs + [p.name], written) for p in subs]
+    children = [c for c in children if not c["meta"].get("archived")]   # архив собирается, но не показывается
     if is_test:
-        html, meta = render_test(folder, depth, crumbs)
+        html, meta = render_test(folder, depth, crumbs, children)   # у теста бывают вложенные страницы (правила)
         n = 0
     else:
-        subs = sorted(
-            [p for p in folder.iterdir() if p.is_dir() and not p.name.startswith(".") and p.name not in SKIP_DIRS],
-            key=lambda p: p.name.lower(),
-        )
-        children = [walk(p, depth + 1, crumbs + [p.name], written) for p in subs]
-        children = [c for c in children if not c["meta"].get("archived")]   # архив собирается, но не показывается
         html, meta = render_section(folder, depth, crumbs, children)
         n = len(children)
     out = folder / "index.html"
