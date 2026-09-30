@@ -437,7 +437,7 @@ def render_section(folder: Path, depth: int, crumbs: list[str], children: list[d
         cards = [tile(c, "Инструмент") for c in children]
         cards.append('<a class="tcard tplus" href="https://claude.ai/code" target="_blank" rel="noopener" '
                      'title="Новый проект в Claude Code">+</a>')
-        parts.append('<div class="tools-panel"><div class="cards tools">' + "".join(cards) + "</div></div>")
+        parts.append('<div class="tools-wrap"><div class="tools-panel"><div class="cards tools">' + "".join(cards) + "</div></div></div>")
     else:
         # страница инструмента: карточка Tests с плитками тестов, под ней карточка Chart
         if children:
