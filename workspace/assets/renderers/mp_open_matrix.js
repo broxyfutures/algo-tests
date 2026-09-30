@@ -367,8 +367,11 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
   function pick(dates, label){
     if (!window.MPCHART) return;
     const idx = dates.map(d => idxOf()[d]).filter(i => i !== undefined);
-    try{ localStorage.setItem('mp-chart-pick', JSON.stringify({idx, label, m: S.m === 'x' ? 'f' : S.m, c: S.c,
-      ticks: S.m === 'x' ? S.ticks : 0})); }catch(e){}
+    // фильтры графика ставятся теми же, что в калькуляторе: точки, типы открытия, типы дня (без NV, если исключён).
+    // Список дней (idx) нужен только там, где фильтры графика его не повторят: своя строка или свой период.
+    const exact = S.m === 'x' || !!S.from || !!S.to;
+    try{ localStorage.setItem('mp-chart-pick', JSON.stringify({idx: exact ? idx : null, label, m: S.m === 'x' ? 'f' : S.m, c: S.c,
+      ticks: S.m === 'x' ? S.ticks : 0, fz: S.cz, fo: S.co, ft: S.nv ? [] : DT.map(t => t[0]).filter(t => t !== 'nv')})); }catch(e){}
   }
 
   // ================================================================ выпадающий мультивыбор в стиле COT Report

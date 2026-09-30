@@ -689,11 +689,16 @@
     // пришли со страницы теста по «показать на графике»: дни, режим, опора и строка оттуда
     if (owns('filter') && location.hash === '#pick'){
       let pk = null; try{ pk = JSON.parse(localStorage.getItem('mp-chart-pick') || 'null'); }catch(e){}
-      if (pk && Array.isArray(pk.idx)){
-        sel = {zones: [], open: '', dt: '', label: pk.label || '', idx: new Set(pk.idx)};
+      if (pk){
         if (pk.m) S.m = pk.m; if (pk.c) S.c = pk.c; S.ticks = pk.ticks || 0; S.hl = 1;
+        // кнопки фильтров встают так же, как в калькуляторе теста
+        S.fz = pk.fz || []; S.fo = pk.fo || []; S.ft = pk.ft || [];
+        // готовый список дней: своя строка или свой период, фильтрами графика их не повторить
+        if (Array.isArray(pk.idx)) sel = {zones: [], open: '', dt: '', label: pk.label || '', idx: new Set(pk.idx)};
         // лента встаёт на последний подсвеченный день
-        if (pk.idx.length) S.pickLast = Math.max(...pk.idx);
+        const hit = Array.isArray(pk.idx) ? pk.idx : md().days.map((d, i) => i).filter(matches);
+        if (hit.length) S.pickLast = Math.max(...hit);
+        save();
       }
     }
     build_cols();
