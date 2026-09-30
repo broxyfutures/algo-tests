@@ -59,8 +59,8 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2010-08-26,1058.75,1059.75,1053.25,open_test_drive,up,range,1057.25,True,above_range,True,open_test_drive,up,range,1057.25,True,above_range,True
 2010-08-27,1053.25,1054.25,1037.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2010-08-30,1060.25,1063.50,1057.75,open_auction_in,,,,False,in_value,True,open_rejection_reverse,down,va,1059.00,False,above_value,True
-2010-08-31,1043.50,1052.75,1039.25,open_rejection_reverse,up,va,1051.25,False,below_range,True,open_auction_in,,,,False,in_value,True
-2010-09-01,1061.50,1076.75,1061.00,open_drive,up,,1074.50,True,above_range,True,open_drive,up,,1074.50,True,above_value,True
+2010-08-31,1043.50,1052.75,1039.25,open_rejection_reverse,up,va,1051.25,False,below_range,True,open_rejection_reverse,up,va,1051.25,False,below_range,True
+2010-09-01,1061.50,1076.75,1061.00,open_drive,up,,1074.50,True,above_range,True,open_drive,up,,1074.50,True,above_range,True
 2010-09-02,1081.75,1086.00,1079.25,open_test_drive,up,va,1084.00,True,above_range,True,open_test_drive,up,va,1084.00,True,above_range,True
 2010-09-03,1099.75,1104.50,1095.50,open_auction_out,,a_blurred,1096.25,False,above_range,True,open_auction_out,,a_blurred,1096.25,False,above_range,True
 2010-09-07,1098.00,1099.50,1091.75,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,False
@@ -81,7 +81,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2010-09-28,1139.75,1140.00,1127.25,open_auction_out,,va,1133.00,False,below_value,False,open_auction_out,,va,1133.00,False,below_value,False
 2010-09-29,1139.50,1142.25,1135.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2010-09-30,1145.75,1153.50,1144.00,open_auction_out,,va,1146.00,False,above_range,True,open_auction_in,,,,False,in_value,True
-2010-10-01,1145.00,1146.50,1136.25,open_rejection_reverse,down,va,1137.75,False,above_value,True,open_auction_in,,,,False,in_value,True
+2010-10-01,1145.00,1146.50,1136.25,open_rejection_reverse,down,va,1137.75,False,above_value,True,open_rejection_reverse,down,va,1137.75,False,above_value,True
 2010-10-04,1139.00,1144.00,1137.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2010-10-05,1143.25,1148.75,1142.00,open_drive,up,,1147.75,True,above_value,False,open_drive,up,,1147.75,True,above_value,False
 2010-10-06,1155.50,1158.75,1154.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -142,7 +142,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2010-12-23,1252.75,1254.25,1251.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2010-12-27,1247.50,1251.00,1247.00,open_rejection_reverse,up,va,1251.00,False,below_range,True,open_rejection_reverse,up,va,1251.00,False,below_range,True
 2010-12-28,1255.25,1256.00,1251.50,open_rejection_reverse,down,va,1252.75,False,above_range,False,open_rejection_reverse,down,va,1252.75,False,above_range,False
-2010-12-29,1256.25,1257.75,1255.50,open_auction_out,,va,1257.25,False,above_range,True,open_auction_out,,va,1257.25,False,above_range,True
+2010-12-29,1256.25,1257.75,1255.50,open_auction_out,,va,1257.25,False,above_range,True,open_drive,up,,1257.25,False,above_range,True
 2010-12-30,1254.50,1257.00,1252.25,open_auction_out,,va,1253.50,False,below_range,True,open_auction_out,,va,1253.50,False,below_range,True
 2010-12-31,1251.25,1252.75,1249.50,open_rejection_reverse,up,va,1252.00,False,below_range,True,open_rejection_reverse,up,va,1252.00,False,below_range,True
 2011-01-03,1263.25,1269.25,1262.75,open_drive,up,,1268.25,True,above_range,True,open_drive,up,,1268.25,True,above_range,True
@@ -176,7 +176,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2011-02-11,1313.75,1319.00,1313.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2011-02-14,1326.00,1328.75,1325.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2011-02-15,1325.75,1328.00,1322.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2011-02-16,1330.25,1334.00,1329.75,open_drive,up,,1333.00,True,above_range,True,open_drive,up,,1333.00,True,above_range,True
+2011-02-16,1330.25,1334.00,1329.75,open_drive,up,,1333.00,True,above_range,True,open_test_drive,up,a_extreme,1333.00,True,above_value,True
 2011-02-17,1330.25,1333.75,1329.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2011-02-18,1339.50,1339.75,1337.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2011-02-22,1326.50,1334.50,1323.25,open_auction_out,,a_blurred,1330.50,False,below_range,True,open_auction_out,,a_blurred,1330.50,False,below_range,True
@@ -508,10 +508,10 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2012-06-07,1328.75,1329.50,1318.75,open_auction_out,,a_blurred,1323.25,False,above_range,True,open_auction_out,,a_blurred,1323.25,False,above_range,True
 2012-06-08,1311.25,1313.25,1307.00,open_auction_out,,range,1312.50,False,below_range,True,open_auction_out,,range,1312.50,False,below_range,True
 2012-06-11,1329.00,1330.00,1316.00,open_rejection_reverse,down,va,1317.50,False,above_range,True,open_rejection_reverse,down,va,1317.50,False,above_range,True
-2012-06-12,1305.25,1308.75,1300.25,open_test_drive,down,va,1301.75,True,below_value,True,open_test_drive,down,a_extreme,1301.75,True,below_value,True
+2012-06-12,1305.25,1308.75,1300.25,open_test_drive,down,va,1301.75,True,below_value,True,open_test_drive,down,va,1301.75,True,below_value,True
 2012-06-13,1313.00,1316.25,1308.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2012-06-14,1311.00,1317.25,1307.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2012-06-15,1328.25,1331.00,1325.50,open_auction_out,,range,1329.00,False,above_range,True,open_auction_out,,range,1329.00,False,above_range,True
+2012-06-15,1328.25,1331.00,1325.50,open_auction_out,,range,1329.00,False,above_range,True,open_drive,up,,1329.00,False,above_value,True
 2012-06-18,1330.25,1337.75,1327.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2012-06-19,1345.25,1351.75,1343.75,open_drive,up,,1350.75,True,above_range,True,open_drive,up,,1350.75,True,above_range,True
 2012-06-20,1351.50,1353.00,1347.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -656,7 +656,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2013-01-10,1463.50,1464.75,1460.50,open_drive,up,,1461.00,False,above_range,True,open_drive,up,,1461.00,False,above_range,True
 2013-01-11,1466.75,1467.50,1462.25,open_rejection_reverse,down,va,1462.50,False,above_value,False,open_rejection_reverse,down,va,1462.50,False,above_value,False
 2013-01-14,1465.25,1467.00,1460.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2013-01-15,1459.25,1462.50,1458.25,open_rejection_reverse,up,va,1460.25,False,below_range,True,open_auction_out,,va,1460.25,False,below_value,True
+2013-01-15,1459.25,1462.50,1458.25,open_rejection_reverse,up,va,1460.25,False,below_range,True,open_rejection_reverse,up,va,1460.25,False,below_range,True
 2013-01-16,1464.00,1466.50,1462.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2013-01-17,1473.50,1474.75,1470.25,open_drive,up,,1474.50,False,above_range,True,open_drive,up,,1474.50,False,above_range,True
 2013-01-18,1476.25,1477.25,1473.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -668,7 +668,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2013-01-29,1494.00,1498.00,1493.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2013-01-30,1502.75,1505.50,1499.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2013-01-31,1495.25,1500.00,1493.25,open_test_drive,down,va,1495.75,True,below_value,True,open_test_drive,down,va,1495.75,True,below_value,True
-2013-02-01,1502.75,1507.50,1500.00,open_auction_out,,va,1503.25,False,above_range,True,open_auction_in,,,,False,in_value,True
+2013-02-01,1502.75,1507.50,1500.00,open_auction_out,,va,1503.25,False,above_range,True,open_auction_out,,va,1503.25,False,above_range,True
 2013-02-04,1499.00,1501.75,1497.75,open_test_drive,down,range,1499.25,True,below_range,True,open_test_drive,down,range,1499.25,True,below_range,True
 2013-02-05,1499.75,1505.00,1498.75,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,False
 2013-02-06,1501.25,1505.25,1500.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -742,7 +742,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2013-05-15,1645.00,1648.25,1644.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2013-05-16,1653.00,1658.00,1650.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2013-05-17,1654.75,1659.00,1652.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2013-05-20,1662.75,1666.75,1662.25,open_test_drive,up,va,1665.25,True,above_value,True,open_drive,up,,1665.25,True,above_range,True
+2013-05-20,1662.75,1666.75,1662.25,open_test_drive,up,va,1665.25,True,above_value,True,open_test_drive,up,va,1665.25,True,above_value,True
 2013-05-21,1665.75,1670.25,1660.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2013-05-22,1668.50,1685.75,1668.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2013-05-23,1636.50,1645.50,1634.25,open_auction_out,,a_blurred,1643.00,False,below_range,True,open_auction_out,,a_blurred,1643.00,False,below_range,True
@@ -761,7 +761,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2013-06-12,1636.50,1638.25,1626.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2013-06-13,1610.75,1616.50,1607.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2013-06-14,1634.75,1640.75,1633.00,open_drive,up,,1635.75,False,above_value,True,open_drive,up,,1635.75,False,above_value,True
-2013-06-17,1631.50,1638.75,1631.25,open_drive,up,,1637.25,True,above_value,False,open_drive,up,,1637.25,True,above_value,False
+2013-06-17,1631.50,1638.75,1631.25,open_drive,up,,1637.25,True,above_value,False,open_auction_in,,,,False,in_value,False
 2013-06-18,1634.00,1639.75,1633.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2013-06-19,1644.50,1646.75,1640.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2013-06-20,1606.75,1609.00,1596.75,open_drive,down,,1598.00,True,below_range,True,open_drive,down,,1598.00,True,below_range,True
@@ -796,7 +796,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2013-08-01,1695.50,1700.75,1694.25,open_auction_out,,va,1700.25,False,above_range,True,open_auction_out,,va,1700.25,False,above_range,True
 2013-08-02,1698.00,1700.75,1695.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2013-08-05,1701.00,1703.25,1698.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2013-08-06,1698.75,1700.50,1693.75,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,True
+2013-08-06,1698.75,1700.50,1693.75,open_auction_in,,,,False,in_value,False,open_test_drive,down,va,1694.00,True,below_value,True
 2013-08-07,1687.25,1689.50,1681.00,open_test_drive,down,va,1681.75,True,below_range,True,open_test_drive,down,va,1681.75,True,below_range,True
 2013-08-08,1695.25,1697.00,1688.00,open_rejection_reverse,down,va,1689.50,False,above_range,True,open_rejection_reverse,down,va,1689.50,False,above_range,True
 2013-08-09,1691.00,1696.25,1689.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -929,16 +929,16 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2014-02-11,1796.50,1803.75,1795.25,open_drive,up,,1802.75,True,above_range,True,open_drive,up,,1802.75,True,above_range,True
 2014-02-12,1817.25,1823.25,1816.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2014-02-13,1803.25,1816.25,1803.00,open_rejection_reverse,up,va,1813.50,False,below_range,True,open_rejection_reverse,up,va,1813.50,False,below_value,True
-2014-02-14,1823.25,1831.00,1821.50,open_auction_in,,,,False,in_value,True,open_drive,up,,1830.50,True,above_value,False
+2014-02-14,1823.25,1831.00,1821.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2014-02-18,1837.00,1839.75,1831.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2014-02-19,1832.25,1844.50,1831.00,open_rejection_reverse,up,va,1843.75,False,below_value,False,open_rejection_reverse,up,va,1843.75,False,below_value,False
-2014-02-20,1827.50,1831.25,1821.00,open_auction_out,,va,1828.25,False,below_value,True,open_rejection_reverse,up,va,1828.25,False,below_value,True
+2014-02-20,1827.50,1831.25,1821.00,open_auction_out,,va,1828.25,False,below_value,True,open_auction_out,,va,1828.25,False,below_value,True
 2014-02-21,1840.00,1843.00,1836.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2014-02-24,1837.75,1849.75,1837.00,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,False
 2014-02-25,1845.25,1847.75,1837.25,open_auction_out,,va,1841.25,False,below_value,True,open_auction_out,,va,1841.25,False,below_value,True
 2014-02-26,1846.25,1849.50,1840.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2014-02-27,1840.75,1845.25,1838.50,open_rejection_reverse,up,va,1842.00,False,below_value,True,open_rejection_reverse,up,va,1842.00,False,below_value,True
-2014-02-28,1852.75,1864.50,1852.25,open_auction_in,,,,False,in_value,False,open_drive,up,,1863.25,True,above_range,True
+2014-02-28,1852.75,1864.50,1852.25,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,False
 2014-03-03,1841.75,1849.50,1839.00,open_test_drive,down,range,1843.25,True,below_range,True,open_test_drive,down,range,1843.25,True,below_range,True
 2014-03-04,1862.50,1868.50,1862.25,open_drive,up,,1867.75,True,above_range,True,open_drive,up,,1867.75,True,above_range,True
 2014-03-05,1872.25,1875.00,1869.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -1020,7 +1020,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2014-06-25,1937.75,1946.25,1937.75,open_auction_out,,va,1943.50,False,below_range,False,open_auction_out,,va,1943.50,False,below_range,False
 2014-06-26,1951.50,1951.50,1936.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2014-06-27,1944.75,1948.75,1944.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2014-06-30,1952.00,1956.75,1950.50,open_drive,up,,1955.50,False,above_value,True,open_auction_in,,,,False,in_value,True
+2014-06-30,1952.00,1956.75,1950.50,open_drive,up,,1955.50,False,above_value,True,open_auction_in,,,,False,in_value,False
 2014-07-01,1956.75,1964.00,1956.25,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,False
 2014-07-02,1965.75,1968.50,1964.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2014-07-03,1972.75,1975.00,1971.25,open_drive,up,,1973.00,True,above_range,True,open_test_drive,up,va,1973.00,True,above_range,True
@@ -1157,7 +1157,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2015-01-15,2012.25,2016.00,1991.25,open_auction_out,,va,2005.00,False,above_range,False,open_auction_out,,va,2005.00,False,above_range,False
 2015-01-16,1983.50,1994.50,1981.25,open_rejection_reverse,up,va,1990.50,False,below_range,True,open_rejection_reverse,up,va,1990.50,False,below_range,True
 2015-01-20,2020.00,2023.25,2003.50,open_auction_out,,va,2010.50,False,above_range,False,open_auction_out,,va,2010.50,False,above_range,False
-2015-01-21,2010.75,2024.25,2005.25,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,False
+2015-01-21,2010.75,2024.25,2005.25,open_auction_in,,,,False,in_value,False,open_test_drive,up,va,2021.00,True,above_value,True
 2015-01-22,2036.25,2041.00,2019.25,open_test_drive,up,va,2035.50,True,above_range,True,open_test_drive,up,va,2035.50,True,above_range,True
 2015-01-23,2053.75,2055.25,2048.50,open_auction_out,,va,2052.75,False,above_value,True,open_auction_out,,va,2052.75,False,above_value,True
 2015-01-26,2043.25,2043.75,2034.50,open_drive,down,,2041.50,False,below_range,True,open_drive,down,,2041.50,False,below_range,True
@@ -1224,7 +1224,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2015-04-23,2096.50,2103.50,2094.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2015-04-24,2111.75,2112.50,2106.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2015-04-27,2118.50,2119.75,2113.50,open_auction_out,,va,2118.25,False,above_range,True,open_auction_out,,va,2118.25,False,above_range,True
-2015-04-28,2102.50,2104.25,2088.25,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,True
+2015-04-28,2102.50,2104.25,2088.25,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,False
 2015-04-29,2098.50,2107.00,2095.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2015-04-30,2093.50,2098.00,2083.50,open_auction_out,,va,2085.00,False,below_value,False,open_auction_out,,va,2085.00,False,below_value,True
 2015-05-01,2088.50,2095.50,2088.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -1250,7 +1250,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2015-06-01,2113.50,2115.25,2100.25,open_rejection_reverse,down,va,2104.50,False,above_value,False,open_rejection_reverse,down,va,2104.50,False,above_value,False
 2015-06-02,2104.50,2106.50,2096.25,open_auction_out,,va,2103.75,False,below_value,True,open_auction_out,,va,2103.75,False,below_value,True
 2015-06-03,2114.00,2119.50,2107.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2015-06-04,2104.50,2111.75,2099.75,open_test_drive,down,va,2106.75,True,below_range,True,open_rejection_reverse,up,va,2106.75,True,below_value,True
+2015-06-04,2104.50,2111.75,2099.75,open_test_drive,down,va,2106.75,True,below_range,True,open_test_drive,down,va,2106.75,True,below_value,True
 2015-06-05,2093.25,2098.00,2083.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2015-06-08,2090.00,2092.00,2085.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2015-06-09,2078.25,2082.00,2071.25,open_test_drive,down,va,2072.25,True,below_value,True,open_test_drive,down,va,2072.25,True,below_value,True
@@ -1374,7 +1374,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2015-11-24,2071.50,2078.50,2071.00,open_test_drive,down,range,2072.25,True,below_range,True,open_test_drive,down,range,2072.25,True,below_range,True
 2015-11-25,2088.00,2089.00,2083.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2015-11-27,2087.50,2088.50,2081.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2015-11-30,2090.25,2092.00,2083.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
+2015-11-30,2090.25,2092.00,2083.25,open_auction_in,,,,False,in_value,True,open_rejection_reverse,down,va,2086.25,False,above_value,False
 2015-12-01,2087.75,2097.25,2084.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2015-12-02,2099.50,2103.25,2097.50,open_auction_out,,va,2099.00,False,above_value,True,open_auction_out,,va,2099.00,False,above_value,True
 2015-12-03,2081.50,2084.50,2065.25,open_auction_out,,va,2068.25,False,below_value,False,open_auction_out,,va,2068.25,False,below_value,False
@@ -1539,7 +1539,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2016-07-22,2160.25,2161.00,2157.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2016-07-25,2166.00,2167.00,2158.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2016-07-26,2161.75,2168.00,2161.50,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,False
-2016-07-27,2168.25,2169.25,2162.25,open_rejection_reverse,down,va,2163.50,False,above_range,False,open_rejection_reverse,down,va,2163.50,False,above_value,True
+2016-07-27,2168.25,2169.25,2162.25,open_rejection_reverse,down,va,2163.50,False,above_range,False,open_rejection_reverse,down,va,2163.50,False,above_range,False
 2016-07-28,2159.25,2162.75,2154.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2016-07-29,2161.00,2165.00,2157.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2016-08-01,2168.00,2169.50,2162.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -1590,7 +1590,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2016-10-04,2155.75,2158.25,2147.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2016-10-05,2150.50,2155.75,2150.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2016-10-06,2150.00,2151.75,2144.50,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,False
-2016-10-07,2157.25,2159.25,2146.25,open_rejection_reverse,down,va,2150.50,False,above_range,False,open_auction_in,,,,False,in_value,True
+2016-10-07,2157.25,2159.25,2146.25,open_rejection_reverse,down,va,2150.50,False,above_range,False,open_rejection_reverse,down,va,2150.50,False,above_range,False
 2016-10-10,2158.00,2163.50,2157.75,open_drive,up,,2162.00,False,above_value,False,open_auction_in,,,,False,in_value,False
 2016-10-11,2152.75,2153.75,2139.75,open_drive,down,,2141.25,True,below_range,True,open_drive,down,,2141.25,True,below_range,True
 2016-10-12,2132.00,2137.00,2126.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -1675,7 +1675,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2017-02-06,2286.75,2291.50,2286.25,open_rejection_reverse,up,va,2290.50,False,below_value,True,open_rejection_reverse,up,va,2290.50,False,below_value,True
 2017-02-07,2292.25,2295.00,2290.25,open_auction_out,,va,2292.75,False,above_range,True,open_auction_out,,va,2292.75,False,above_range,True
 2017-02-08,2284.25,2286.50,2281.00,open_auction_out,,va,2285.00,False,below_range,True,open_auction_out,,va,2285.00,False,below_value,True
-2017-02-09,2293.75,2300.00,2293.00,open_drive,up,,2299.75,True,above_range,True,open_drive,up,,2299.75,True,above_value,True
+2017-02-09,2293.75,2300.00,2293.00,open_drive,up,,2299.75,True,above_range,True,open_drive,up,,2299.75,True,above_range,True
 2017-02-10,2308.00,2310.00,2306.75,open_test_drive,up,va,2309.00,True,above_range,True,open_test_drive,up,va,2309.00,True,above_range,True
 2017-02-13,2319.00,2323.00,2318.50,open_drive,up,,2322.50,True,above_range,True,open_drive,up,,2322.50,True,above_range,True
 2017-02-14,2323.75,2326.25,2320.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -1722,7 +1722,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2017-04-13,2336.25,2344.75,2334.00,open_rejection_reverse,up,va,2341.00,False,below_range,False,open_rejection_reverse,up,va,2341.00,False,below_value,False
 2017-04-17,2330.75,2337.75,2328.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2017-04-18,2336.75,2344.50,2335.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2017-04-19,2345.00,2349.25,2344.25,open_drive,up,,2346.50,False,above_range,True,open_drive,up,,2346.50,False,above_value,False
+2017-04-19,2345.00,2349.25,2344.25,open_drive,up,,2346.50,False,above_range,True,open_drive,up,,2346.50,False,above_value,True
 2017-04-20,2341.00,2344.50,2337.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2017-04-21,2352.25,2353.00,2348.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2017-04-24,2371.50,2372.50,2367.25,open_drive,up,,2370.50,False,above_range,True,open_drive,up,,2370.50,False,above_range,True
@@ -1732,9 +1732,9 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2017-04-28,2388.00,2388.25,2380.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2017-05-01,2386.00,2386.25,2380.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2017-05-02,2387.50,2388.75,2381.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2017-05-03,2381.50,2383.50,2379.00,open_rejection_reverse,up,va,2382.50,True,below_range,True,open_auction_in,,,,False,in_value,True
-2017-05-04,2386.75,2387.75,2381.25,open_rejection_reverse,down,va,2386.00,False,above_range,True,open_auction_in,,,,False,in_value,True
-2017-05-05,2390.00,2391.50,2385.50,open_rejection_reverse,down,va,2387.25,False,above_range,True,open_auction_in,,,,False,in_value,True
+2017-05-03,2381.50,2383.50,2379.00,open_rejection_reverse,up,va,2382.50,True,below_range,True,open_test_drive,down,a_extreme,2382.50,True,below_value,True
+2017-05-04,2386.75,2387.75,2381.25,open_rejection_reverse,down,va,2386.00,False,above_range,True,open_rejection_reverse,down,va,2386.00,False,above_range,True
+2017-05-05,2390.00,2391.50,2385.50,open_rejection_reverse,down,va,2387.25,False,above_range,True,open_rejection_reverse,down,va,2387.25,False,above_range,True
 2017-05-08,2395.75,2397.75,2392.25,open_auction_out,,a_extreme,2392.50,False,above_value,True,open_auction_out,,a_extreme,2392.50,False,above_value,True
 2017-05-09,2397.75,2400.00,2396.00,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,False
 2017-05-10,2391.75,2393.25,2389.25,open_auction_out,,a_extreme,2390.00,False,below_value,True,open_auction_in,,,,False,in_value,True
@@ -1770,7 +1770,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2017-06-22,2433.50,2434.00,2430.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2017-06-23,2432.75,2433.75,2428.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2017-06-26,2442.25,2447.50,2442.00,open_drive,up,,2445.50,False,above_range,True,open_drive,up,,2445.50,False,above_range,True
-2017-06-27,2433.25,2434.50,2429.25,open_auction_out,,va,2431.00,False,below_range,True,open_auction_in,,,,False,in_value,True
+2017-06-27,2433.25,2434.50,2429.25,open_auction_out,,va,2431.00,False,below_range,True,open_auction_out,,va,2431.00,False,below_range,True
 2017-06-28,2428.00,2432.00,2425.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2017-06-29,2439.75,2440.50,2426.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2017-06-30,2425.50,2428.25,2418.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -1831,7 +1831,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2017-09-19,2505.00,2505.25,2501.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2017-09-20,2506.00,2507.25,2503.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2017-09-21,2503.75,2504.50,2496.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2017-09-22,2495.25,2498.75,2494.75,open_auction_out,,range,2498.00,False,below_range,True,open_rejection_reverse,up,va,2498.00,False,below_range,True
+2017-09-22,2495.25,2498.75,2494.75,open_auction_out,,range,2498.00,False,below_range,True,open_rejection_reverse,up,va,2498.00,False,below_value,True
 2017-09-25,2495.75,2500.00,2495.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2017-09-26,2498.50,2501.25,2497.25,open_drive,up,,2499.00,False,above_value,True,open_drive,up,,2499.00,False,above_value,True
 2017-09-27,2503.50,2505.00,2499.50,open_rejection_reverse,down,va,2499.75,False,above_range,True,open_rejection_reverse,down,va,2499.75,False,above_range,True
@@ -1913,7 +1913,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2018-01-17,2788.75,2789.00,2780.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2018-01-18,2802.75,2806.50,2795.75,open_rejection_reverse,down,va,2799.00,False,above_value,True,open_rejection_reverse,down,va,2799.00,False,above_value,True
 2018-01-19,2806.00,2808.25,2800.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2018-01-22,2809.50,2822.50,2809.25,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,False
+2018-01-22,2809.50,2822.50,2809.25,open_auction_in,,,,False,in_value,False,open_drive,up,,2821.25,False,above_value,False
 2018-01-23,2835.50,2841.50,2832.00,open_drive,up,,2838.00,True,above_value,True,open_drive,up,,2838.00,True,above_value,True
 2018-01-24,2848.00,2854.75,2845.50,open_drive,up,,2852.00,True,above_range,True,open_drive,up,,2852.00,True,above_range,True
 2018-01-25,2848.50,2850.00,2833.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -2014,7 +2014,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2018-06-12,2787.00,2787.25,2782.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2018-06-13,2792.50,2794.75,2790.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2018-06-14,2790.25,2794.00,2786.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2018-06-15,2779.00,2779.50,2772.25,open_drive,down,,2773.50,True,below_range,True,open_drive,down,,2773.50,True,below_value,True
+2018-06-15,2779.00,2779.50,2772.25,open_drive,down,,2773.50,True,below_range,True,open_drive,down,,2773.50,True,below_range,True
 2018-06-18,2766.50,2769.75,2761.25,open_auction_out,,a_extreme,2767.50,False,below_value,True,open_auction_out,,a_extreme,2767.50,False,below_value,True
 2018-06-19,2750.50,2758.75,2747.25,open_drive,down,,2747.75,True,below_range,True,open_drive,down,,2747.75,True,below_range,True
 2018-06-20,2774.00,2775.75,2767.75,open_auction_out,,range,2768.50,False,above_range,True,open_auction_out,,range,2768.50,False,above_range,True
@@ -2024,7 +2024,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2018-06-26,2725.50,2730.50,2718.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2018-06-27,2731.75,2745.00,2729.25,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,False
 2018-06-28,2701.25,2707.25,2694.25,open_test_drive,down,va,2700.00,True,below_value,True,open_test_drive,down,va,2700.00,True,below_value,True
-2018-06-29,2729.50,2740.50,2729.50,open_drive,up,,2736.50,True,above_range,True,open_drive,up,,2736.50,True,above_value,True
+2018-06-29,2729.50,2740.50,2729.50,open_drive,up,,2736.50,True,above_range,True,open_auction_in,,,,False,in_value,False
 2018-07-02,2703.00,2712.75,2700.50,open_auction_out,,a_blurred,2711.00,False,below_range,True,open_auction_out,,a_blurred,2711.00,False,below_range,True
 2018-07-03,2737.00,2738.00,2731.25,open_drive,up,,2734.25,False,above_range,True,open_drive,up,,2734.25,False,above_range,True
 2018-07-05,2729.75,2732.75,2722.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -2039,7 +2039,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2018-07-18,2811.75,2814.00,2806.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2018-07-19,2808.75,2812.75,2800.25,open_auction_out,,va,2804.50,False,below_value,True,open_auction_out,,va,2804.50,False,below_value,True
 2018-07-20,2803.25,2807.25,2802.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2018-07-23,2800.00,2803.50,2797.00,open_test_drive,down,range,2798.50,True,below_range,True,open_test_drive,down,range,2798.50,True,below_range,True
+2018-07-23,2800.00,2803.50,2797.00,open_test_drive,down,range,2798.50,True,below_range,True,open_test_drive,down,va,2798.50,True,below_range,True
 2018-07-24,2823.25,2831.25,2822.50,open_drive,up,,2829.75,False,above_range,True,open_drive,up,,2829.75,False,above_range,True
 2018-07-25,2819.00,2826.00,2818.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2018-07-26,2837.00,2843.75,2836.00,open_test_drive,up,va,2839.00,True,above_value,True,open_drive,up,,2839.00,True,above_value,True
@@ -2048,7 +2048,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2018-07-31,2813.00,2818.00,2808.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2018-08-01,2819.50,2824.50,2817.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2018-08-02,2797.50,2810.50,2795.00,open_rejection_reverse,up,va,2808.75,False,below_range,True,open_rejection_reverse,up,va,2808.75,False,below_range,True
-2018-08-03,2829.00,2835.25,2827.00,open_auction_in,,,,False,in_value,True,open_drive,up,,2834.25,True,above_range,True
+2018-08-03,2829.00,2835.25,2827.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2018-08-06,2838.75,2843.50,2835.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2018-08-07,2857.00,2861.50,2855.75,open_drive,up,,2861.50,True,above_range,True,open_drive,up,,2861.50,True,above_range,True
 2018-08-08,2857.00,2858.25,2853.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -2107,7 +2107,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2018-10-23,2715.50,2723.50,2692.25,open_drive,down,,2700.75,False,below_range,True,open_drive,down,,2700.75,False,below_range,True
 2018-10-24,2739.00,2743.50,2726.00,open_rejection_reverse,down,va,2728.00,False,above_value,True,open_rejection_reverse,down,va,2728.00,False,above_value,True
 2018-10-25,2679.25,2697.00,2667.50,open_auction_out,,va,2692.50,False,below_value,True,open_auction_out,,va,2692.50,False,below_value,True
-2018-10-26,2663.75,2672.25,2638.00,open_drive,down,,2648.50,True,below_range,True,open_drive,down,,2648.50,True,below_range,True
+2018-10-26,2663.75,2672.25,2638.00,open_drive,down,,2648.50,True,below_range,True,open_drive,down,,2648.50,True,below_value,True
 2018-10-29,2692.25,2707.00,2687.00,open_drive,up,,2702.00,False,above_value,False,open_drive,up,,2702.00,False,above_value,False
 2018-10-30,2641.25,2675.25,2635.75,open_rejection_reverse,up,va,2663.75,False,below_value,False,open_rejection_reverse,up,va,2663.75,False,below_value,False
 2018-10-31,2711.75,2727.50,2706.25,open_drive,up,,2724.75,True,above_range,True,open_drive,up,,2724.75,True,above_range,True
@@ -2227,7 +2227,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2019-04-17,2923.00,2923.50,2904.50,open_rejection_reverse,down,va,2910.50,False,above_range,False,open_rejection_reverse,down,va,2910.50,False,above_range,False
 2019-04-18,2909.50,2910.00,2897.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2019-04-22,2900.00,2909.00,2899.00,open_auction_in,,,,False,in_value,True,open_rejection_reverse,up,va,2906.25,False,below_value,True
-2019-04-23,2915.25,2923.25,2912.25,open_drive,up,,2923.25,True,above_range,True,open_test_drive,up,va,2923.25,True,above_value,True
+2019-04-23,2915.25,2923.25,2912.25,open_drive,up,,2923.25,True,above_range,True,open_drive,up,,2923.25,True,above_range,True
 2019-04-24,2936.00,2937.50,2931.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2019-04-25,2928.75,2929.25,2915.00,open_drive,down,,2918.75,True,below_value,False,open_drive,down,,2918.75,True,below_value,False
 2019-04-26,2928.00,2929.50,2919.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -2266,7 +2266,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2019-06-13,2890.50,2896.50,2885.25,open_auction_out,,va,2891.75,False,above_range,True,open_auction_out,,va,2891.75,False,above_range,True
 2019-06-14,2889.00,2889.75,2880.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2019-06-17,2895.50,2900.25,2892.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2019-06-18,2914.00,2932.50,2910.25,open_drive,up,,2929.25,True,above_range,True,open_drive,up,,2929.25,True,above_value,False
+2019-06-18,2914.00,2932.50,2910.25,open_drive,up,,2929.25,True,above_range,True,open_drive,up,,2929.25,True,above_range,True
 2019-06-19,2925.50,2927.25,2920.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2019-06-20,2960.50,2961.75,2952.25,open_auction_out,,a_blurred,2953.50,False,above_range,True,open_auction_out,,a_blurred,2953.50,False,above_range,True
 2019-06-21,2955.50,2957.75,2951.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -2412,7 +2412,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2020-01-10,3282.00,3283.75,3274.75,open_auction_out,,va,3280.00,False,above_range,True,open_auction_out,,va,3280.00,False,above_range,True
 2020-01-13,3273.00,3276.00,3268.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2020-01-14,3283.75,3286.50,3279.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2020-01-15,3282.25,3297.00,3281.75,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,False
+2020-01-15,3282.25,3297.00,3281.75,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,True
 2020-01-16,3305.25,3308.50,3302.75,open_drive,up,,3306.75,True,above_range,True,open_drive,up,,3306.75,True,above_range,True
 2020-01-17,3325.25,3326.50,3320.00,open_drive,up,,3326.25,False,above_range,True,open_drive,up,,3326.25,False,above_range,True
 2020-01-21,3316.50,3323.50,3316.00,open_rejection_reverse,up,va,3321.50,False,below_range,True,open_rejection_reverse,up,va,3321.50,False,below_range,True
@@ -2736,7 +2736,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2021-04-26,4178.25,4185.50,4175.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2021-04-27,4183.00,4183.75,4166.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2021-04-28,4182.00,4188.25,4176.75,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,False
-2021-04-29,4207.25,4211.00,4190.25,open_auction_out,,range,4192.75,False,above_range,True,open_auction_out,,va,4192.75,False,above_range,True
+2021-04-29,4207.25,4211.00,4190.25,open_auction_out,,range,4192.75,False,above_range,True,open_auction_out,,range,4192.75,False,above_range,True
 2021-04-30,4180.00,4189.25,4177.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2021-05-03,4198.25,4202.50,4190.00,open_drive,up,,4197.50,False,above_range,True,open_auction_out,,va,4197.50,False,above_value,True
 2021-05-04,4164.75,4170.25,4135.25,open_drive,down,,4147.25,True,below_range,True,open_drive,down,,4147.25,True,below_range,True
@@ -2927,7 +2927,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2022-01-26,4413.00,4437.00,4391.00,open_auction_out,,range,4397.50,False,above_range,True,open_auction_out,,range,4397.50,False,above_range,True
 2022-01-27,4387.50,4422.00,4375.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2022-01-28,4332.00,4336.50,4283.00,open_auction_in,,,,False,in_value,True,open_drive,down,,4312.00,False,below_value,True
-2022-01-31,4417.00,4463.00,4402.75,open_drive,up,,4448.75,False,above_value,False,open_auction_in,,,,False,in_value,False
+2022-01-31,4417.00,4463.00,4402.75,open_drive,up,,4448.75,False,above_value,False,open_drive,up,,4448.75,False,above_value,False
 2022-02-01,4511.75,4514.50,4474.00,open_auction_out,,va,4492.50,False,above_range,False,open_auction_out,,va,4492.50,False,above_range,False
 2022-02-02,4559.75,4569.00,4543.50,open_auction_out,,a_blurred,4546.25,False,above_range,True,open_auction_out,,a_blurred,4546.25,False,above_range,True
 2022-02-03,4514.25,4532.75,4505.00,open_auction_out,,a_blurred,4529.75,False,below_range,True,open_auction_out,,a_blurred,4529.75,False,below_range,True
@@ -2980,7 +2980,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2022-04-12,4440.75,4466.75,4432.75,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,False
 2022-04-13,4389.25,4411.75,4387.00,open_auction_out,,va,4401.50,False,below_value,True,open_auction_out,,va,4401.50,False,below_value,True
 2022-04-14,4444.00,4455.75,4413.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2022-04-18,4376.25,4403.75,4376.25,open_auction_out,,range,4396.25,False,below_range,True,open_rejection_reverse,up,va,4396.25,False,below_value,True
+2022-04-18,4376.25,4403.75,4376.25,open_auction_out,,range,4396.25,False,below_range,True,open_auction_out,,va,4396.25,False,below_range,True
 2022-04-19,4386.75,4437.50,4385.00,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,False
 2022-04-20,4477.50,4484.25,4452.50,open_auction_out,,va,4467.00,False,above_range,True,open_auction_out,,va,4467.00,False,above_range,True
 2022-04-21,4494.50,4509.00,4487.75,open_auction_out,,a_blurred,4496.25,False,above_range,True,open_auction_out,,a_blurred,4496.25,False,above_range,True
@@ -2989,7 +2989,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2022-04-26,4265.75,4267.50,4221.25,open_rejection_reverse,down,va,4231.75,False,above_value,True,open_rejection_reverse,down,va,4231.75,False,above_value,True
 2022-04-27,4179.25,4227.25,4165.00,open_test_drive,down,va,4166.25,True,below_value,True,open_test_drive,down,va,4166.25,True,below_value,True
 2022-04-28,4229.75,4238.00,4191.00,open_rejection_reverse,down,va,4191.50,False,above_value,False,open_auction_in,,,,False,in_value,True
-2022-04-29,4242.50,4265.50,4216.50,open_auction_in,,,,False,in_value,True,open_rejection_reverse,down,va,4218.50,False,above_value,True
+2022-04-29,4242.50,4265.50,4216.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2022-05-02,4127.00,4156.00,4098.00,open_auction_out,,a_extreme,4150.50,False,below_value,True,open_auction_out,,a_extreme,4150.50,False,below_value,True
 2022-05-03,4156.00,4168.25,4139.00,open_test_drive,up,va,4163.25,True,above_value,True,open_test_drive,up,va,4163.25,True,above_value,True
 2022-05-04,4176.50,4180.25,4150.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -3145,7 +3145,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2022-12-07,3933.75,3957.75,3924.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2022-12-08,3955.00,3975.75,3937.75,open_test_drive,up,va,3973.50,True,above_value,False,open_test_drive,up,va,3973.50,True,above_value,False
 2022-12-09,3952.25,3972.00,3944.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2022-12-12,3944.50,3951.75,3937.00,open_auction_out,,a_extreme,3947.50,False,below_value,True,open_rejection_reverse,up,va,3947.50,False,below_value,True
+2022-12-12,3944.50,3951.75,3937.00,open_auction_out,,a_extreme,3947.50,False,below_value,True,open_auction_out,,a_extreme,3947.50,False,below_value,True
 2022-12-13,4106.50,4107.25,4052.00,open_auction_out,,a_blurred,4058.25,False,above_range,True,open_auction_out,,a_blurred,4058.25,False,above_range,True
 2022-12-14,4051.75,4080.00,4051.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2022-12-15,3976.00,3985.25,3933.50,open_drive,down,,3942.25,True,below_range,True,open_drive,down,,3942.25,True,below_range,True
@@ -3188,10 +3188,10 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2023-02-09,4165.50,4166.75,4141.75,open_rejection_reverse,down,va,4143.50,False,above_value,True,open_rejection_reverse,down,va,4143.50,False,above_value,True
 2023-02-10,4078.50,4100.75,4069.75,open_rejection_reverse,up,va,4095.75,False,below_value,True,open_rejection_reverse,up,va,4095.75,False,below_value,True
 2023-02-13,4107.00,4129.00,4101.50,open_drive,up,,4128.50,True,above_range,True,open_drive,up,,4128.50,True,above_range,True
-2023-02-14,4131.50,4170.00,4114.00,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,True
-2023-02-15,4122.00,4134.75,4113.00,open_rejection_reverse,up,va,4127.50,False,below_value,True,open_auction_in,,,,False,in_value,True
-2023-02-16,4103.75,4122.75,4098.25,open_auction_out,,range,4121.50,False,below_range,True,open_auction_out,,va,4121.50,False,below_value,True
-2023-02-17,4076.25,4085.75,4057.00,open_auction_out,,a_blurred,4074.50,False,below_range,True,open_auction_out,,range,4074.50,False,below_range,True
+2023-02-14,4131.50,4170.00,4114.00,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,False
+2023-02-15,4122.00,4134.75,4113.00,open_rejection_reverse,up,va,4127.50,False,below_value,True,open_rejection_reverse,up,va,4127.50,False,below_value,True
+2023-02-16,4103.75,4122.75,4098.25,open_auction_out,,range,4121.50,False,below_range,True,open_auction_out,,a_extreme,4121.50,False,below_value,True
+2023-02-17,4076.25,4085.75,4057.00,open_auction_out,,a_blurred,4074.50,False,below_range,True,open_auction_out,,a_blurred,4074.50,False,below_range,True
 2023-02-21,4045.25,4056.25,4029.50,open_test_drive,down,va,4031.75,True,below_range,True,open_test_drive,down,va,4031.75,True,below_range,True
 2023-02-22,4009.00,4018.50,3992.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2023-02-23,4028.50,4034.25,4017.25,open_auction_out,,va,4022.75,False,above_range,True,open_rejection_reverse,down,va,4022.75,False,above_value,True
@@ -3229,9 +3229,9 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2023-04-11,4142.25,4142.75,4133.00,open_auction_out,,range,4140.00,False,above_range,True,open_auction_out,,range,4140.00,False,above_range,True
 2023-04-12,4158.25,4161.00,4140.75,open_auction_out,,va,4155.00,False,above_range,True,open_auction_out,,va,4155.00,False,above_range,True
 2023-04-13,4130.25,4146.50,4124.50,open_rejection_reverse,up,va,4145.50,False,below_value,True,open_rejection_reverse,up,va,4145.50,False,below_value,True
-2023-04-14,4166.25,4189.00,4159.25,open_auction_in,,,,False,in_value,True,open_auction_out,,range,4161.00,False,above_range,True
-2023-04-17,4161.00,4169.50,4159.50,open_auction_in,,,,False,in_value,True,open_auction_out,,va,4164.75,False,above_value,True
-2023-04-18,4193.50,4194.75,4170.50,open_auction_out,,range,4171.75,False,above_range,True,open_auction_out,,range,4171.75,False,above_range,True
+2023-04-14,4166.25,4189.00,4159.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
+2023-04-17,4161.00,4169.50,4159.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
+2023-04-18,4193.50,4194.75,4170.50,open_auction_out,,range,4171.75,False,above_range,True,open_auction_out,,range,4171.75,False,above_range,False
 2023-04-19,4158.50,4167.00,4157.75,open_auction_out,,range,4166.00,False,below_range,True,open_auction_out,,range,4166.00,False,below_range,True
 2023-04-20,4146.25,4159.50,4145.00,open_auction_out,,range,4156.50,False,below_range,True,open_auction_out,,range,4156.50,False,below_range,True
 2023-04-21,4155.75,4158.25,4137.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -3247,10 +3247,10 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2023-05-05,4114.50,4136.75,4111.50,open_drive,up,,4133.25,True,above_range,True,open_drive,up,,4133.25,True,above_range,True
 2023-05-08,4154.75,4156.25,4142.25,open_rejection_reverse,down,va,4143.25,False,above_value,False,open_rejection_reverse,down,va,4143.25,False,above_value,False
 2023-05-09,4135.50,4142.75,4131.00,open_auction_out,,range,4137.25,False,below_range,True,open_auction_out,,range,4137.25,False,below_range,True
-2023-05-10,4162.75,4169.50,4138.50,open_auction_out,,va,4145.00,False,above_range,True,open_rejection_reverse,down,va,4145.00,False,above_value,True
+2023-05-10,4162.75,4169.50,4138.50,open_auction_out,,va,4145.00,False,above_range,True,open_auction_out,,va,4145.00,False,above_range,True
 2023-05-11,4141.50,4143.00,4121.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2023-05-12,4155.75,4158.25,4139.50,open_rejection_reverse,down,va,4141.00,False,above_range,True,open_rejection_reverse,down,va,4141.00,False,above_value,True
-2023-05-15,4143.00,4144.00,4123.00,open_rejection_reverse,down,va,4130.75,False,above_value,False,open_auction_in,,,,False,in_value,True
+2023-05-15,4143.00,4144.00,4123.00,open_rejection_reverse,down,va,4130.75,False,above_value,False,open_rejection_reverse,down,va,4130.75,False,above_value,False
 2023-05-16,4139.00,4148.75,4127.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2023-05-17,4143.75,4144.25,4125.75,open_rejection_reverse,down,va,4137.00,True,above_value,False,open_auction_in,,,,False,in_value,True
 2023-05-18,4167.25,4187.50,4164.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -3304,7 +3304,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2023-07-28,4596.75,4607.25,4589.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2023-07-31,4611.50,4619.25,4601.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2023-08-01,4599.50,4609.25,4591.50,open_auction_out,,va,4595.50,False,below_value,True,open_auction_out,,va,4595.50,False,below_value,True
-2023-08-02,4567.75,4570.25,4550.75,open_drive,down,,4554.75,True,below_range,True,open_drive,down,,4554.75,True,below_value,True
+2023-08-02,4567.75,4570.25,4550.75,open_drive,down,,4554.75,True,below_range,True,open_drive,down,,4554.75,True,below_range,True
 2023-08-03,4513.25,4526.00,4506.25,open_auction_out,,a_blurred,4506.50,True,below_range,True,open_auction_out,,a_blurred,4506.50,True,below_range,True
 2023-08-04,4538.50,4550.75,4518.75,open_rejection_reverse,down,va,4536.00,False,above_value,True,open_rejection_reverse,down,va,4536.00,False,above_value,True
 2023-08-07,4518.25,4529.00,4510.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
@@ -3313,7 +3313,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2023-08-10,4509.00,4544.75,4506.75,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,False
 2023-08-11,4465.50,4493.00,4459.00,open_rejection_reverse,up,va,4486.50,False,below_range,True,open_rejection_reverse,up,va,4486.50,False,below_range,True
 2023-08-14,4472.50,4489.25,4469.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2023-08-15,4487.25,4491.00,4461.25,open_test_drive,down,va,4464.25,True,below_value,True,open_test_drive,down,va,4464.25,True,below_value,True
+2023-08-15,4487.25,4491.00,4461.25,open_test_drive,down,va,4464.25,True,below_value,True,open_auction_in,,,,False,in_value,True
 2023-08-16,4448.25,4465.50,4447.25,open_auction_out,,va,4457.50,False,below_value,True,open_auction_out,,va,4457.50,False,below_value,True
 2023-08-17,4433.00,4435.75,4419.75,open_test_drive,down,va,4422.75,True,below_value,True,open_test_drive,down,va,4422.75,True,below_value,True
 2023-08-18,4353.50,4372.75,4350.00,open_drive,down,,4358.50,False,below_range,True,open_drive,down,,4358.50,False,below_range,True
@@ -3477,7 +3477,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2024-04-05,5211.00,5231.25,5206.75,open_auction_out,,a_extreme,5221.25,False,below_value,True,open_auction_out,,a_extreme,5221.25,False,below_value,True
 2024-04-08,5258.50,5262.75,5246.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2024-04-09,5271.75,5274.25,5240.00,open_rejection_reverse,down,va,5241.75,False,above_range,False,open_auction_in,,,,False,in_value,True
-2024-04-10,5199.75,5216.25,5191.00,open_auction_out,,range,5211.25,False,below_range,True,open_auction_out,,a_extreme,5211.25,False,below_value,True
+2024-04-10,5199.75,5216.25,5191.00,open_auction_out,,range,5211.25,False,below_range,True,open_auction_out,,range,5211.25,False,below_range,True
 2024-04-11,5218.75,5220.50,5181.75,open_rejection_reverse,down,va,5186.50,False,above_value,False,open_rejection_reverse,down,va,5186.50,False,above_value,False
 2024-04-12,5204.25,5218.75,5195.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2024-04-15,5211.25,5213.00,5179.00,open_rejection_reverse,down,va,5185.50,False,above_value,True,open_rejection_reverse,down,va,5185.50,False,above_value,True
@@ -3534,7 +3534,7 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2024-06-27,5538.75,5555.00,5536.50,open_auction_in,,,,False,in_value,False,open_auction_in,,,,False,in_value,True
 2024-06-28,5552.75,5585.00,5547.75,open_auction_out,,va,5577.75,False,above_value,False,open_auction_out,,va,5577.75,False,above_value,True
 2024-07-01,5537.00,5539.25,5505.50,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
-2024-07-02,5516.00,5536.25,5515.00,open_auction_in,,,,False,in_value,True,open_rejection_reverse,up,va,5532.50,False,below_value,False
+2024-07-02,5516.00,5536.25,5515.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2024-07-03,5564.25,5580.00,5563.75,open_drive,up,,5569.75,True,above_value,True,open_drive,up,,5569.75,True,above_value,True
 2024-07-05,5592.25,5602.75,5585.50,open_test_drive,up,va,5595.75,True,above_value,True,open_test_drive,up,va,5595.75,True,above_value,True
 2024-07-08,5629.00,5637.50,5626.50,open_auction_out,,a_blurred,5629.75,False,above_range,True,open_auction_out,,a_blurred,5629.75,False,above_range,True
@@ -4063,8 +4063,8 @@ date,open,ib_high,ib_low,open_type_day,open_dir_day,trigger_day,c1030_day,ib_bre
 2026-08-07,7757.25,7780.50,7743.50,open_test_drive,up,va,7779.50,True,above_value,True,open_auction_in,,,,False,in_value,True
 2026-08-10,7773.00,7791.25,7771.25,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2026-08-11,7791.75,7792.50,7771.75,open_rejection_reverse,down,va,7784.75,False,above_value,False,open_rejection_reverse,down,va,7784.75,False,above_value,False
-2026-08-12,7791.75,7794.00,7763.50,open_rejection_reverse,down,va,7772.50,False,above_value,True,open_rejection_reverse,down,va,7772.50,False,above_value,False
-2026-08-13,7793.25,7837.00,7785.50,open_drive,up,,7836.50,True,above_value,False,open_test_drive,up,va,7836.50,True,above_value,True
+2026-08-12,7791.75,7794.00,7763.50,open_rejection_reverse,down,va,7772.50,False,above_value,True,open_rejection_reverse,down,va,7772.50,False,above_value,True
+2026-08-13,7793.25,7837.00,7785.50,open_drive,up,,7836.50,True,above_value,False,open_drive,up,,7836.50,True,above_value,False
 2026-08-14,7827.75,7830.75,7813.75,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2026-08-17,7803.00,7809.50,7791.00,open_auction_in,,,,False,in_value,True,open_auction_in,,,,False,in_value,True
 2026-08-18,7726.25,7735.25,7716.50,open_drive,down,,7726.50,True,below_range,True,open_drive,down,,7726.50,True,below_range,True

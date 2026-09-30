@@ -24,5 +24,13 @@ DAY_CODE = {"normal": "nm", "nontrend": "nt", "normal_variation": "nv", "trend":
 
 DIR = {"up": "u", "down": "d", "": ""}
 
-# что случилось с днём в композите (mp_composite_*.csv, колонка action)
-COMP_ACTION = {"start": 0, "added": 1, "skipped_shape": 2, "skipped_daytype": 3}
+# что случилось с днём в композите (mp_composite_*.csv, колонки action и start_reason).
+# День либо добавлен в открытый композит, либо начал новый — и тогда важно, почему.
+COMP_ACTION = {
+    "added": 1,
+    "start:first": 0,          # первый день истории
+    "start:migration": 2,      # VA нового дня не совпала с VA композита
+    "start:shape": 3,          # VA совпала, но склеенный профиль перестал быть колоколом
+    "start:daytype": 4,        # трендовый день или double-distribution: в композит не берём
+    "start:data_gap": 5,       # день после дыры в данных, опоры нет
+}

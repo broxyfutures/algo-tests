@@ -5,9 +5,13 @@
 Выход: data/derived/mp_composite_{fixed,adaptive}.csv, одна строка на RTH-день.
 
 Что произошло с днём:
-  date, row, action           start (день начал новый композит) / added / skipped_shape /
-                              skipped_daytype (Trend или Double-Distribution Trend, VA совпала)
-  start_reason                first / migration (VA не совпала) / data_gap (день после дыры в данных)
+  date, row, action           added (день вошёл в открытый композит) либо start (начал новый)
+  start_reason                почему начался новый: first (первый день истории) / migration (VA не
+                              совпала) / shape (VA совпала, но профиль перестал быть колоколом) /
+                              daytype (трендовый день или double-distribution) / data_gap (после дыры)
+
+День либо входит в композит, либо закрывает его и становится первым днём следующего. Пропусков нет,
+поэтому композит — всегда непрерывный отрезок торговых дней, а каждый день ровно в одном композите.
 В день ролла открытый композит сдвигается на спред новый − старый контракт (prev_shift) и живёт дальше.
   overlap                     доля VA дня внутри VA композита до этого дня
   poc_pos, bimodal, va_sym    форма пробного профиля (композит + день), если была проверка
@@ -103,15 +107,15 @@ def main() -> int:
                 cs = P.tpo_stats(comp_lo, comp_hi, row)
                 ov = overlap_share(b.val, b.vah, cs["val"], cs["vah"])
                 r["overlap"] = round(ov, 3)
-                if ov > C.COMP_MIN_OVERLAP and b.day_type in C.COMP_EXCLUDE_DAY_TYPES:
-                    action, reason = "skipped_daytype", ""
-                elif ov > C.COMP_MIN_OVERLAP:
+                if ov <= C.COMP_MIN_OVERLAP:
+                    action, reason = "start", "migration"
+                elif b.day_type in C.COMP_EXCLUDE_DAY_TYPES:
+                    action, reason = "start", "daytype"
+                else:
                     tl, th = np.r_[comp_lo, lo], np.r_[comp_hi, hi]
                     sh = shape(tl, th, row)
                     r.update(poc_pos=sh["poc_pos"], bimodal=sh["bimodal"], va_sym=sh["va_sym"])
-                    action, reason = ("added", "") if sh["shape_ok"] else ("skipped_shape", "")
-                else:
-                    action, reason = "start", "migration"
+                    action, reason = ("added", "") if sh["shape_ok"] else ("start", "shape")
             if action == "start":
                 comp_id += 1
                 comp_lo, comp_hi, comp_start, comp_days = lo.copy(), hi.copy(), b.date.date(), 1
@@ -172,8 +176,8 @@ def main() -> int:
         print("  длина (дней → сколько композитов):", lengths.value_counts().sort_index().to_dict())
         print("  действия с днями:", df["action"].value_counts().to_dict())
         print("  почему начинался новый:", df.loc[df.action == "start", "start_reason"].value_counts().to_dict())
-        sk = df[df.action == "skipped_shape"]
-        print(f"  пропущено по форме: {len(sk)} (двойное распределение {int(sk.bimodal.sum())}, "
+        sk = df[(df.action == "start") & (df.start_reason == "shape")]
+        print(f"  закрыто по форме: {len(sk)} (двойное распределение {int(sk.bimodal.sum())}, "
               f"POC не в центре {int(((sk.poc_pos < C.COMP_POC_POS[0]) | (sk.poc_pos > C.COMP_POC_POS[1])).sum())}, "
               f"VA несимметрична {int((sk.va_sym < C.COMP_VA_SYM).sum())})")
         print("  опора дня:", df["ref_source"].value_counts().to_dict())

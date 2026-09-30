@@ -19,7 +19,8 @@
     z0/t0 точка и тип открытия при опоре «вчерашний день», z1/t1 — при опоре «композит»
     ref0  [poc, vah, val, high, low] вчерашнего профиля (в день ролла уже со сдвигом),
     ref1  то же для опоры-композита (иначе вчерашний день), null если опоры нет
-    cid   номер композита, cact 0 start / 1 added / 2 skipped_shape / 3 skipped_daytype,
+    cid   номер композита, cact 1 добавлен, иначе начал новый: 0 первый день, 2 миграция VA,
+          3 сломана форма, 4 трендовый день, 5 после дыры в данных;
           cdays длина композита после этого дня
     flags биты: 1 ролл · 2 уходящий контракт · 4 укороченный день · 8 день после дыры в данных ·
           16 день не входит в статистику теста 1
@@ -105,7 +106,8 @@ def main() -> int:
                 ZONE_CODE[o.open_zone_comp], OPEN_CODE[o.open_type_comp],
                 levels(b, ["prev_poc", "prev_vah", "prev_val", "prev_high", "prev_low"]),
                 levels(c, ["ref_poc", "ref_vah", "ref_val", "ref_high", "ref_low"]),
-                int(c.comp_id), COMP_ACTION[c.action], int(c.comp_days), int(flags),
+                int(c.comp_id), COMP_ACTION[c.action if c.action == "added" else f"start:{c.start_reason}"],
+                int(c.comp_days), int(flags),
             ])
             if c.action in ("start", "added"):
                 members.setdefault(int(c.comp_id), []).append(i)
