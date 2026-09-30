@@ -189,6 +189,7 @@ table.plain{width:100%;border-collapse:collapse;font-size:12px}
 .foot{margin-top:28px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--t4)}
 
 /* главная: обычная шапка страницы, заголовок чуть крупнее; плитки в стилистике COT Report */
+.hdr.hdr-root{border-bottom:none;padding-bottom:6px}
 .hdr.hdr-root h1{font-size:20px}
 .hdr.hdr-root .sub{text-transform:none;letter-spacing:.06em;font-size:11px}
 .tools-panel{border:1px solid var(--border);border-radius:2px;padding:14px;background:var(--surface)}
@@ -202,5 +203,5 @@ table.plain{width:100%;border-collapse:collapse;font-size:12px}
 .cards-title{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--t1);font-weight:600;margin:26px 0 12px}
 
 /* заголовки разделов на странице инструмента: тем же шрифтом и размером, что h1 страницы */
-.sec-title{margin:0 0 16px;font-size:15px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--t1)}
+.sec-title{margin:26px 0 12px;font-size:15px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--t1)}
 .card .cards{margin-bottom:0}
