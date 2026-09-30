@@ -8,7 +8,10 @@
   date, row, action           added (день вошёл в открытый композит) либо start (начал новый)
   start_reason                почему начался новый: first (первый день истории) / migration (VA не
                               совпала) / shape (VA совпала, но профиль перестал быть колоколом) /
-                              daytype (трендовый день или double-distribution) / data_gap (после дыры)
+                              data_gap (после дыры в данных)
+
+Тип дня на композит не влияет: трендовый день войдёт, если VA совпала и склеенный профиль остался
+колоколом, и закроет композит, если форма сломалась — как любой другой день.
 
 День либо входит в композит, либо закрывает его и становится первым днём следующего. Пропусков нет,
 поэтому композит — всегда непрерывный отрезок торговых дней, а каждый день ровно в одном композите.
@@ -65,8 +68,6 @@ def main() -> int:
 
     for mode in C.ROW_MODES:
         daily = pd.read_csv(C.DERIVED / f"mp_daily_{mode}.csv", parse_dates=["date"])
-        dtype = pd.read_csv(C.DERIVED / f"mp_daytype_{mode}.csv", parse_dates=["date"])
-        daily = daily.merge(dtype[["date", "day_type"]], on="date", how="left")
         rows = []
         comp_members = {}         # comp_id → [(дата, сдвиг на роллы)] участников (для графика)
         members = []              # участники открытого композита
@@ -109,8 +110,6 @@ def main() -> int:
                 r["overlap"] = round(ov, 3)
                 if ov <= C.COMP_MIN_OVERLAP:
                     action, reason = "start", "migration"
-                elif b.day_type in C.COMP_EXCLUDE_DAY_TYPES:
-                    action, reason = "start", "daytype"
                 else:
                     tl, th = np.r_[comp_lo, lo], np.r_[comp_hi, hi]
                     sh = shape(tl, th, row)
