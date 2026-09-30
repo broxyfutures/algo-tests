@@ -202,6 +202,4 @@ table.plain{width:100%;border-collapse:collapse;font-size:12px}
 .tcard.tplus:hover{border-color:var(--border-hi);background:var(--surface-2);color:var(--t1)}
 .cards-title{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--t1);font-weight:600;margin:26px 0 12px}
 
-/* заголовки разделов на странице инструмента: тем же шрифтом и размером, что h1 страницы */
-.sec-title{margin:26px 0 12px;font-size:15px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--t1)}
 .card .cards{margin-bottom:0}

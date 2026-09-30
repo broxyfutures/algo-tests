@@ -439,12 +439,12 @@ def render_section(folder: Path, depth: int, crumbs: list[str], children: list[d
                      'title="Новый проект в Claude Code">+</a>')
         parts.append('<div class="tools-panel"><div class="cards tools">' + "".join(cards) + "</div></div>")
     else:
-        # страница инструмента: Tests, потом Chart; заголовки над карточками, шрифтом h1 страницы
+        # страница инструмента: карточка с плитками тестов, под ней карточка чарта, без заголовков
         if children:
-            parts.insert(0, '<h2 class="sec-title">Tests</h2><section class="card"><div class="cards">'
+            parts.insert(0, '<section class="card"><div class="cards">'
                          + "".join(tile(c, "Тест" if c["is_test"] else "Раздел") for c in children) + "</div></section>")
         if r["mount"] and not mounted:
-            parts.append(f'<h2 class="sec-title">Chart</h2><section class="card">{r["mount"](meta)}</section>')
+            parts.append(f'<section class="card">{r["mount"](meta)}</section>')
         if not children and not r["mount"]:
             parts.append('<div class="empty">Пока пусто.</div>')
     return page_shell(title, meta.get("subtitle", ""), crumbs, depth, "\n".join(parts), "", scripts_html(r, depth, None)), meta
