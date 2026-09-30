@@ -11,7 +11,7 @@
                     modes: {f: {days, comps}, a: {days, comps}}}
 
   день = [ row, bl, poc, vah, val, ibh, ibl, open, high, low, close,
-           dt, dd, z0, t0, z1, t1, ref0, ref1, cid, cact, cdays, flags ]
+           dt, dd, z0, t0, z1, t1, ref0, ref1, cid, cact, cdays, flags, c1030, shift ]
     row   высота строки этого режима в пайплайне (график умеет рисовать любой другой)
     bl    [lo0,hi0, lo1,hi1, ...] — low и high блоков A…M в тиках (0.25) от low дня;
           точные цены, поэтому профиль пересобирается под любую высоту строки
@@ -24,6 +24,8 @@
           cdays длина композита после этого дня
     flags биты: 1 ролл · 2 уходящий контракт · 4 укороченный день · 8 день после дыры в данных ·
           16 день не входит в статистику теста 1
+    c1030 цена в 10:30 (закрытие блока B), shift сдвиг вчерашних цен на ролл (0, если ролла нет):
+          по ним тест 1 пересчитывает точку и тип открытия со своей высотой строки
   comps[id] = {s: индекс первого дня, d: [индексы дней-участников],
                sh: [сдвиг цен каждого дня на роллы внутри композита],
                poc, vah, val, hi, lo}   — только композиты от 2 дней; профиль график собирает сам
@@ -65,6 +67,7 @@ def main() -> int:
     per = pd.read_parquet(C.DERIVED / "periods_30m.parquet")
     per = per[per.session == "RTH"].sort_values(["date", "period"])
     by_day = {d: (g["low"].to_numpy(), g["high"].to_numpy()) for d, g in per.groupby("date")}
+    c1030 = per[per.period == C.IB_PERIODS - 1].set_index("date")["close"]
 
     kw = dict(parse_dates=["date"], keep_default_na=False)
     daily = {m: pd.read_csv(C.DERIVED / f"mp_daily_{m}.csv", parse_dates=["date"]) for m in C.ROW_MODES}
@@ -108,6 +111,7 @@ def main() -> int:
                 levels(c, ["ref_poc", "ref_vah", "ref_val", "ref_high", "ref_low"]),
                 int(c.comp_id), COMP_ACTION[c.action if c.action == "added" else f"start:{c.start_reason}"],
                 int(c.comp_days), int(flags),
+                num(c1030.get(b.date)), num(b.prev_shift) or 0,
             ])
             if c.action in ("start", "added"):
                 members.setdefault(int(c.comp_id), []).append(i)

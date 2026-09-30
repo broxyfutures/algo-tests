@@ -329,9 +329,10 @@ def mount_mp_zone_table(meta: dict) -> str:
 
 def mount_mp_open_matrix(meta: dict) -> str:
     return ('<div class="controls" id="om-controls"></div>'
-            '<h3 class="card-title" style="margin-top:4px">Тепловая карта<span class="hint" id="om-heat-sub"></span></h3><div id="om-heat"></div>'
+            '<h3 class="card-title" style="margin-top:4px">Калькулятор<span class="hint">точка и тип открытия → вероятность типа дня</span></h3><div id="om-calc"></div>'
+            '<h3 class="card-title" style="margin-top:26px">Тепловая карта<span class="hint" id="om-heat-sub"></span></h3><div id="om-heat"></div>'
+            '<div class="om-info" id="om-heat-info" hidden></div>'
             '<h3 class="card-title" style="margin-top:26px">Какой тип дня</h3><div id="om-types"></div>'
-            '<h3 class="card-title" style="margin-top:22px">По тренду точки открытия или против</h3><div id="om-dirs"></div>'
             '<p class="note" id="om-note"></p>')
 
 

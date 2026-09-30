@@ -174,13 +174,15 @@
     function matches(i){
       const d = day(i);
       if (d[F.flags] & 16) return false;                  // день не в статистике теста
+      if (!owns('filter') && sel.idx) return sel.idx.has(i);   // тест прислал готовый список дней
       const f = filterNow();
       if (!f.zones.length && !f.opens.length && !f.dts.length) return true;
       return (!f.zones.length || f.zones.includes(zoneOf(d)))
         && (!f.opens.length || f.opens.includes(typeOf(d)))
         && (!f.dts.length || f.dts.includes(d[F.dt]));
     }
-    const anyFilter = () => { const f = filterNow(); return !!(f.zones.length || f.opens.length || f.dts.length); };
+    const anyFilter = () => { if (!owns('filter') && sel.idx) return true;
+      const f = filterNow(); return !!(f.zones.length || f.opens.length || f.dts.length); };
 
     // колонки: дни и (если включено) склеенные профили композитов после последнего дня-участника
     let cols = [];
@@ -663,7 +665,11 @@
       const x = e.detail || {};
       if (x.mode && x.mode !== S.m){ S.m = x.mode; cache = new Map(); cacheKey = ''; }
       if (x.ref) S.c = x.ref;
-      sel = {zones: x.zones || [], open: x.open || '', dt: x.dayType || '', label: x.label || ''};
+      // своя высота строки статистики теста: график рисует профили той же строкой
+      if (x.ticks !== undefined && x.ticks !== S.ticks){ S.ticks = x.ticks; cache = new Map(); cacheKey = ''; save(); }
+      // idx — индексы дней выборки: тест сам знает, какие дни попали (период, своя строка)
+      sel = {zones: x.zones || [], open: x.open || '', dt: x.dayType || '', label: x.label || '',
+             idx: Array.isArray(x.idx) ? new Set(x.idx) : null};
       build_cols(); controls(); draw();
     });
 
