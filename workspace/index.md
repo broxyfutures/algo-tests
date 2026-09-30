@@ -1,3 +1,4 @@
 ---
-title: Algo Tests
+title: Algo-Tests Workspace
+subtitle: Рабочее пространство для тестов и идей при работе с моими торговыми инструментами
 ---

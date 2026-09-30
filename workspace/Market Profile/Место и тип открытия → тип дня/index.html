@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Место и тип открытия → тип дня</title>
 <script>try{if(localStorage.getItem("algo-tests-theme")==="light")document.documentElement.setAttribute("data-theme","light")}catch(e){}</script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&family=Unbounded:wght@600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@400;500&display=swap">
 <link rel="stylesheet" href="../../assets/style.css"></head>
 <body>
 <div class="theme-toggle" id="theme-toggle" role="button" tabindex="0" aria-label="Переключить тему"><span class="label" id="theme-toggle-label">Тёмная</span><div class="theme-toggle-track"><div class="theme-toggle-knob"></div></div></div>
@@ -79,15 +79,23 @@
 .res tr.om-zone td{border-top:1px solid var(--border-2)}
 .res tr.om-sub td.state{padding-left:26px;font-weight:500;letter-spacing:.02em}
 .om-heat{width:100%;overflow-x:auto}
-table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;width:100%;table-layout:fixed;min-width:560px}
-.om-hm col.om-c0{width:170px}
+table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;width:100%;table-layout:fixed;min-width:760px}
+.om-hm col.om-c0{width:240px}
+.om-hm col.om-cn{width:56px}
+.om-hm td.om-n{color:var(--t3);font-family:var(--mono);font-size:11.5px;background:none}
+.om-hm tr.om-hz th.om-rowh{color:var(--t1);font-weight:600;padding-top:10px}
+.om-hm tr.om-hs th.om-rowh{padding-left:18px}
+.om-hm tr.om-ha th.om-rowh{color:var(--t1);font-weight:600}
+.om-hm th.om-colh{cursor:pointer}
+.om-hm th.om-colh:hover,.om-hm th.om-colsel{color:var(--t1)}
+.om-hm th.om-colsel{box-shadow:inset 0 -2px 0 var(--t1)}
 .om-hm th{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);font-weight:500;padding:6px 4px;text-align:center;vertical-align:bottom;line-height:1.4}
 .om-hm th.om-rowh{text-align:left;white-space:nowrap;text-transform:none;font-size:12px;letter-spacing:.02em;color:var(--t2);padding-right:12px;overflow:hidden;text-overflow:ellipsis}
 .om-hm tbody th.om-rowh{cursor:pointer}
 .om-hm tbody th.om-rowh:hover,.om-hm tbody th.om-rowsel{color:var(--t1)}
 .om-hm tbody th.om-rowsel{box-shadow:inset 2px 0 0 var(--t1)}
 .om-hm th .om-n{display:block;color:var(--t4);letter-spacing:.06em}
-.om-hm td{padding:11px 4px;text-align:center;border-radius:3px;font-variant-numeric:tabular-nums}
+.om-hm td{padding:9px 4px;text-align:center;border-radius:3px;font-variant-numeric:tabular-nums}
 .om-hm td.om-base{background:var(--surface-2)!important;color:var(--t2)!important}
 .om-hm .om-colsel{outline:1px solid var(--border-hi);outline-offset:-1px}
 .om-hm tbody td[data-k]{cursor:pointer}
@@ -109,7 +117,8 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;width:1
 .om-info .om-dates{margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--t3);line-height:1.6}
 .om-calc{font-family:var(--sans)}
 .om-calc .om-cin{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:flex-end;margin-bottom:14px}
-.om-calc select{font:inherit;font-size:12px;padding:5px 8px;background:var(--surface-2);color:var(--t1);border:1px solid var(--border-2);border-radius:3px;min-width:210px}
+#om-calc .ctl{flex-wrap:wrap;max-width:100%}
+#om-calc .seg{max-width:100%;flex-wrap:wrap}
 .om-calc .om-cres{font-size:12px;color:var(--t3);margin-bottom:8px}
 .om-calc .om-cres b{color:var(--t1);font-weight:500}
 .om-sbar{display:flex;height:34px;gap:2px;border-radius:4px;overflow:hidden}
@@ -475,7 +484,7 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;width:1
       ctl('Зоны', seg([['5', '5 зон'], ['3', '3 группы']], S.z, v => upd('z', v))),
       ctl('Период', seg(PRESETS.map(p => [p[0], p[1]]), presetNow(), v => { const p = PRESETS.find(x => x[0] === v); updMany({from: p[2], to: p[3]}); }), dateRange()),
       ctl('Показать', seg([['pct', '% дней'], ['n', 'дни']], S.v, v => upd('v', v))),
-      ctl('Шкала карты', seg([['row', 'по строке'], ['all', 'общая']], S.hs, v => upd('hs', v))),
+      ctl('Шкала карты', seg([['row', 'по типу дня'], ['all', 'общая']], S.hs, v => upd('hs', v))),
     );
     const R = rowsNow();
     if (!R){
@@ -534,73 +543,80 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;width:1
     const goRow = document.querySelector('#om-types .om-go-row');
     if (goRow) goRow.addEventListener('click', () => pick(sg1.dates, selName));
     document.querySelectorAll('#om-types tr[data-k]').forEach(tr =>
-      tr.addEventListener('click', () => updMany({sel: tr.dataset.k, cell: '', hrow: ''})));
+      tr.addEventListener('click', () => upd('sel', tr.dataset.k)));
 
     // ---------------------------------------------------------------- тепловая карта
-    // тип дня (Y) × тип открытия (X) внутри зоны выбранной строки; без зоны — все зоны вместе
-    const hz = selRow.zone || null;
-    const colsOut = OT.map(([o, name]) => ({o, name, g: G[(hz || '*') + '|' + o]})).filter(c => c.g && c.g.n);
-    const val = (c, t) => (c.g.t[t] || 0) / c.g.n * 100;
-    const rowMax = {}, rowMin = {};
+    // все три переменные сразу: строка = точка открытия (вся зона) и точка × тип открытия,
+    // колонка = тип дня, ячейка = доля дней строки с этим типом дня (строка = 100%)
+    const HR = order.filter(o => !(o.cls === 'om-sub' && ZL.length && G[o.zone + '|*'].n === G[o.k].n));   // «внутри VA» не дублируем
+    if (S.cell && !S.cell.includes('#')) S.cell = '';
+    const val = (g, t) => g.n ? (g.t[t] || 0) / g.n * 100 : 0;
+    const colMax = {}, colMin = {};
     DT.forEach(t => {
-      const v = colsOut.map(c => val(c, t[0]));
-      rowMax[t[0]] = Math.max(...v, 0.1); rowMin[t[0]] = Math.min(...v, rowMax[t[0]]);
+      const v = HR.filter(o => o.k !== '_all').map(o => val(G[o.k], t[0]));
+      colMax[t[0]] = Math.max(...v, 0.1); colMin[t[0]] = Math.min(...v, colMax[t[0]]);
     });
-    const mxAll = Math.max(...DT.map(t => rowMax[t[0]]), 1);
-    // «по строке»: минимум строки в начале шкалы, максимум в конце; «общая»: 0 → максимум карты
+    const mxAll = Math.max(...DT.map(t => colMax[t[0]]), 1);
+    // «по типу дня»: в каждой колонке своя шкала от минимума к максимуму; «общая»: 0 → максимум карты
     const norm = (p, t) => S.hs === 'row'
-      ? (rowMax[t] - rowMin[t] < 1e-9 ? 0.5 : (p - rowMin[t]) / (rowMax[t] - rowMin[t]))
+      ? (colMax[t] - colMin[t] < 1e-9 ? 0.5 : (p - colMin[t]) / (colMax[t] - colMin[t]))
       : p / mxAll;
-    const baseG = hz ? G[hz + '|*'] : G._all;
-    if (S.cell && !colsOut.find(c => S.cell.startsWith(c.o + '|'))) S.cell = '';
-    let hmh = `<table class="om-hm"><colgroup><col class="om-c0"><col>${colsOut.map(() => '<col>').join('')}</colgroup>` +
-      `<thead><tr><th class="om-rowh">Тип дня \\ тип открытия</th><th>${hz ? 'вся зона' : 'все дни'}<span class="om-n">${baseG.n}</span></th>` +
-      colsOut.map(c => `<th class="${selRow.k === (hz || '') + '|' + c.o ? 'om-colsel' : ''}" title="${c.name}">${c.name.replace('Open-', 'O-')}<span class="om-n">${c.g.n}</span></th>`).join('') + '</tr></thead><tbody>';
-    DT.forEach(t => {
-      hmh += `<tr><th class="om-rowh${S.hrow === t[0] && !S.cell ? ' om-rowsel' : ''}" data-t="${t[0]}" title="сводка по типу «${t[1]}»">${t[1]}</th><td class="om-base">${f1((baseG.t[t[0]] || 0) / baseG.n * 100)}%</td>` +
-        colsOut.map(c => {
-          const p = val(c, t[0]), k = c.o + '|' + t[0];
+    const rowName = o => o.k === '_all' ? 'все дни' : o.cls === 'om-zone' ? zoneName(o.zone) : zoneName(o.zone) + ' · ' + o.label;
+    let hmh = `<table class="om-hm"><colgroup><col class="om-c0"><col class="om-cn">${DT.map(() => '<col>').join('')}</colgroup>` +
+      `<thead><tr><th class="om-rowh">Точка · тип открытия</th><th>n</th>` +
+      DT.map(t => `<th class="om-colh${S.hrow === t[0] && !S.cell ? ' om-colsel' : ''}" data-t="${t[0]}" title="сводка по типу «${t[1]}»">${SHORT[t[1]] || t[1]}</th>`).join('') +
+      '</tr></thead><tbody>';
+    HR.forEach(o => {
+      const g = G[o.k], lab = o.k === '_all' ? 'все дни' : o.cls === 'om-zone' ? zoneName(o.zone) : o.label;
+      hmh += `<tr class="${o.cls === 'om-zone' ? 'om-hz' : o.cls === 'om-sub' ? 'om-hs' : 'om-ha'}"><th class="om-rowh${S.sel === o.k ? ' om-rowsel' : ''}" data-k="${o.k}" title="${esc(rowName(o))}">${esc(lab)}</th><td class="om-n">${g.n}</td>` +
+        DT.map(t => {
+          const p = val(g, t[0]), k = o.k + '#' + t[0];
+          if (o.k === '_all') return `<td class="om-base">${f1(p)}%</td>`;
           return `<td data-k="${k}" class="${S.cell === k ? 'om-cellsel' : ''}" style="${paint(norm(p, t[0]))}" ` +
-            `title="${t[1]} · ${c.name}: ${f1(p)}% (${c.g.t[t[0]] || 0} из ${c.g.n}). Клик: сводка">${f1(p)}%</td>`;
+            `title="${esc(rowName(o))} → ${t[1]}: ${f1(p)}% (${g.t[t[0]] || 0} из ${g.n}). Клик: сводка">${f1(p)}%</td>`;
         }).join('') + '</tr>';
     });
     hmh += `</tbody></table>`;
     hmh += `<div class="om-scale"><span class="om-bar" style="background:${rampCss()}"></span>` +
-      `<span>${S.hs === 'row' ? 'голубой: реже всего в строке, розовый: чаще всего' : `общая шкала 0% → ${f1(mxAll)}%: голубой реже, розовый чаще`}</span></div>`;
+      `<span>${S.hs === 'row' ? 'голубой: реже всего для этого типа дня, розовый: чаще всего' : `общая шкала 0% → ${f1(mxAll)}%: голубой реже, розовый чаще`}</span></div>`;
     document.getElementById('om-heat').innerHTML = `<div class="om-heat">${hmh}</div>`;
     const sub = document.getElementById('om-heat-sub');
-    if (sub) sub.textContent = (hz ? zoneName(hz) : 'все зоны') + ' · колонка = 100% · клик по ячейке или типу дня: сводка';
+    if (sub) sub.textContent = 'строка = 100% · клик по ячейке или типу дня: сводка';
     document.querySelectorAll('#om-heat td[data-k]').forEach(td =>
       td.addEventListener('click', () => updMany({cell: S.cell === td.dataset.k ? '' : td.dataset.k, hrow: ''})));
-    document.querySelectorAll('#om-heat tbody th[data-t]').forEach(th =>
+    document.querySelectorAll('#om-heat th.om-colh').forEach(th =>
       th.addEventListener('click', () => updMany({hrow: S.hrow === th.dataset.t && !S.cell ? '' : th.dataset.t, cell: ''})));
+    document.querySelectorAll('#om-heat tbody th[data-k]').forEach(th =>
+      th.addEventListener('click', () => updMany({sel: th.dataset.k})));
 
     // ---------------------------------------------------------------- сводка по ячейке / типу дня
     const info = document.getElementById('om-heat-info');
-    const cellSel = S.cell ? S.cell.split('|') : null;
     let infoDates = null, infoTitle = '', infoRows = [];
-    if (cellSel){
-      const [o, t] = cellSel, g = G[(hz || '*') + '|' + o];
+    if (S.cell){
+      const [rk, t] = S.cell.split('#'), g = G[rk], o = order.find(x => x.k === rk);
       infoDates = (g && g.byT[t]) || [];
-      infoTitle = [hz ? zoneName(hz) : 'все зоны', OTN[o], DTN[t]].join(' · ');
-      const tAll = baseG.t[t] || 0;
+      infoTitle = (o ? rowName(o) : '') + ' → ' + DTN[t];
+      const n = g ? g.n : 0, tAll = G._all.t[t] || 0, p = n ? infoDates.length / n * 100 : 0;
       infoRows = [
-        ['Дней в ячейке', `${infoDates.length} из ${g ? g.n : 0}`],
-        ['Доля в колонке (тип открытия)', f1(infoDates.length / (g ? g.n : 1) * 100) + '%'],
-        [`Частота «${DTN[t]}» в ${hz ? 'зоне' : 'выборке'}`, f1(tAll / baseG.n * 100) + '%'],
-        ['Разница с ней', sg(infoDates.length / (g ? g.n : 1) * 100 - tAll / baseG.n * 100) + ' п.п.'],
+        ['Дней в ячейке', `${infoDates.length} из ${n}`],
+        ['Вероятность при этом открытии', f1(p) + '%'],
+        [`Частота «${DTN[t]}» во всей выборке`, f1(base(t)) + '%'],
+        ['Разница с ней', sg(p - base(t)) + ' п.п.'],
         [`Из всех дней «${DTN[t]}» здесь`, tAll ? f1(infoDates.length / tAll * 100) + '%' : '—'],
       ];
     } else if (S.hrow){
       const t = S.hrow;
-      infoDates = baseG.byT[t] || [];
-      infoTitle = (hz ? zoneName(hz) : 'все зоны') + ' · ' + DTN[t];
-      const best = colsOut.map(c => ({c, p: val(c, t)})).sort((a, b) => b.p - a.p);
+      infoDates = G._all.byT[t] || [];
+      infoTitle = 'все дни → ' + DTN[t];
+      // где этот тип дня чаще и реже всего: только строки точка × тип открытия от 20 дней
+      const cand = HR.filter(o => o.k !== '_all' && (o.cls === 'om-sub' || o.zone === 'iv') && G[o.k].n >= 20)
+        .map(o => ({o, p: val(G[o.k], t)})).sort((a, b) => b.p - a.p);
+      const fmt = x => `${rowName(x.o)} · ${f1(x.p)}% (n ${G[x.o.k].n})`;
       infoRows = [
-        ['Дней этого типа', `${infoDates.length} из ${baseG.n}`],
-        ['Частота', f1(infoDates.length / baseG.n * 100) + '%'],
-        ['Чаще всего после', best.length ? `${best[0].c.name} · ${f1(best[0].p)}%` : '—'],
-        ['Реже всего после', best.length ? `${best[best.length - 1].c.name} · ${f1(best[best.length - 1].p)}%` : '—'],
+        ['Дней этого типа', `${infoDates.length} из ${allN}`],
+        ['Частота', f1(infoDates.length / allN * 100) + '%'],
+        ['Чаще всего при', cand.length ? fmt(cand[0]) : '—'],
+        ['Реже всего при', cand.length ? fmt(cand[cand.length - 1]) : '—'],
       ];
     }
     if (infoDates){
@@ -629,8 +645,6 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;width:1
     const opens = S.cz === 'iv' ? ['oai'] : OT.map(o => o[0]).filter(o => o !== 'oai');
     if (!opens.includes(S.co)) S.co = opens[0];
     const g = G[S.cz + '|' + S.co], zg = G[S.cz + '|*'];
-    const selZ = `<select id="om-cz">${ZL.map(([z, n]) => `<option value="${z}"${z === S.cz ? ' selected' : ''}>${n}</option>`).join('')}</select>`;
-    const selO = `<select id="om-co">${opens.map(o => `<option value="${o}"${o === S.co ? ' selected' : ''}>${OTN[o]}</option>`).join('')}</select>`;
     let body = '';
     if (!g || !g.n){
       body = `<div class="om-cres">В выборке нет дней с таким открытием.</div>`;
@@ -648,11 +662,10 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;width:1
         `<div class="om-sbase" title="тонкая полоса: все дни выборки, для сравнения">${bbar}</div>` +
         `<div class="om-leg">${leg}</div>`;
     }
-    host.innerHTML = `<div class="om-calc om-viz"><div class="om-cin">` +
-      `<label class="ctl"><span class="ctl-label">Точка открытия</span>${selZ}</label>` +
-      `<label class="ctl"><span class="ctl-label">Тип открытия</span>${selO}</label></div>${body}</div>`;
-    host.querySelector('#om-cz').addEventListener('change', e => upd('cz', e.target.value));
-    host.querySelector('#om-co').addEventListener('change', e => upd('co', e.target.value));
+    host.innerHTML = `<div class="om-calc om-viz"><div class="om-cin controls"></div>${body}</div>`;
+    host.querySelector('.om-cin').append(
+      ctl('Точка открытия', seg(ZL.map(([z, n]) => [z, n]), S.cz, v => upd('cz', v))),
+      ctl('Тип открытия', seg(opens.map(o => [o, OTN[o]]), S.co, v => upd('co', v))));
   }
 
   render();

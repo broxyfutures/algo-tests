@@ -37,8 +37,7 @@ WS = Path(__file__).resolve().parent
 ROOT_TITLE = "Algo Tests"
 SKIP_DIRS = {"assets"}
 FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?'
-         'family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500'
-         '&family=Unbounded:wght@600;700&display=swap">')
+         'family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@400;500&display=swap">')
 
 VERDICT_CLASS = {"прошло": "pass", "не прошло": "fail", "частично": "part"}
 STATUS_CLASS = {"завершён": "pass", "закрыт": "dim", "заменён": "dim", "в работе": "part", "инструмент": "mid"}
@@ -428,7 +427,8 @@ def render_section(folder: Path, depth: int, crumbs: list[str], children: list[d
     mount_in = meta.get("mount_in", "Результаты")   # в какой блок вставить интерактив
     parts = []
     if depth == 0:
-        parts.append(f'<section class="hero"><h1 class="hero-title">{esc(title)}</h1></section>')
+        parts.append(f'<section class="hero"><h1 class="hero-title">{esc(title)}</h1>'
+                     + (f'<p class="hero-sub">{esc(meta["subtitle"])}</p>' if meta.get("subtitle") else "") + '</section>')
     mounted = False
     for head, content in split_sections(body):
         inner = md_to_html(content) if content else ""
@@ -453,9 +453,13 @@ def render_section(folder: Path, depth: int, crumbs: list[str], children: list[d
                 f'<a class="tcard" href="{child_href(c["name"])}"><div class="tcard-kind">{kind}</div>'
                 f'<div class="tcard-name">{esc(m.get("title") or c["name"])}</div><div class="tcard-sub">{esc(sub)}</div></a>'
             )
-        if depth > 0:
+        if depth == 0:
+            # плитка «+»: место под следующий инструмент (новая папка в workspace)
+            cards.append('<div class="tcard tplus" title="Новый инструмент: папка в workspace с index.md">+</div>')
+            parts.append('<div class="tools-panel"><div class="cards tools">' + "".join(cards) + "</div></div>")
+        else:
             parts.append('<h2 class="cards-title">Тесты</h2>')
-        parts.append(f'<div class="cards{" tools" if depth == 0 else ""}">' + "".join(cards) + "</div>")
+            parts.append('<div class="cards">' + "".join(cards) + "</div>")
     elif not r["mount"]:
         parts.append('<div class="empty">Пока пусто.</div>')
     return page_shell(title, meta.get("subtitle", ""), crumbs, depth, "\n".join(parts), "", scripts_html(r, depth, None)), meta
