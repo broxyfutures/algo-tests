@@ -230,13 +230,16 @@ def crumbs_html(crumbs: list[str], depth: int) -> str:
     return '<nav class="crumbs">' + '<span class="sep">/</span>'.join(parts) + "</nav>"
 
 
-def page_shell(title: str, sub: str, crumbs: list[str], depth: int, body: str, meta_html: str = "", scripts: str = "") -> str:
+def page_shell(title: str, sub: str, crumbs: list[str], depth: int, body: str, meta_html: str = "", scripts: str = "",
+               hdr_btn: str = "", after_hdr: str = "") -> str:
     # корень: та же шапка, что на остальных страницах, без крошек и чуть крупнее
     head = (
         ("" if depth == 0 else f"{crumbs_html(crumbs, depth)}\n")
         + f'<header class="hdr{" hdr-root" if depth == 0 else ""}"><div><h1>{esc(title)}</h1>'
         + (f'<div class="sub">{esc(sub)}</div>' if sub else "")
-        + f'</div><div class="meta" id="hdr-meta">{meta_html}</div></header>\n')
+        + hdr_btn
+        + f'</div><div class="meta" id="hdr-meta">{meta_html}</div></header>\n'
+        + after_hdr)
     return (
         f"<!doctype html>\n<html lang=\"ru\"><head><meta charset=\"utf-8\">"
         f"<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
@@ -391,8 +394,17 @@ def render_test(folder: Path, depth: int, crumbs: list[str]) -> tuple[str, dict]
         parts.append(r["pre"](meta))
     has_results_section = False
     mount_in = meta.get("mount_in", "Результаты")   # в какой блок вставить интерактив
+    # header_fold: блок, который прячется за кнопкой в шапке и раскрывается панелью под ней
+    hfold = meta.get("header_fold") or ""
+    hdr_btn = after_hdr = ""
     for head, content in split_sections(body):
         inner = md_to_html(content) if content else ""
+        if hfold and head == hfold:
+            hdr_btn = (f'<button class="hdr-btn" type="button" aria-expanded="false" aria-controls="hdr-panel" '
+                       f'onclick="var p=document.getElementById(\'hdr-panel\'),o=p.hidden;p.hidden=!o;'
+                       f'this.setAttribute(\'aria-expanded\',o)">{esc(head)}</button>')
+            after_hdr = f'<section class="card hdr-panel" id="hdr-panel" hidden><div class="prose">{inner}</div></section>\n'
+            continue
         if head == mount_in and r["mount"]:
             has_results_section = True
             inner += r["mount"](meta)
@@ -408,7 +420,8 @@ def render_test(folder: Path, depth: int, crumbs: list[str]) -> tuple[str, dict]
 
     scripts = scripts_html(r, depth, results_text)
     meta_html = ""
-    html = page_shell(title, meta.get("instrument", ""), crumbs, depth, "\n".join(p for p in parts if p), meta_html, scripts)
+    html = page_shell(title, meta.get("instrument", ""), crumbs, depth, "\n".join(p for p in parts if p), meta_html, scripts,
+                      hdr_btn, after_hdr)
     return html, meta
 
 

@@ -200,3 +200,11 @@ table.plain{width:100%;border-collapse:collapse;font-size:12px}
 .tcard.tplus{width:150px;align-items:center;justify-content:center;font-family:var(--mono);font-size:34px;font-weight:300;color:var(--t3);background:var(--surface)}
 .tcard.tplus:hover{border-color:var(--border-hi);background:var(--surface-2);color:var(--t1)}
 .cards-title{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--t1);font-weight:600;margin:26px 0 12px}
+
+/* кнопка в шапке страницы (описание теста) и панель, которую она раскрывает */
+.hdr-btn{display:inline-block;margin-top:12px;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;padding:6px 14px;border:1px solid var(--border-2);background:var(--surface);color:var(--t3);cursor:pointer;border-radius:2px}
+.hdr-btn:hover{color:var(--t2);border-color:var(--t3)}
+.hdr-btn[aria-expanded="true"]{color:var(--t1);border-color:var(--border-hi);background:var(--surface-2)}
+.hdr-btn::after{content:" ▾"}
+.hdr-btn[aria-expanded="true"]::after{content:" ▴"}
+.hdr-panel[hidden]{display:none}

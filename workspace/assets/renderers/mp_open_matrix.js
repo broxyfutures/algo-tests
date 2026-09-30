@@ -10,7 +10,7 @@
   const D = window.DATA, M = D.meta;
   const KEY = 'mp-open-matrix-' + D.test + '-v2';
   // nv: 1 учитывать Normal Variation, 0 исключить из выборки
-  const S = {m:'f', c:'0', from:'', to:'', ticks:8, cz:'*', co:'*', nv:1};
+  const S = {m:'f', c:'0', from:'', to:'', ticks:8, cz:'av', co:'od', nv:1};
   try{ Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); }catch(e){}
   if (!['f', 'a', 'x'].includes(S.m)) S.m = 'f';
   const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} };
@@ -34,27 +34,53 @@
 .om-date{font:inherit;font-size:11px;padding:4px 6px;background:var(--surface-2);color:var(--t1);border:1px solid var(--border-2);border-radius:2px;font-family:var(--mono)}
 .om-inl{display:inline-flex;align-items:center;gap:7px;font-size:11px;color:var(--t3);flex-wrap:wrap}
 .om-busy{font-size:11px;color:var(--t3);margin:0 0 10px}
-.om-calc .om-cin{margin-bottom:6px}
-.om-res{display:flex;gap:28px 40px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:18px}
-.om-donut{flex:0 1 560px;max-width:100%}
+.om-sec{border-top:1px solid var(--border);margin-top:14px;padding-top:16px}
+.om-lab0{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);font-weight:600;margin-bottom:12px}
+.om-res{display:flex;gap:20px 40px;align-items:center;flex-wrap:wrap}
+.om-donut{flex:0 1 520px;max-width:100%}
 .om-donut svg{display:block;width:100%;height:auto;overflow:visible}
 .om-donut .om-lead{stroke:var(--t4);fill:none;stroke-width:1}
 .om-donut .om-lab{font-family:var(--mono);font-size:12px;fill:var(--t2)}
 .om-donut .om-lab tspan{fill:var(--t1);font-weight:600}
 .om-side{flex:1 1 340px;min-width:0;font-family:var(--mono)}
-.om-head{font-size:11px;letter-spacing:.06em;color:var(--t3);margin-bottom:12px;line-height:1.6}
+.om-head{font-size:11px;letter-spacing:.06em;color:var(--t3);margin-bottom:10px;line-height:1.6}
 .om-head b{color:var(--t1);font-weight:600}
 table.om-leg{border-collapse:collapse;width:100%;font-size:12.5px}
 .om-leg th{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);font-weight:500;text-align:right;padding:0 0 8px 12px;border-bottom:1px solid var(--border)}
 .om-leg th:first-child{text-align:left;padding-left:0}
-.om-leg td{padding:8px 0 8px 12px;border-bottom:1px solid var(--border);text-align:right;color:var(--t1);font-variant-numeric:tabular-nums}
+.om-leg td{padding:7px 0 7px 12px;border-bottom:1px solid var(--border);text-align:right;color:var(--t1);font-variant-numeric:tabular-nums}
 .om-leg td:first-child{text-align:left;padding-left:0;color:var(--t2);white-space:nowrap}
-.om-leg td:first-child i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:9px;vertical-align:-1px}
 .om-leg td.n{color:var(--t3)}
-.om-leg td.up{color:var(--up)}.om-leg td.dn{color:var(--dn)}
-.om-leg tr.zero td{color:var(--t4)}
-.om-go{display:inline-block;margin-top:14px;font-size:11px;color:var(--up)}
-.om-go:hover{color:var(--t1)}`;
+i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:9px;vertical-align:-1px}
+.om-go{display:inline-block;margin-top:12px;font-size:11px;color:var(--up)}
+.om-go:hover{color:var(--t1)}
+/* калькулятор: [точка] + [тип открытия] = типы дня по убыванию */
+.om-eq{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:var(--mono)}
+.om-op{font-size:16px;color:var(--t3);font-weight:300}
+.om-sel{position:relative;user-select:none}
+.om-sel-t{font:inherit;font-size:11px;color:var(--t1);background:var(--surface-2);border:1px solid var(--border-2);padding:7px 30px 7px 12px;cursor:pointer;min-width:220px;text-align:left;border-radius:2px;position:relative;letter-spacing:.02em}
+.om-sel-t small{display:block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:2px}
+.om-sel-t::after{content:'';position:absolute;right:11px;top:50%;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--t3)}
+.om-sel.open .om-sel-t,.om-sel-t:hover{border-color:var(--border-hi)}
+.om-sel-dd{display:none;position:absolute;top:calc(100% + 2px);left:0;min-width:100%;background:var(--surface);border:1px solid var(--border-2);z-index:50;border-radius:2px;box-shadow:0 6px 22px rgba(0,0,0,.35)}
+.om-sel.open .om-sel-dd{display:block}
+.om-sel-o{font-size:11px;color:var(--t2);padding:7px 12px;cursor:pointer;white-space:nowrap;border-bottom:1px solid var(--border)}
+.om-sel-o:last-child{border-bottom:none}
+.om-sel-o:hover{color:var(--t1);background:var(--surface-2)}
+.om-sel-o.on{color:var(--t1);font-weight:600}
+.om-eqres{font-size:11px;color:var(--t3);letter-spacing:.04em}
+.om-eqres b{color:var(--t1);font-weight:600}
+.om-sbar{display:flex;height:30px;gap:2px;margin-top:14px}
+.om-sbar div{display:flex;align-items:center;justify-content:center;min-width:0;font-family:var(--mono);font-size:11px;color:#fff;white-space:nowrap;overflow:hidden}
+.om-sbar div:first-child{border-radius:2px 0 0 2px}.om-sbar div:last-child{border-radius:0 2px 2px 0}
+.om-rank{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.om-rank > div{flex:1 1 150px;border:1px solid var(--border);border-radius:2px;padding:8px 10px;background:var(--surface-2);font-family:var(--mono);min-width:0}
+.om-rank .k{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);display:flex;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.om-rank .k i{margin-right:7px;flex:0 0 10px}
+.om-rank .v{font-size:17px;font-weight:600;color:var(--t1);margin-top:4px}
+.om-rank .s{font-size:10.5px;color:var(--t3);margin-top:1px}
+.om-rank .s .up{color:var(--up)}.om-rank .s .dn{color:var(--dn)}
+.om-rank > div.zero{opacity:.45}`;
   document.head.appendChild(st);
   const slot = i => `var(--d${i})`;
   const SHORT = {'Double-Distribution Trend':'DD-Trend', 'Normal Variation':'Normal Var.',
@@ -342,6 +368,21 @@ table.om-leg{border-collapse:collapse;width:100%;font-size:12.5px}
       ticks: S.m === 'x' ? S.ticks : 0})); }catch(e){}
   }
 
+  // ================================================================ выпадающий выбор в стиле COT Report
+  function dropdown(label, opts, cur, cb){
+    const w = document.createElement('div'); w.className = 'om-sel';
+    const t = document.createElement('button'); t.type = 'button'; t.className = 'om-sel-t';
+    t.innerHTML = `<small>${label}</small>${esc((opts.find(o => o[0] === cur) || opts[0])[1])}`;
+    const dd = document.createElement('div'); dd.className = 'om-sel-dd';
+    opts.forEach(([v, n]) => { const o = document.createElement('div'); o.className = 'om-sel-o' + (v === cur ? ' on' : ''); o.textContent = n;
+      o.addEventListener('click', e => { e.stopPropagation(); w.classList.remove('open'); cb(v); }); dd.appendChild(o); });
+    t.addEventListener('click', e => { e.stopPropagation(); const was = w.classList.contains('open');
+      document.querySelectorAll('.om-sel.open').forEach(x => x.classList.remove('open')); if (!was) w.classList.add('open'); });
+    w.append(t, dd);
+    return w;
+  }
+  document.addEventListener('click', () => document.querySelectorAll('.om-sel.open').forEach(x => x.classList.remove('open')));
+
   // ================================================================ страница
   function render(){
     const host = document.getElementById('om-controls'); host.innerHTML = '';
@@ -356,39 +397,53 @@ table.om-leg{border-collapse:collapse;width:100%;font-size:12.5px}
     if (!R){ calc.innerHTML = '<p class="om-busy">Загружаю цены блоков для пересчёта…</p>'; return; }
     if (!S.nv) R = R.filter(r => r.t !== 'nv');
     const types = DT.map((t, i) => ({code: t[0], name: t[1], color: slot(i + 1)})).filter(t => S.nv || t.code !== 'nv');
-
-    // выбор: точка открытия и тип открытия, «все» = без условия
-    const opens = S.cz === 'iv' ? ['oai'] : S.cz === '*' ? OT.map(o => o[0]) : OT.map(o => o[0]).filter(o => o !== 'oai');
-    if (S.co !== '*' && !opens.includes(S.co)) S.co = '*';
-    const sel = R.filter(r => (S.cz === '*' || r.z5 === S.cz) && (S.co === '*' || r.o === S.co));
     const count = rows => { const c = {}; rows.forEach(r => { c[r.t] = (c[r.t] || 0) + 1; }); return c; };
-    const cs = count(sel), cb = count(R);
-    const isAll = S.cz === '*' && S.co === '*';
-    const title = isAll ? 'все дни' : [S.cz === '*' ? '' : ZN[S.cz], S.co === '*' ? '' : OTN[S.co]].filter(Boolean).join(' · ');
+    const cb = count(R), base = code => R.length ? (cb[code] || 0) / R.length * 100 : 0;
+    const noNV = S.nv ? '' : ' · без Normal Variation';
+    calc.innerHTML = '<div class="om-viz"><div class="om-sec om-all"></div><div class="om-sec om-calc"></div></div>';
 
-    calc.innerHTML = '<div class="om-calc om-viz"><div class="om-cin controls"></div><div class="om-res"></div></div>';
-    calc.querySelector('.om-cin').append(
-      ctl('Точка открытия', seg([['*', 'все']].concat(D.zones.map(([z, n]) => [z, n])), S.cz, v => upd('cz', v))),
-      ctl('Тип открытия', seg([['*', 'все']].concat(opens.map(o => [o, OTN[o]])), S.co, v => upd('co', v))));
-    const res = calc.querySelector('.om-res');
-    if (!sel.length){ res.innerHTML = '<p class="om-busy">В выборке нет таких дней.</p>'; }
+    // ---------------------------------------------------------------- общая диаграмма: все дни выборки
+    const all = calc.querySelector('.om-all');
+    if (!R.length) all.innerHTML = '<p class="om-busy">В выборке нет дней.</p>';
     else {
-      const rows = types.map(t => {
-        const n = cs[t.code] || 0, p = n / sel.length * 100, b = (cb[t.code] || 0) / R.length * 100, d = p - b;
-        return `<tr class="${n ? '' : 'zero'}"><td><i style="background:${t.color}"></i>${t.name}</td><td>${f1(p)}%</td><td class="n">${n}</td>` +
-          (isAll ? '' : `<td class="${d > 0.05 ? 'up' : d < -0.05 ? 'dn' : ''}">${sg(d)}</td>`) + '</tr>';
-      }).join('');
-      res.innerHTML = `<div class="om-donut">${donut(types.map(t => ({label: t.name, value: cs[t.code] || 0, color: t.color})), sel.length)}</div>` +
-        `<div class="om-side"><div class="om-head"><b>${esc(title)}</b><br>${sel.length} дней` +
-        (isAll ? '' : ` · ${f1(sel.length / R.length * 100)}% выборки`) + ` · ${periodLabel()}${S.nv ? '' : ' · без Normal Variation'}</div>` +
-        `<table class="om-leg"><thead><tr><th>Тип дня</th><th>Доля</th><th>Дней</th>${isAll ? '' : '<th title="разница с долей среди всех дней выборки">к всем дням</th>'}</tr></thead><tbody>${rows}</tbody></table>` +
-        `<a class="om-go" href="../index.html#pick">показать эти дни на графике →</a></div>`;
-      res.querySelector('.om-go').addEventListener('click', () => pick(sel.map(r => r.date), title + (S.nv ? '' : ' · без NV')));
+      const byShare = types.slice().sort((a, b) => (cb[b.code] || 0) - (cb[a.code] || 0));
+      all.innerHTML = `<div class="om-res"><div class="om-donut">${donut(types.map(t => ({label: t.name, value: cb[t.code] || 0, color: t.color})), R.length)}</div>` +
+        `<div class="om-side"><div class="om-head"><b>Все дни выборки</b><br>${R.length} дней · ${periodLabel()}${noNV}</div>` +
+        `<table class="om-leg"><thead><tr><th>Тип дня</th><th>Доля</th><th>Дней</th></tr></thead><tbody>` +
+        byShare.map(t => `<tr><td><i class="om-sw" style="background:${t.color}"></i>${t.name}</td><td>${f1(base(t.code))}%</td><td class="n">${cb[t.code] || 0}</td></tr>`).join('') +
+        `</tbody></table></div></div>`;
+    }
+
+    // ---------------------------------------------------------------- калькулятор: точка + тип открытия = тип дня
+    const box = calc.querySelector('.om-calc');
+    const opens = S.cz === 'iv' ? ['oai'] : S.cz === '*' ? OT.map(o => o[0]) : OT.map(o => o[0]).filter(o => o !== 'oai');
+    if (S.co !== '*' && !opens.includes(S.co)) S.co = opens.length === 1 ? opens[0] : '*';
+    const sel = R.filter(r => (S.cz === '*' || r.z5 === S.cz) && (S.co === '*' || r.o === S.co));
+    const cs = count(sel);
+    const title = [S.cz === '*' ? 'любая точка' : ZN[S.cz], S.co === '*' ? 'любой тип открытия' : OTN[S.co]].join(' · ');
+    box.innerHTML = '<div class="om-lab0">Калькулятор</div><div class="om-eq"></div><div class="om-out"></div>';
+    const eqRes = document.createElement('span'); eqRes.className = 'om-eqres';
+    eqRes.innerHTML = sel.length ? `<b>тип дня</b> · ${sel.length} дней${R.length ? ' · ' + f1(sel.length / R.length * 100) + '% выборки' : ''}` : '<b>тип дня</b> · нет таких дней';
+    const op = t => { const e = document.createElement('span'); e.className = 'om-op'; e.textContent = t; return e; };
+    box.querySelector('.om-eq').append(
+      dropdown('Точка открытия', [['*', 'любая']].concat(D.zones.map(([z, n]) => [z, n])), S.cz, v => upd('cz', v)), op('+'),
+      dropdown('Тип открытия', [['*', 'любой']].concat(opens.map(o => [o, OTN[o]])), S.co, v => upd('co', v)), op('='), eqRes);
+    if (sel.length){
+      const ranked = types.map(t => ({...t, n: cs[t.code] || 0})).map(t => ({...t, p: t.n / sel.length * 100, d: t.n / sel.length * 100 - base(t.code)}))
+        .sort((a, b) => b.n - a.n || base(b.code) - base(a.code));
+      const bar = ranked.filter(t => t.n).map(t =>
+        `<div style="flex:${t.p} 1 0;background:${t.color}" title="${t.name}: ${f1(t.p)}% (${t.n} из ${sel.length})">${t.p >= 8 ? f1(t.p) + '%' : ''}</div>`).join('');
+      const chips = ranked.map(t => `<div class="${t.n ? '' : 'zero'}"><span class="k"><i class="om-sw" style="background:${t.color}"></i>${SHORT[t.name] || t.name}</span>` +
+        `<div class="v">${f1(t.p)}%</div><div class="s">${t.n} дн · <span class="${t.d > 0.05 ? 'up' : t.d < -0.05 ? 'dn' : ''}" title="разница с долей среди всех дней выборки">${sg(t.d)} п.п.</span></div></div>`).join('');
+      box.querySelector('.om-out').innerHTML = `<div class="om-sbar">${bar}</div><div class="om-rank">${chips}</div>` +
+        `<a class="om-go" href="../index.html#pick">показать эти дни на графике →</a>`;
+      box.querySelector('.om-go').addEventListener('click', () => pick(sel.map(r => r.date), title + (S.nv ? '' : ' · без NV')));
     }
 
     const blkN = S.m === 'f' ? 'фикс. 2 пт' : S.m === 'a' ? 'адаптивный блок' : `своя строка ${S.ticks} тиков`;
-    document.getElementById('om-note').textContent = `${blkN} · опора: ${S.c === '0' ? 'вчерашний день' : 'композит'} · ${periodLabel()} · ${R.length} дней в выборке` +
-      (S.m === 'x' ? ' · своя строка пересчитывает VA, открытия, DD и композиты, при 8 тиках совпадает с фикс. 2 пт' : '');
+    document.getElementById('om-note').textContent = `${blkN} · опора: ${S.c === '0' ? 'вчерашний день' : 'композит'} · ${periodLabel()}${noNV}. ` +
+      `«п.п.» в калькуляторе: разница с долей этого типа среди всех дней выборки.` +
+      (S.m === 'x' ? ' Своя строка пересчитывает VA, открытия, DD и композиты, при 8 тиках совпадает с фикс. 2 пт.' : '');
   }
 
   render();
