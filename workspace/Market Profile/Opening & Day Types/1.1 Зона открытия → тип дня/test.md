@@ -1,4 +1,5 @@
 ---
+archived: true
 id: mp-open-1.1
 title: 1.1 Зона открытия → тип дня
 status: заменён

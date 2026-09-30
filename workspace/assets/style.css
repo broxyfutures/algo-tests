@@ -124,6 +124,17 @@ a:hover{text-decoration:underline}
 .pill.dim{border-color:var(--border-2);color:var(--t3)}
 .pill.mid{border-color:var(--dn);color:var(--dn)}
 
+/* сворачиваемый блок, как toggle в Notion */
+.card.fold{padding-top:0;padding-bottom:0}
+.card.fold details{padding:18px 0}
+.card.fold summary{list-style:none;cursor:pointer;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--t2);font-weight:600;display:flex;align-items:center;gap:9px}
+.card.fold summary::-webkit-details-marker{display:none}
+.card.fold summary::before{content:'';width:0;height:0;border-left:5px solid var(--t3);border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .15s}
+.card.fold details[open] summary::before{transform:rotate(90deg)}
+.card.fold summary:hover{color:var(--t1)}
+.card.fold details[open] summary{margin-bottom:14px}
+.card.fold .hint{margin-left:10px}
+
 /* results table */
 .twrap{overflow-x:auto;border:1px solid var(--border);border-radius:3px}
 table.res{width:100%;border-collapse:collapse;font-size:12.5px;min-width:760px}

@@ -1,4 +1,5 @@
 ---
+archived: true
 id: mp-open-1.2
 title: 1.2 Зона открытия → тип открытия
 status: заменён

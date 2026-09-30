@@ -118,7 +118,10 @@ def parse_frontmatter(text: str) -> tuple[dict, str]:
         if m:
             key = m.group(1)
             val = m.group(2).strip()
-            meta[key] = val if val else []
+            if val.startswith("[") and val.endswith("]"):          # список в одну строку: [a, b, c]
+                meta[key] = [x.strip() for x in val[1:-1].split(",") if x.strip()]
+            else:
+                meta[key] = val if val else []
     return meta, "\n".join(lines[end + 1:])
 
 
@@ -244,7 +247,11 @@ def page_shell(title: str, sub: str, crumbs: list[str], depth: int, body: str, m
     )
 
 
-def card(title: str | None, inner: str, hint: str = "") -> str:
+def card(title: str | None, inner: str, hint: str = "", collapsed: bool = False) -> str:
+    if collapsed and title:
+        return ('<section class="card fold"><details><summary>' + esc(title)
+                + (f'<span class="hint">{esc(hint)}</span>' if hint else "")
+                + f'</summary><div class="prose">{inner}</div></details></section>')
     head = ""
     if title:
         head = f'<h2 class="card-title">{esc(title)}' + (f'<span class="hint">{esc(hint)}</span>' if hint else "") + "</h2>"
@@ -257,14 +264,8 @@ def pill(text: str, cls_map: dict) -> str:
 
 
 def props_html(meta: dict) -> str:
+    """Шапка страницы. Статус и вердикт не показываются: трейдер читает выводы из текста."""
     rows = []
-    if meta.get("status"):
-        rows.append(("Статус", pill(meta["status"], STATUS_CLASS)))
-    if meta.get("verdict"):
-        v = pill(meta["verdict"], VERDICT_CLASS)
-        if meta.get("verdict_note"):
-            v += f' <span class="sans" style="margin-left:8px">{esc(meta["verdict_note"])}</span>'
-        rows.append(("Вердикт", v))
     if meta.get("instrument"):
         rows.append(("Инструмент", f'<span class="sans">{esc(meta["instrument"])}</span>'))
     dates = []
@@ -360,6 +361,19 @@ RENDERERS = {
 }
 
 
+def scripts_html(r: dict, depth: int, results_text: str | None) -> str:
+    """Файлы данных и скрипты рендерера для страницы."""
+    sc = []
+    for name in ([r["data_js"]] if isinstance(r.get("data_js"), str) else r.get("data_js") or []):
+        sc.append(f'<script src="{rel(depth)}assets/data/{name}" defer></script>')
+    if r.get("js") and results_text is not None:
+        js = (WS / "assets" / "renderers" / r["js"]).read_text(encoding="utf-8")
+        sc.append(f"<script>window.DATA = {results_text};</script>\n<script>\n{js}\n</script>")
+    for name in r.get("js_extra", []):
+        sc.append("<script>\n" + (WS / "assets" / "renderers" / name).read_text(encoding="utf-8") + "\n</script>")
+    return "\n".join(sc)
+
+
 def render_test(folder: Path, depth: int, crumbs: list[str]) -> tuple[str, dict]:
     meta, body = parse_frontmatter((folder / "test.md").read_text(encoding="utf-8"))
     rname = meta.get("renderer", "markdown")
@@ -375,6 +389,7 @@ def render_test(folder: Path, depth: int, crumbs: list[str]) -> tuple[str, dict]
         results_text = results_text.replace("</", "<\\/")
 
     title = meta.get("title") or folder.name
+    fold = set(meta.get("collapse") or [])
     parts = [props_html(meta)]
     if r.get("pre"):
         parts.append(r["pre"](meta))
@@ -384,25 +399,17 @@ def render_test(folder: Path, depth: int, crumbs: list[str]) -> tuple[str, dict]
         if head == "Результаты" and r["mount"]:
             has_results_section = True
             inner += r["mount"](meta)
-            parts.append(card(head, inner))
+            parts.append(card(head, inner, collapsed=head in fold))
             if r["extra"]:
                 parts.append(r["extra"](meta))
         else:
-            parts.append(card(head, inner))
+            parts.append(card(head, inner, collapsed=head in fold))
     if r["mount"] and not has_results_section:
         parts.append(card("Результаты", r["mount"](meta)))
         if r["extra"]:
             parts.append(r["extra"](meta))
 
-    sc = []
-    for name in ([r["data_js"]] if isinstance(r.get("data_js"), str) else r.get("data_js") or []):
-        sc.append(f'<script src="{rel(depth)}assets/data/{name}" defer></script>')
-    if r["js"]:
-        js = (WS / "assets" / "renderers" / r["js"]).read_text(encoding="utf-8")
-        sc.append(f"<script>window.DATA = {results_text};</script>\n<script>\n{js}\n</script>")
-    for name in r.get("js_extra", []):
-        sc.append("<script>\n" + (WS / "assets" / "renderers" / name).read_text(encoding="utf-8") + "\n</script>")
-    scripts = "\n".join(sc)
+    scripts = scripts_html(r, depth, results_text)
     meta_html = ""
     if not r["js"]:
         bits = []
@@ -420,21 +427,23 @@ def render_section(folder: Path, depth: int, crumbs: list[str], children: list[d
     if idx.exists():
         meta, body = parse_frontmatter(idx.read_text(encoding="utf-8"))
     title = meta.get("title") or (ROOT_TITLE if depth == 0 else folder.name)
+    fold = set(meta.get("collapse") or [])          # заголовки блоков, которые свёрнуты
+    r = RENDERERS.get(meta.get("renderer", "markdown"), RENDERERS["markdown"])
+    mount_in = meta.get("mount_in", "Результаты")   # в какой блок вставить интерактив
     parts = []
     for head, content in split_sections(body):
-        parts.append(card(head, md_to_html(content)))
+        inner = md_to_html(content) if content else ""
+        if r["mount"] and head == mount_in:
+            inner += r["mount"](meta)
+        parts.append(card(head, inner, collapsed=head in fold))
     if children:
         cards = []
         for c in children:
             m = c["meta"]
             if c["is_test"]:
                 kind = "Тест"
-                sub = m.get("verdict_note") or m.get("instrument") or ""
+                sub = m.get("summary") or m.get("verdict_note") or m.get("instrument") or ""
                 foot = ""
-                if m.get("status"):
-                    foot += pill(m["status"], STATUS_CLASS)
-                if m.get("verdict"):
-                    foot += pill(m["verdict"], VERDICT_CLASS)
             else:
                 kind = "Раздел"
                 n = c["n_children"]
@@ -442,15 +451,15 @@ def render_section(folder: Path, depth: int, crumbs: list[str], children: list[d
                 foot = ""
             cards.append(
                 f'<a class="tcard" href="{child_href(c["name"])}"><div class="tcard-kind">{kind}</div>'
-                f'<div class="tcard-name">{esc(c["name"])}</div><div class="tcard-sub">{esc(sub)}</div>'
+                f'<div class="tcard-name">{esc(m.get("title") or c["name"])}</div><div class="tcard-sub">{esc(sub)}</div>'
                 + (f'<div class="tcard-foot">{foot}</div>' if foot else "")
                 + "</a>"
             )
         parts.append('<div class="cards">' + "".join(cards) + "</div>")
-    else:
+    elif not r["mount"]:
         parts.append('<div class="empty">Пока пусто. Добавь папку с test.md и запусти build.py.</div>')
     meta_html = f"<div>{len(children)} {'элемент' if len(children) == 1 else 'элемента' if 0 < len(children) < 5 else 'элементов'}</div>" if children else ""
-    return page_shell(title, meta.get("subtitle", ""), crumbs, depth, "\n".join(parts), meta_html), meta
+    return page_shell(title, meta.get("subtitle", ""), crumbs, depth, "\n".join(parts), meta_html, scripts_html(r, depth, None)), meta
 
 
 def walk(folder: Path, depth: int, crumbs: list[str], written: list[tuple[Path, int]]) -> dict:
@@ -464,6 +473,7 @@ def walk(folder: Path, depth: int, crumbs: list[str], written: list[tuple[Path, 
             key=lambda p: p.name.lower(),
         )
         children = [walk(p, depth + 1, crumbs + [p.name], written) for p in subs]
+        children = [c for c in children if not c["meta"].get("archived")]   # архив собирается, но не показывается
         html, meta = render_section(folder, depth, crumbs, children)
         n = len(children)
     out = folder / "index.html"

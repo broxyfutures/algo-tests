@@ -1,4 +1,5 @@
 ---
+archived: true
 title: COT Report
 subtitle: Commitments of Traders · CFTC · позиции крупных участников фьючерсных рынков
 summary: Проверки, меняет ли позиционирование групп из отчёта CFTC распределение исходов по ES

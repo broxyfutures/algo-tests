@@ -1,4 +1,5 @@
 ---
+archived: true
 id: mp-open-audit
 title: Аудит 1.1–1.2
 status: завершён
