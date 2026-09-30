@@ -231,10 +231,10 @@ def crumbs_html(crumbs: list[str], depth: int) -> str:
 
 
 def page_shell(title: str, sub: str, crumbs: list[str], depth: int, body: str, meta_html: str = "", scripts: str = "") -> str:
-    # корень: без крошек и шапки, вместо них баннер (он внутри body)
-    head = "" if depth == 0 else (
-        f"{crumbs_html(crumbs, depth)}\n"
-        f'<header class="hdr"><div><h1>{esc(title)}</h1>'
+    # корень: та же шапка, что на остальных страницах, без крошек и чуть крупнее
+    head = (
+        ("" if depth == 0 else f"{crumbs_html(crumbs, depth)}\n")
+        + f'<header class="hdr{" hdr-root" if depth == 0 else ""}"><div><h1>{esc(title)}</h1>'
         + (f'<div class="sub">{esc(sub)}</div>' if sub else "")
         + f'</div><div class="meta" id="hdr-meta">{meta_html}</div></header>\n')
     return (
@@ -426,9 +426,6 @@ def render_section(folder: Path, depth: int, crumbs: list[str], children: list[d
     r = RENDERERS.get(meta.get("renderer", "markdown"), RENDERERS["markdown"])
     mount_in = meta.get("mount_in", "Результаты")   # в какой блок вставить интерактив
     parts = []
-    if depth == 0:
-        parts.append(f'<section class="hero"><h1 class="hero-title">{esc(title)}</h1>'
-                     + (f'<p class="hero-sub">{esc(meta["subtitle"])}</p>' if meta.get("subtitle") else "") + '</section>')
     mounted = False
     for head, content in split_sections(body):
         inner = md_to_html(content) if content else ""

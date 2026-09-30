@@ -188,10 +188,9 @@ table.plain{width:100%;border-collapse:collapse;font-size:12px}
 .chip{display:inline-block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--border-2);border-radius:2px;padding:2px 7px;color:var(--t2);margin-right:6px}
 .foot{margin-top:28px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--t4)}
 
-/* главная: заголовок и плитки инструментов, стилистика COT Report; заголовок как h1 страниц, только крупнее */
-.hero{padding:6vh 0 22px}
-.hero-title{margin:0;font-family:var(--mono);font-weight:600;font-size:clamp(22px,3.2vw,34px);line-height:1.2;letter-spacing:.12em;text-transform:uppercase;color:var(--t1)}
-.hero-sub{margin:10px 0 0;font-family:var(--mono);font-size:11px;line-height:1.6;letter-spacing:.06em;color:var(--t3)}
+/* главная: обычная шапка страницы, заголовок чуть крупнее; плитки в стилистике COT Report */
+.hdr.hdr-root h1{font-size:20px}
+.hdr.hdr-root .sub{text-transform:none;letter-spacing:.06em;font-size:11px}
 .tools-panel{border:1px solid var(--border);border-radius:2px;padding:14px;background:var(--surface)}
 .cards.tools{display:flex;flex-wrap:wrap;gap:14px;margin:0}
 .cards.tools .tcard{width:280px;min-height:120px;padding:16px 18px;border-radius:2px;background:var(--surface-2);border-color:var(--border-2)}
