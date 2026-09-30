@@ -187,3 +187,16 @@ table.plain{width:100%;border-collapse:collapse;font-size:12px}
 .note{font-family:var(--sans);font-size:13px;color:var(--t3);margin-top:12px;line-height:1.55}
 .chip{display:inline-block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--border-2);border-radius:2px;padding:2px 7px;color:var(--t2);margin-right:6px}
 .foot{margin-top:28px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--t4)}
+
+/* главная: баннер Algo Tests и плитки инструментов */
+.hero{position:relative;display:flex;align-items:center;justify-content:center;min-height:46vh;padding:56px 0 40px;margin-bottom:8px;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(40% 55% at 38% 55%,rgba(60,101,198,.22),transparent 70%),radial-gradient(38% 50% at 64% 45%,rgba(192,91,191,.18),transparent 70%)}
+:root[data-theme="light"] .hero::before{background:radial-gradient(40% 55% at 38% 55%,rgba(71,113,212,.14),transparent 70%),radial-gradient(38% 50% at 64% 45%,rgba(168,64,159,.10),transparent 70%)}
+.hero-title{position:relative;margin:0;font-family:'Unbounded',var(--sans);font-weight:700;font-size:clamp(46px,10vw,132px);line-height:1;letter-spacing:-.02em;text-align:center;
+  background:linear-gradient(100deg,#5389e8 0%,#6846c9 38%,#c05bbf 70%,#ef77b0 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+:root[data-theme="light"] .hero-title{background-image:linear-gradient(100deg,#3e72cf 0%,#5c36b9 38%,#a8409f 70%,#c42a73 100%)}
+.cards.tools{max-width:920px;margin:0 auto 16px;grid-template-columns:repeat(auto-fit,minmax(260px,320px));justify-content:center}
+.cards.tools .tcard{min-height:150px;padding:22px 24px}
+.cards.tools .tcard-name{font-family:'Unbounded',var(--sans);font-size:19px;font-weight:600;letter-spacing:0}
+.cards-title{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--t1);font-weight:600;margin:26px 0 12px}

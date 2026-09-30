@@ -27,7 +27,7 @@ import pandas as pd  # noqa: E402
 import config as C  # noqa: E402
 from mp.codes import DAY_CODE, DAY_TYPES, DIR, OPEN_CODE, OPEN_TYPES, ZONE_CODE, ZONES  # noqa: E402
 
-OUT = C.ROOT.parent / "workspace" / "Market Profile" / "Opening & Day Types" / "1 Точка открытия × тип открытия → тип дня"
+OUT = C.ROOT.parent / "workspace" / "Market Profile" / "Место и тип открытия → тип дня"
 
 
 def load(mode: str) -> pd.DataFrame:

@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Тесты открытия</title>
 <script>try{if(localStorage.getItem("algo-tests-theme")==="light")document.documentElement.setAttribute("data-theme","light")}catch(e){}</script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&family=Unbounded:wght@600;700&display=swap">
 <link rel="stylesheet" href="../../assets/style.css"></head>
 <body>
 <div class="theme-toggle" id="theme-toggle" role="button" tabindex="0" aria-label="Переключить тему"><span class="label" id="theme-toggle-label">Тёмная</span><div class="theme-toggle-track"><div class="theme-toggle-knob"></div></div></div>
 <div class="app">
-<nav class="crumbs"><a href="../../index.html">Тесты</a><span class="sep">/</span><a href="../index.html">Market Profile</a><span class="sep">/</span><span class="cur">Opening &amp; Day Types</span></nav>
-<header class="hdr"><div><h1>Тесты открытия</h1><div class="sub">где открылся день, как он открылся и что из этого вышло</div></div><div class="meta" id="hdr-meta"><div>1 элемент</div></div></header>
+<nav class="crumbs"><a href="../../index.html">Algo Tests</a><span class="sep">/</span><a href="../index.html">Market Profile</a><span class="sep">/</span><span class="cur">Opening &amp; Day Types</span></nav>
+<header class="hdr"><div><h1>Тесты открытия</h1><div class="sub">где открылся день, как он открылся и что из этого вышло</div></div><div class="meta" id="hdr-meta"></div></header>
 <section class="card"><h2 class="card-title">Что здесь</h2><div class="prose"><p>Тесты про открытие RTH-сессии ES. Каждый отвечает на один вопрос и показывает описательную статистику по всем переменным сразу: порогов «прошло / не прошло» нет, выводы делает трейдер.</p>
 <p>Любой тест считается в четырёх вариантах, которые переключаются прямо на странице: фиксированный блок 2 пт и адаптивный, опора вчерашний профиль и опора композит. Дополнительно делится история на 2010–2018 и 2019–2026, чтобы видеть, держится ли картина в обеих половинах.</p></div></section>
 <section class="card"><h2 class="card-title">Переменные</h2><div class="prose"><p><strong>Точка открытия</strong> — где цена 09:30 относительно опоры: выше диапазона, выше VA в диапазоне, внутри VA, ниже VA в диапазоне, ниже диапазона. Пять зон можно смотреть и тремя группами: внутри VA, снаружи VA в диапазоне, снаружи диапазона.</p>
@@ -17,8 +17,7 @@
 <p>Правила типов дня и открытия целиком лежат в <code>mp-es-pipeline/PROFILE_RULES.md</code>, разделы 6 и 7. Как восстановлены профили и что считается value area — на странице раздела Market Profile.</p></div></section>
 <section class="card"><h2 class="card-title">План</h2><div class="prose"><p>Действующий тест один: <strong>точка открытия × тип открытия → тип дня</strong>. Следующий на очереди — принятие или отвержение зоны открытия, дальше Strong High / Low и работа с уровнями прошлых профилей.</p>
 <p>Тесты 1.1 и 1.2 и аудит к ним убраны в архив: они считались по старым правилам типов открытия и заменены тестом 1.</p></div></section>
-<div class="cards"><a class="tcard" href="1%20%D0%A2%D0%BE%D1%87%D0%BA%D0%B0%20%D0%BE%D1%82%D0%BA%D1%80%D1%8B%D1%82%D0%B8%D1%8F%20%C3%97%20%D1%82%D0%B8%D0%BF%20%D0%BE%D1%82%D0%BA%D1%80%D1%8B%D1%82%D0%B8%D1%8F%20%E2%86%92%20%D1%82%D0%B8%D0%BF%20%D0%B4%D0%BD%D1%8F/index.html"><div class="tcard-kind">Тест</div><div class="tcard-name">1 Точка открытия × тип открытия → тип дня</div><div class="tcard-sub">С какой вероятностью формируется каждый тип дня при данной точке и данном типе открытия</div></a></div>
-<div class="foot">Тесты / Market Profile / Opening &amp; Day Types</div>
+<div class="empty">Пока пусто.</div>
 </div>
 
 <script>

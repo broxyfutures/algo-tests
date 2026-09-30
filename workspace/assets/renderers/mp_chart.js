@@ -40,6 +40,8 @@
 .mpc .mpc-load{padding:40px 0;text-align:center;color:var(--t3);font-size:12px}
 .mpc .mpc-flt{margin:2px 0 16px;padding:12px 0 0;border-top:1px solid var(--border)}
 .mpc .mpc-flt .controls{margin-bottom:0;gap:14px 18px}
+.mpc .ctl{flex-wrap:wrap;max-width:100%}
+.mpc .seg{flex-wrap:wrap;max-width:100%}
 .mpc .mpc-flt-t{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:10px}
 .mpc .mpc-flt-t b{color:var(--t2);font-weight:500}
 .mpc .mpc-flt-t .mpc-reset{margin-left:10px;font:inherit;font-size:10px;letter-spacing:.06em;text-transform:none;color:var(--t3);background:none;border:none;border-bottom:1px solid var(--border-2);padding:0 0 1px;cursor:pointer}
@@ -174,14 +176,14 @@
     function matches(i){
       const d = day(i);
       if (d[F.flags] & 16) return false;                  // день не в статистике теста
-      if (!owns('filter') && sel.idx) return sel.idx.has(i);   // тест прислал готовый список дней
+      if (sel.idx) return sel.idx.has(i);                 // тест прислал готовый список дней
       const f = filterNow();
       if (!f.zones.length && !f.opens.length && !f.dts.length) return true;
       return (!f.zones.length || f.zones.includes(zoneOf(d)))
         && (!f.opens.length || f.opens.includes(typeOf(d)))
         && (!f.dts.length || f.dts.includes(d[F.dt]));
     }
-    const anyFilter = () => { if (!owns('filter') && sel.idx) return true;
+    const anyFilter = () => { if (sel.idx) return true;
       const f = filterNow(); return !!(f.zones.length || f.opens.length || f.dts.length); };
 
     // колонки: дни и (если включено) склеенные профили композитов после последнего дня-участника
@@ -457,13 +459,13 @@
       const el = document.createElement('div'); el.className = 'seg';
       const all = document.createElement('button');
       all.textContent = 'Все'; all.setAttribute('aria-pressed', !cur.length);
-      all.addEventListener('click', () => upd(key, []));
+      all.addEventListener('click', () => { sel.idx = null; upd(key, []); });
       el.appendChild(all);
       opts.forEach(([v, t]) => {
         const b = document.createElement('button'); b.textContent = t;
         b.setAttribute('aria-pressed', cur.includes(v));
         b.addEventListener('click', () => { const a = cur.slice(), i = a.indexOf(v);
-          i < 0 ? a.push(v) : a.splice(i, 1); upd(key, a); });
+          i < 0 ? a.push(v) : a.splice(i, 1); sel.idx = null; upd(key, a); });
         el.appendChild(b);
       });
       return el;
@@ -515,11 +517,13 @@
           ctl('Тип открытия', multi(D.open_types.map(o => [o[0], o[1].replace('Open-','O-')]), S.fo, 'fo')),
           ctl('Тип дня', multi(D.day_types.map(t => [t[0], t[1].replace('Double-Distribution ','DD-')]), S.ft, 'ft')));
         const t = root.querySelector('#mpc-flt-t');
-        const names = filterNames();
+        const names = sel.idx ? 'из теста · ' + sel.label : filterNames();
         t.innerHTML = 'Какие дни подсветить' + (names ? ': <b>' + names + '</b>' : '');
         if (names){
           const r = document.createElement('button'); r.className = 'mpc-reset'; r.textContent = 'сбросить';
-          r.addEventListener('click', () => { S.fz = []; S.fo = []; S.ft = []; save(); build_cols(); controls(); draw(); });
+          r.addEventListener('click', () => { S.fz = []; S.fo = []; S.ft = []; sel.idx = null;
+            try{ history.replaceState(null, '', location.pathname); }catch(e){}
+            save(); build_cols(); controls(); draw(); });
           t.appendChild(r);
         }
       }
@@ -558,18 +562,12 @@
         () => document.fullscreenElement === stage ? document.exitFullscreen() : stage.requestFullscreen()));
       const gap = document.createElement('div'); gap.className = 'gap'; b.append(gap);
       const info = document.createElement('div'); info.className = 'mpc-sel';
-      const selName = owns('filter') ? (filterNames() || 'все дни') : (sel.label || 'все дни');
+      const selName = sel.idx ? (sel.label || 'дни из теста') : owns('filter') ? (filterNames() || 'все дни') : (sel.label || 'все дни');
       const on = cols.filter(c => c.t === 'd' && c.on).length;
       info.innerHTML = `подсветка: <b>${selName}</b> · ${on} из ${nTest} дней в статистике`;
       b.append(info);
       root.querySelector('#mpc-hint').textContent =
-        'Тянуть мышью по графику — двигать ленту, по шкале дат — растягивать и сжимать дни, по ценовой шкале — ' +
-        'растягивать и сжимать цену. Колесо — масштаб по дням (над ценовой шкалой или с Alt — по цене), Shift + колесо — ' +
-        'прокрутка. ' +
-        (S.man ? 'Масштаб цены твой: при прокрутке шкала стоит на месте, кнопка «цена по кадру» вернёт автоподбор. '
-               : 'Масштаб цены подбирается по видимым дням, пока ты не задашь свой. ') + 'Линиями отмечены только POC, границы value area и границы диапазона дня; слева плашка первого часа ' +
-        '(IB), стрелки — открытие и закрытие RTH. Границы диапазона дня пунктиром, POC и границы value area сплошные. ' +
-        'Карточка дня — наведение с зажатым Ctrl или Cmd.';
+        'Мышь: двигать ленту · колесо: масштаб по дням, над шкалой цены или с Alt: по цене · Ctrl + наведение: карточка дня';
     }
 
     // ---------------------------------------------------------------- мышь
@@ -673,8 +671,20 @@
       build_cols(); controls(); draw();
     });
 
+    // пришли со страницы теста по «показать на графике»: дни, режим, опора и строка оттуда
+    if (owns('filter') && location.hash === '#pick'){
+      let pk = null; try{ pk = JSON.parse(localStorage.getItem('mp-chart-pick') || 'null'); }catch(e){}
+      if (pk && Array.isArray(pk.idx)){
+        sel = {zones: [], open: '', dt: '', label: pk.label || '', idx: new Set(pk.idx)};
+        if (pk.m) S.m = pk.m; if (pk.c) S.c = pk.c; S.ticks = pk.ticks || 0; S.hl = 1;
+        // лента встаёт на последний подсвеченный день
+        if (pk.idx.length) S.pickLast = Math.max(...pk.idx);
+      }
+    }
     build_cols();
     S.i0 = S.i0 || Math.max(0, cols.length - 8);
+    if (S.pickLast !== undefined){ const k = cols.findIndex(c => c.t === 'd' && c.i === S.pickLast);
+      if (k >= 0) S.i0 = Math.max(0, k - 5); delete S.pickLast; }
     controls(); draw();
     window.MPChart.debug = () => ({S, view, lo, hi, W, H, colW, cols: cols.length, Y, P, sel,
                                    AXW, TOP, BOT, MAXB, pads: pads(), dayProfile, compProfile, levels, build});

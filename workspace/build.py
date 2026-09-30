@@ -3,12 +3,13 @@
 Сборка workspace: каждая папка превращается в index.html рядом со своими
 исходниками, так что дерево папок и есть сайт. Открывается по file://.
 
-Правила:
-  - папка с test.md            → страница теста (лист);
-  - папка без test.md          → раздел: текст из index.md (необязателен)
-                                 плюс карточки вложенных папок;
-  - имена папок от корня       → хлебные крошки «Тесты / … / текущая»;
-  - assets/ и скрытые папки пропускаются.
+Сайт в три уровня:
+  - корень                     → баннер Algo Tests и плитки инструментов;
+  - папка инструмента          → чарт (renderer в index.md) и плитки тестов;
+  - папка с test.md            → страница теста: идея, правила, статистика
+                                 (интерактив встаёт в блок mount_in, по умолчанию «Результаты»).
+Имена папок от корня → хлебные крошки. assets/ и скрытые папки пропускаются,
+папки с archived: true собираются, но в плитках не показываются.
 
 test.md = frontmatter (плоские key: value и списки «- item») + тело с
 заголовками «## …». Ключ renderer выбирает, что вставить в раздел «Результаты»:
@@ -33,10 +34,11 @@ import urllib.parse
 from pathlib import Path
 
 WS = Path(__file__).resolve().parent
-ROOT_TITLE = "Тесты"
+ROOT_TITLE = "Algo Tests"
 SKIP_DIRS = {"assets"}
 FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?'
-         'family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap">')
+         'family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500'
+         '&family=Unbounded:wght@600;700&display=swap">')
 
 VERDICT_CLASS = {"прошло": "pass", "не прошло": "fail", "частично": "part"}
 STATUS_CLASS = {"завершён": "pass", "закрыт": "dim", "заменён": "dim", "в работе": "part", "инструмент": "mid"}
@@ -230,6 +232,12 @@ def crumbs_html(crumbs: list[str], depth: int) -> str:
 
 
 def page_shell(title: str, sub: str, crumbs: list[str], depth: int, body: str, meta_html: str = "", scripts: str = "") -> str:
+    # корень: без крошек и шапки, вместо них баннер (он внутри body)
+    head = "" if depth == 0 else (
+        f"{crumbs_html(crumbs, depth)}\n"
+        f'<header class="hdr"><div><h1>{esc(title)}</h1>'
+        + (f'<div class="sub">{esc(sub)}</div>' if sub else "")
+        + f'</div><div class="meta" id="hdr-meta">{meta_html}</div></header>\n')
     return (
         f"<!doctype html>\n<html lang=\"ru\"><head><meta charset=\"utf-8\">"
         f"<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
@@ -237,12 +245,8 @@ def page_shell(title: str, sub: str, crumbs: list[str], depth: int, body: str, m
         f'<link rel="stylesheet" href="{rel(depth)}assets/style.css"></head>\n<body>\n'
         f"{THEME_TOGGLE_HTML}\n"
         f'<div class="app">\n'
-        f"{crumbs_html(crumbs, depth)}\n"
-        f'<header class="hdr"><div><h1>{esc(title)}</h1>'
-        + (f'<div class="sub">{esc(sub)}</div>' if sub else "")
-        + f'</div><div class="meta" id="hdr-meta">{meta_html}</div></header>\n'
-        f"{body}\n"
-        f'<div class="foot">{esc(" / ".join(crumbs))}</div>\n'
+        + head
+        + f"{body}\n"
         f"</div>\n{scripts}\n{THEME_TOGGLE_SCRIPT}\n</body></html>\n"
     )
 
@@ -340,12 +344,6 @@ def mount_mp_chart(meta: dict) -> str:
     return '<div class="mpc" id="mpc"></div>'
 
 
-def pre_mp_chart(meta: dict) -> str:
-    return card("Профили и композиты",
-                mount_mp_chart(meta),
-                "исходники теста: выбери строку в таблице или ячейку тепловой карты — эти дни подсветятся")
-
-
 def mount_mp_chart_page(meta: dict) -> str:
     return '<div class="mpc" id="mpc" data-own="mode,ref,filter"></div>'
 
@@ -355,8 +353,9 @@ RENDERERS = {
     "cot_pa_tables": {"mount": mount_cot_pa_tables, "extra": extra_cot_pa_tables, "js": "cot_pa_tables.js", "needs_results": True},
     "cot_yesno": {"mount": mount_cot_yesno, "extra": None, "js": "cot_yesno.js", "needs_results": True},
     "mp_zone_table": {"mount": mount_mp_zone_table, "extra": None, "js": "mp_zone_table.js", "needs_results": True},
+    # данные графика нужны тесту для своей строки и сводок; сам чарт живёт на странице инструмента
     "mp_open_matrix": {"mount": mount_mp_open_matrix, "extra": None, "js": "mp_open_matrix.js", "needs_results": True,
-                       "pre": pre_mp_chart, "js_extra": ["mp_chart.js"], "data_js": "mp_chart_data.js"},
+                       "data_js": "mp_chart_data.js"},
     "mp_chart": {"mount": mount_mp_chart_page, "extra": None, "js": None, "needs_results": False,
                  "js_extra": ["mp_chart.js"], "data_js": "mp_chart_data.js"},
 }
@@ -395,9 +394,10 @@ def render_test(folder: Path, depth: int, crumbs: list[str]) -> tuple[str, dict]
     if r.get("pre"):
         parts.append(r["pre"](meta))
     has_results_section = False
+    mount_in = meta.get("mount_in", "Результаты")   # в какой блок вставить интерактив
     for head, content in split_sections(body):
         inner = md_to_html(content) if content else ""
-        if head == "Результаты" and r["mount"]:
+        if head == mount_in and r["mount"]:
             has_results_section = True
             inner += r["mount"](meta)
             parts.append(card(head, inner, collapsed=head in fold))
@@ -412,11 +412,6 @@ def render_test(folder: Path, depth: int, crumbs: list[str]) -> tuple[str, dict]
 
     scripts = scripts_html(r, depth, results_text)
     meta_html = ""
-    if not r["js"]:
-        bits = []
-        if meta.get("updated"):
-            bits.append(f"<div>Обновлено <b>{esc(meta['updated'])}</b></div>")
-        meta_html = "".join(bits)
     html = page_shell(title, meta.get("instrument", ""), crumbs, depth, "\n".join(p for p in parts if p), meta_html, scripts)
     return html, meta
 
@@ -432,35 +427,43 @@ def render_section(folder: Path, depth: int, crumbs: list[str], children: list[d
     r = RENDERERS.get(meta.get("renderer", "markdown"), RENDERERS["markdown"])
     mount_in = meta.get("mount_in", "Результаты")   # в какой блок вставить интерактив
     parts = []
+    if depth == 0:
+        parts.append(f'<section class="hero"><h1 class="hero-title">{esc(title)}</h1></section>')
+    mounted = False
     for head, content in split_sections(body):
         inner = md_to_html(content) if content else ""
         if r["mount"] and head == mount_in:
             inner += r["mount"](meta)
+            mounted = True
         parts.append(card(head, inner, collapsed=head in fold))
+    if r["mount"] and not mounted:                  # интерактив без текста: отдельной карточкой сверху
+        parts.insert(0, card(None, r["mount"](meta)))
     if children:
         cards = []
         for c in children:
             m = c["meta"]
             if c["is_test"]:
-                kind = "Тест"
-                sub = m.get("summary") or m.get("verdict_note") or m.get("instrument") or ""
-                foot = ""
+                kind, sub = "Тест", m.get("summary") or ""
             else:
-                kind = "Раздел"
                 n = c["n_children"]
-                sub = m.get("summary") or (f"{n} {'элемент' if n == 1 else 'элемента' if n < 5 else 'элементов'}" if n else "Пока пусто")
-                foot = ""
+                kind = "Инструмент"
+                sub = m.get("summary") or ""
+                sub += (" · " if sub else "") + (plural(n, "тест", "теста", "тестов") if n else "тестов пока нет")
             cards.append(
                 f'<a class="tcard" href="{child_href(c["name"])}"><div class="tcard-kind">{kind}</div>'
-                f'<div class="tcard-name">{esc(m.get("title") or c["name"])}</div><div class="tcard-sub">{esc(sub)}</div>'
-                + (f'<div class="tcard-foot">{foot}</div>' if foot else "")
-                + "</a>"
+                f'<div class="tcard-name">{esc(m.get("title") or c["name"])}</div><div class="tcard-sub">{esc(sub)}</div></a>'
             )
-        parts.append('<div class="cards">' + "".join(cards) + "</div>")
+        if depth > 0:
+            parts.append('<h2 class="cards-title">Тесты</h2>')
+        parts.append(f'<div class="cards{" tools" if depth == 0 else ""}">' + "".join(cards) + "</div>")
     elif not r["mount"]:
-        parts.append('<div class="empty">Пока пусто. Добавь папку с test.md и запусти build.py.</div>')
-    meta_html = f"<div>{len(children)} {'элемент' if len(children) == 1 else 'элемента' if 0 < len(children) < 5 else 'элементов'}</div>" if children else ""
-    return page_shell(title, meta.get("subtitle", ""), crumbs, depth, "\n".join(parts), meta_html, scripts_html(r, depth, None)), meta
+        parts.append('<div class="empty">Пока пусто.</div>')
+    return page_shell(title, meta.get("subtitle", ""), crumbs, depth, "\n".join(parts), "", scripts_html(r, depth, None)), meta
+
+
+def plural(n: int, one: str, few: str, many: str) -> str:
+    w = one if n % 10 == 1 and n % 100 != 11 else few if 2 <= n % 10 <= 4 and not 12 <= n % 100 <= 14 else many
+    return f"{n} {w}"
 
 
 def walk(folder: Path, depth: int, crumbs: list[str], written: list[tuple[Path, int]]) -> dict:

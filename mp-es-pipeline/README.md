@@ -50,7 +50,7 @@ scripts/04_build_weekly_monthly.py  → rolls.csv, mp_weekly_{fixed,adaptive}.cs
 scripts/05_classify_days.py         → mp_daytype_{fixed,adaptive}.csv
 scripts/06_build_day_composites.py  → mp_composite_{fixed,adaptive}.csv
 scripts/07_classify_opens.py        → mp_open_{fixed,adaptive}.csv
-scripts/11_test_open_matrix.py      тест 1 (точка открытия × тип открытия → тип дня) → results.json в workspace
+scripts/11_test_open_matrix.py      тест «Место и тип открытия → тип дня» → results.json в workspace
 scripts/1x_test_*.py            по скрипту на тест, появляются по мере тестов
 data/derived/          производные файлы (коммитятся, ~7 МБ)
 ../workspace/Market Profile/  страницы тестов (test.md + results.json)

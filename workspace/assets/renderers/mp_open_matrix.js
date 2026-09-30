@@ -4,6 +4,7 @@
 // Режим «своя строка» пересчитывает точку и тип открытия, Double-Distribution и композиты прямо здесь,
 // из цен блоков window.MPCHART (assets/data/mp_chart_data.js), теми же правилами, что пайплайн.
 // На странице: #hdr-meta, #om-controls, #om-calc, #om-heat, #om-heat-info, #om-types, #om-note.
+// «Показать на графике» кладёт дни в localStorage (mp-chart-pick) и открывает страницу инструмента с #pick.
 (function(){
   const D = window.DATA, M = D.meta;
   const KEY = 'mp-open-matrix-' + D.test;
@@ -75,7 +76,8 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;width:1
 .om-info .om-it{display:flex;justify-content:space-between;gap:12px;align-items:baseline;margin-bottom:8px;flex-wrap:wrap}
 .om-info .om-it b{color:var(--t1);font-weight:500;font-size:12.5px}
 .om-info .om-x{font:inherit;font-size:11px;color:var(--t3);background:none;border:none;border-bottom:1px solid var(--border-2);padding:0 0 1px;cursor:pointer}
-.om-info .om-x:hover{color:var(--t1)}
+.om-info .om-x:hover,.om-info .om-go:hover{color:var(--t1)}
+.om-info .om-go{font-size:11px;color:var(--up)}
 .om-info .om-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:4px 28px}
 .om-info .om-grid div{display:flex;justify-content:space-between;gap:10px;padding:2px 0;border-bottom:1px solid var(--border)}
 .om-info .om-grid span{color:var(--t3)}
@@ -433,7 +435,13 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;width:1
     return D.rows.filter(r => inRange(r[0])).map(r => ({date: r[0], z5: r[off], o: r[off + 1], t: r[off + 2]}));
   }
 
-  let lastTicks = null;   // какую строку последний раз отдали графику
+  // «показать на графике»: дни уходят на страницу инструмента через localStorage
+  function pick(dates, label){
+    if (!window.MPCHART) return;
+    const idx = dates.map(d => idxOf()[d]).filter(i => i !== undefined);
+    try{ localStorage.setItem('mp-chart-pick', JSON.stringify({idx, label, m: S.m === 'x' ? 'f' : S.m, c: S.c,
+      ticks: S.m === 'x' ? S.ticks : 0})); }catch(e){}
+  }
   function render(){
     const host = document.getElementById('om-controls'); host.innerHTML = '';
     const blk = seg([['f', 'Фикс. 2 пт'], ['a', 'Адаптивный'], ['x', 'Своя строка']], S.m, v => upd('m', v));
@@ -496,8 +504,11 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;width:1
     });
     const sg1 = G[S.sel], selRow = order.find(o => o.k === S.sel);
     const selName = selRow.zone ? zoneName(selRow.zone) + (selRow.cls === 'om-sub' ? ' · ' + selRow.label : '') : 'все дни';
-    const pie1 = pie(selName, DT.map((t, i) => ({label: t[1], value: sg1.t[t[0]] || 0, color: slot(i + 1)})), stats(sg1.dates));
+    const pie1 = pie(selName, DT.map((t, i) => ({label: t[1], value: sg1.t[t[0]] || 0, color: slot(i + 1)})),
+      stats(sg1.dates) + '<p style="margin:12px 0 0"><a class="om-go-row" href="../index.html#pick">показать эти дни на графике →</a></p>');
     document.getElementById('om-types').innerHTML = `<div class="om-wrap">${h}</tbody></table></div>${pie1}</div>`;
+    const goRow = document.querySelector('#om-types .om-go-row');
+    if (goRow) goRow.addEventListener('click', () => pick(sg1.dates, selName));
     document.querySelectorAll('#om-types tr[data-k]').forEach(tr =>
       tr.addEventListener('click', () => updMany({sel: tr.dataset.k, cell: '', hrow: ''})));
 
@@ -526,15 +537,15 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;width:1
         colsOut.map(c => {
           const p = val(c, t[0]), k = c.o + '|' + t[0];
           return `<td data-k="${k}" class="${S.cell === k ? 'om-cellsel' : ''}" style="${paint(norm(p, t[0]))}" ` +
-            `title="${t[1]} · ${c.name}: ${f1(p)}% (${c.g.t[t[0]] || 0} из ${c.g.n}) — клик: сводка и эти дни на графике">${f1(p)}%</td>`;
+            `title="${t[1]} · ${c.name}: ${f1(p)}% (${c.g.t[t[0]] || 0} из ${c.g.n}). Клик: сводка">${f1(p)}%</td>`;
         }).join('') + '</tr>';
     });
     hmh += `</tbody></table>`;
     hmh += `<div class="om-scale"><span class="om-bar" style="background:${rampCss()}"></span>` +
-      `<span>${S.hs === 'row' ? 'голубой — реже всего в строке, розовый — чаще всего (шкала своя у каждого типа дня)' : `общая шкала 0% → ${f1(mxAll)}%: голубой — реже, розовый — чаще`}</span></div>`;
+      `<span>${S.hs === 'row' ? 'голубой: реже всего в строке, розовый: чаще всего' : `общая шкала 0% → ${f1(mxAll)}%: голубой реже, розовый чаще`}</span></div>`;
     document.getElementById('om-heat').innerHTML = `<div class="om-heat">${hmh}</div>`;
     const sub = document.getElementById('om-heat-sub');
-    if (sub) sub.textContent = (hz ? zoneName(hz) : 'все зоны') + ' · колонка = 100% · клик по ячейке или типу дня — сводка';
+    if (sub) sub.textContent = (hz ? zoneName(hz) : 'все зоны') + ' · колонка = 100% · клик по ячейке или типу дня: сводка';
     document.querySelectorAll('#om-heat td[data-k]').forEach(td =>
       td.addEventListener('click', () => updMany({cell: S.cell === td.dataset.k ? '' : td.dataset.k, hrow: ''})));
     document.querySelectorAll('#om-heat tbody th[data-t]').forEach(th =>
@@ -571,34 +582,20 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;width:1
     if (infoDates){
       const s = summary(infoDates) || [];
       const last = infoDates.slice(-8).reverse();
-      info.innerHTML = `<div class="om-it"><b>${esc(infoTitle)}</b><button class="om-x" type="button">закрыть</button></div>` +
+      info.innerHTML = `<div class="om-it"><b>${esc(infoTitle)}</b><span><a class="om-go" href="../index.html#pick">показать на графике →</a>` +
+        ` &nbsp; <button class="om-x" type="button">закрыть</button></span></div>` +
         `<div class="om-grid">${infoRows.concat(infoDates.length ? s : []).map(([k, v]) => `<div><span>${k}</span><em>${v}</em></div>`).join('')}</div>` +
         (last.length ? `<div class="om-dates">последние дни: ${last.join(' · ')}${infoDates.length > 8 ? ' …' : ''}</div>` : '');
       info.hidden = false;
       info.querySelector('.om-x').addEventListener('click', () => updMany({cell: '', hrow: ''}));
+      info.querySelector('.om-go').addEventListener('click', () => pick(infoDates, infoTitle));
     } else info.hidden = true;
 
-    // ---------------------------------------------------------------- выбор уезжает в смотрелку профилей
-    const selDates = infoDates || sg1.dates;
-    const idx = window.MPCHART ? selDates.map(d => idxOf()[d]).filter(i => i !== undefined) : null;
-    const rowOpen = S.sel.includes('|') && !S.sel.endsWith('|*') ? S.sel.split('|')[1] : '';
-    const bits = cellSel ? [hz ? zoneName(hz) : '', OTN[cellSel[0]], DTN[cellSel[1]]]
-      : S.hrow ? [hz ? zoneName(hz) : '', DTN[S.hrow]] : [selName === 'все дни' ? '' : selName];
-    const zoneCodes = hz ? (S.z === '3' ? Z5.filter(z => TO3[z[0]] === hz).map(z => z[0]) : [hz]) : [];
-    const detail = {mode: S.m === 'x' ? 'f' : S.m, ref: S.c, zones: zoneCodes, open: cellSel ? cellSel[0] : rowOpen,
-      dayType: cellSel ? cellSel[1] : S.hrow, label: bits.filter(Boolean).join(' · ') || 'все дни', idx};
-    // своя строка статистики — та же строка на графике; при выходе из режима возвращаем блок пайплайна
-    const tk = S.m === 'x' ? S.ticks : 0;
-    if (tk !== lastTicks && (tk || lastTicks)) detail.ticks = tk;
-    lastTicks = tk;
-    window.dispatchEvent(new CustomEvent('mp-selection', {detail}));
-
-    const blkN = S.m === 'f' ? 'фиксированный блок 2 пт' : S.m === 'a' ? 'адаптивный блок' : `своя строка ${S.ticks} тиков (${(S.ticks * TICK).toFixed(2)} пт), пересчёт в браузере`;
-    const ref = S.c === '0' ? 'опора = вчерашний день' : 'опора = композит (от 2 дней, иначе вчерашний день)';
+    const blkN = S.m === 'f' ? 'фиксированный блок 2 пт' : S.m === 'a' ? 'адаптивный блок' : `своя строка ${S.ticks} тиков (${(S.ticks * TICK).toFixed(2)} пт)`;
+    const ref = S.c === '0' ? 'опора: вчерашний день' : 'опора: композит от 2 дней, иначе вчерашний день';
     document.getElementById('om-note').textContent = `${blkN} · ${ref} · ${periodLabel()} · ${allN} дней. ` +
-      `«% зоны» — доля дней зоны с этим типом открытия. Под процентом типа дня — разница с базовой частотой (все дни выборки) в процентных пунктах. ` +
-      `Тепловая карта и кольцо показывают выбранную строку таблицы. Клик по ячейке карты или по названию типа дня открывает сводку и подсвечивает эти дни на графике вверху страницы.` +
-      (S.m === 'x' ? ' Своя строка — режим для просмотра: точка и тип открытия, Double-Distribution и композиты пересчитаны с этой высотой строки. Основные результаты теста — фиксированный и адаптивный блок.' : '');
+      `Под процентом: разница с базовой частотой, п.п.` +
+      (S.m === 'x' ? ' Своя строка пересчитывает VA, точку и тип открытия, Double-Distribution и композиты; при 8 тиках совпадает с фикс. 2 пт.' : '');
   }
 
   // ================================================================ калькулятор
@@ -624,7 +621,7 @@ table.om-hm{border-collapse:separate;border-spacing:3px;font-size:12.5px;width:1
           ` <small class="${d > 0 ? 'up' : d < 0 ? 'dn' : ''}" title="разница с частотой во всей выборке">${sg(d)}</small></span>`; }).join('');
       body = `<div class="om-cres"><b>${g.n}</b> дней с таким открытием · ${f1(g.n / zg.n * 100)}% дней зоны · ${periodLabel()}</div>` +
         `<div class="om-sbar" role="img" aria-label="вероятность типов дня">${bar}</div>` +
-        `<div class="om-sbase" title="тонкая полоса — все дни выборки, для сравнения">${bbar}</div>` +
+        `<div class="om-sbase" title="тонкая полоса: все дни выборки, для сравнения">${bbar}</div>` +
         `<div class="om-leg">${leg}</div>`;
     }
     host.innerHTML = `<div class="om-calc om-viz"><div class="om-cin">` +

@@ -1,55 +1,16 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Market Profile</title>
 <script>try{if(localStorage.getItem("algo-tests-theme")==="light")document.documentElement.setAttribute("data-theme","light")}catch(e){}</script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&family=Unbounded:wght@600;700&display=swap">
 <link rel="stylesheet" href="../assets/style.css"></head>
 <body>
 <div class="theme-toggle" id="theme-toggle" role="button" tabindex="0" aria-label="Переключить тему"><span class="label" id="theme-toggle-label">Тёмная</span><div class="theme-toggle-track"><div class="theme-toggle-knob"></div></div></div>
 <div class="app">
-<nav class="crumbs"><a href="../index.html">Тесты</a><span class="sep">/</span><span class="cur">Market Profile</span></nav>
-<header class="hdr"><div><h1>Market Profile</h1><div class="sub">TPO-профиль ES из минуток · 2010-06-07 → 2026-09-15 · 4088 дней</div></div><div class="meta" id="hdr-meta"><div>1 элемент</div></div></header>
-<section class="card"><h2 class="card-title">Чарты на основе теста</h2><div class="prose"><p>Те самые профили, по которым считается статистика: буквы TPO по 30-минутным блокам, value area, POC, initial balance, склеенные композиты. Ничего не пересчитывается на странице, цифры те же, что в таблицах тестов.</p><div class="mpc" id="mpc" data-own="mode,ref,filter"></div></div></section>
-<section class="card fold"><details><summary>Как читать чарт</summary><div class="prose"><div class="twrap"><table class="plain md"><thead><tr><th>Элемент</th><th>Что значит</th></tr></thead><tbody><tr><td>Буквы A…M</td><td>30-минутные блоки RTH: A = 09:30–10:00, M = 15:30–16:00</td></tr><tr><td>Тон колонки</td><td>синий — день закрылся выше открытия, розовый — ниже</td></tr><tr><td>Жирная линия</td><td>POC</td></tr><tr><td>Две линии в тон профиля</td><td>границы value area 68 %</td></tr><tr><td>Серый пунктир</td><td>границы диапазона дня, high и low</td></tr><tr><td>Плашка слева</td><td>первый час, initial balance: видно, насколько далеко день ушёл за него</td></tr><tr><td>Стрелки по краям</td><td>слева открытие RTH, справа закрытие, каждая на своём уровне</td></tr><tr><td>Широкая серая колонка</td><td>композит: склеенный профиль нескольких дней, теми же блоками, рисуется после последнего дня-участника</td></tr></tbody></table></div>
-<p>Больше на чарте ничего не отмечено, всё остальное в карточке дня по наведению с Ctrl.</p>
-<h3>Масштаб цены</h3>
-<p>Пока масштаб не тронут, ценовое окно подбирается по видимым дням. Как только ты задал его сам — потянул ценовую шкалу, покрутил колесо над ней или подвинул чарт по вертикали — окно фиксируется в ценах и при прокрутке больше не прыгает: лента едет, шкала стоит. Вернуть автоподбор — кнопка «цена по кадру». Исключение одно: если уехать так далеко, что видимые дни вообще не попадают в окно, кадр подбирается заново.</p>
-<h3>Высота строки</h3>
-<p>Поле «высота строки» принимает количество тиков: <strong>4 тика = 1 пункт</strong>, 8 тиков = 2 пункта. Профиль пересобирается в браузере из цен 30-минутных блоков, POC и value area пересчитываются тем же правилом, что в пайплайне. Кнопка «как в режиме» возвращает блок, с которым считалась статистика. Типы дня и открытия при этом не меняются: они заморожены и от высоты строки не зависят.</p>
-<h3>Фильтры</h3>
-<p>Три строки — точка открытия, тип открытия, тип дня — подсвечивают дни выбранной выборки. Выбирать можно сколько угодно вариантов в каждой строке: внутри строки они складываются, между строками пересекаются. «Все» сбрасывает свою строку, ссылка «сбросить» — все три. Кнопка «только выбранные» сжимает ленту до подсвеченных дней.</p></div></details></section>
-<section class="card fold"><details><summary>Управление чартом</summary><div class="prose"><div class="twrap"><table class="plain md"><thead><tr><th>Действие</th><th>Что делает</th></tr></thead><tbody><tr><td>Тянуть мышью по чарту</td><td>двигать ленту в любую сторону: и по времени, и по цене</td></tr><tr><td>Тянуть по шкале дат внизу</td><td>растягивать и сжимать дни</td></tr><tr><td>Тянуть по ценовой шкале справа</td><td>растягивать и сжимать цену</td></tr><tr><td>Колесо</td><td>масштаб по дням, вокруг курсора</td></tr><tr><td>Колесо над ценовой шкалой или Alt + колесо</td><td>масштаб по цене</td></tr><tr><td>Shift + колесо</td><td>прокрутка по дням</td></tr><tr><td>Наведение с Ctrl или Cmd</td><td>карточка дня со всеми числами</td></tr><tr><td>«По блокам A-B-C»</td><td>каждый 30-минутный блок отдельным диапазоном, как свечки</td></tr></tbody></table></div></div></details></section>
-<section class="card"><h2 class="card-title">Данные и метод</h2><div class="prose"><h3>Источник</h3>
-<div class="twrap"><table class="plain md"><thead><tr><th>Параметр</th><th>Значение</th></tr></thead><tbody><tr><td>Данные</td><td>Databento · GLBX.MDP3 · ES.v.0 (континуальный, фронт по объёму) · ohlcv-1m</td></tr><tr><td>Период</td><td>2010-06-07 → 2026-09-15</td></tr><tr><td>Профилей</td><td>4088 дневных (4054 полных, 34 укороченных), 850 недельных, 196 месячных</td></tr></tbody></table></div>
-<h3>Что восстанавливается точно, что приближённо</h3>
-<div class="twrap"><table class="plain md"><thead><tr><th>Элемент</th><th>Точность</th></tr></thead><tbody><tr><td>TPO-профиль, POC и value area по TPO, IB, выход за IB, хвосты, single prints, poor high/low</td><td>точно: минутный ряд непрерывен, поэтому блок побывал на каждой цене между своими low и high</td></tr><tr><td>Ночная сессия: high / low, ON POC</td><td>точно</td></tr><tr><td>Объёмный профиль, VPOC</td><td>приближённо: объём минуты раскладывается поровну по её диапазону</td></tr><tr><td>Дельта, bid/ask</td><td>нет, нужны тиковые данные</td></tr></tbody></table></div>
-<h3>Профили</h3>
-<div class="twrap"><table class="plain md"><thead><tr><th>Профиль</th><th>Блок по времени</th><th>Что входит</th></tr></thead><tbody><tr><td>Дневной</td><td>30 мин, A…M</td><td>только RTH 09:30–16:00 New York</td></tr><tr><td>Ночь (к дневному)</td><td>30 мин</td><td>18:00 накануне → 09:29</td></tr><tr><td>Недельный</td><td>4 часа от 18:00</td><td>все торги с 18:00 воскресенья до 17:00 пятницы</td></tr><tr><td>Месячный</td><td>1 день (сутки Globex)</td><td>все торги месяца</td></tr></tbody></table></div>
-<p>Праздничные сессии Globex (NYSE закрыта, ES до 13:00) не считаются дневным профилем, но входят в недельный и месячный. Час 16:00–17:00 входит только в недельный и месячный.</p>
-<h3>Области профиля</h3>
-<div class="twrap"><table class="plain md"><thead><tr><th>Область</th><th>Правило</th></tr></thead><tbody><tr><td>Value area</td><td>68 %, по две строки от POC (CBOT)</td></tr><tr><td>POC</td><td>строка с наибольшим числом TPO, при равенстве ближайшая к центру</td></tr><tr><td>IB</td><td>2 блока по 30 минут (A + B)</td></tr><tr><td>Excess</td><td>≥ 2 блоков с одной отметкой на краю. Одиночные отметки последнего блока не excess: цена не успела доказать отторжение</td></tr><tr><td>Single prints</td><td>≥ 2 блоков подряд с одной отметкой внутри профиля</td></tr><tr><td>Poor high / low</td><td>≥ 2 отметки на крайней строке</td></tr></tbody></table></div>
-<p>Проверка на данных: VAL ≤ POC ≤ VAH во всех профилях, IB всегда внутри диапазона дня.</p>
-<h3>Размер блока: два режима параллельно</h3>
-<p>Каждый профиль считается дважды, тесты показывают результаты рядом.</p>
-<ul><li><strong>fixed</strong>: день 2 пт, неделя 4 пт, месяц 8 пт на всю историю, как в терминале.</li><li><strong>adaptive</strong>: дневной блок = медиана диапазона RTH за 20 прошлых дней / 25, округление до сетки 0.25 · 0.5 · 0.75 · 1 · 1.5 · 2 · 2.5 · 3 · 4 · 5 · 6 · 8. Пересчёт по понедельникам: сдвиг на одну ступень применяется, если та же цель вышла вторую неделю подряд, на две и больше — сразу. Недельный = дневной × 2, месячный = дневной первой недели месяца × 4.</li></ul>
-<p>При fixed дневной профиль 2012 года состоит в среднем из 7 рядов и value area занимает 71 % диапазона дня, в 2026 году 34 ряда и 51 %. При adaptive около 25 рядов и 50–53 % в любой год.</p>
-<h3>Ролл контракта</h3>
-<ul><li>Спред новый − старый контракт в момент переключения: 2010–2021 от −5 до −10 пт, 2023–2026 от +45 до +74 пт.</li><li>Дневной профиль всегда по одному контракту. В день ролла вчерашние уровни и открытый композит сдвигаются на спред, чтобы сравнивать цены в одном контракте.</li><li>Недельный и месячный профили через ролл: старый контракт сдвигается на спред, форма профиля сохраняется.</li><li>Databento переключает поздно, за 1–3 дня до экспирации. Эти 177 дней остаются в тестах: спред за день почти не меняется, TPO-форма та же, ниже только объём.</li></ul>
-<h3>Сверка с терминалом</h3>
-<ul><li>Дневной 17.01.2025, блок 2 пт: совпадает построчно. POC 6042, VA 6030–6048, IB 6012.75–6033.</li><li>Недельный 30.12.2024, блок 4 пт: POC 5956 и VAH 5984 совпадают.</li><li>Недельный 16.12.2024 с роллом внутри: у нас POC 6132 со сдвигом старого контракта на +74 пт, в терминале около 6078. Похоже, терминал склеивает контракты без сдвига.</li></ul>
-<h3>Дневные композиты (тумблер в тестах)</h3>
-<p>День входит в открытый композит, если его VA больше чем на 50 % лежит внутри VA композита <strong>и</strong> склеенный профиль остаётся симметричным колоколом: POC в средней половине диапазона, нет двойного распределения, короткая сторона VA от POC не меньше трети длинной. Тип дня роли не играет: трендовый день входит на общих основаниях, но обычно ломает колокол сам.</p>
-<p>Если хоть что-то из этого не выполнено, композит закрывается, а этот день становится первым днём следующего. Причин закрытия ровно две: миграция VA и сломанная форма. Пропусков нет — композит всегда непрерывный отрезок дней, каждый день ровно в одном композите. Через ролл композит сдвигается на спред и продолжается. Недельные и месячные профили не склеиваются.</p>
-<p>В тестах: тумблер выкл = опора вчерашний профиль, вкл = открытый композит от 2 дней. За историю 811 композитов от 2 дней в fixed и 753 в adaptive, самый длинный 9 дней.</p>
-<h3>Типы дня</h3>
-<p>По Mind Over Markets с поправками трейдера, правила полностью в <code>mp-es-pipeline/PROFILE_RULES.md</code>, раздел 6.</p>
-<div class="twrap"><table class="plain md"><thead><tr><th>Тип дня</th><th>Условия</th><th>Доля дней</th></tr></thead><tbody><tr><td>Normal Variation</td><td>выход за IB в одну сторону, остальное не подошло</td><td>65.0 %</td></tr><tr><td>Normal / Nontrend</td><td>выхода за IB нет (допуск 20 % IB); IB широкий / узкий (&lt; 0.4 × R20)</td><td>9.9 % / 1.0 %</td></tr><tr><td>Neutral-Extreme / Center</td><td>выход в обе стороны; Extreme = закрытие в крайних 20 % диапазона</td><td>8.2 % / 5.9 %</td></tr><tr><td>Trend</td><td>выход в одну сторону; на первых 10 блоках (A…J) ни один не ушёл за минимум двух предыдущих против тренда, ноль нарушений, последние три блока свободны; закрытие в крайних 25 % диапазона</td><td>6.4 %</td></tr><tr><td>Double-Distribution Trend</td><td>выход в одну сторону, две области, разделённые single prints</td><td>3.5 %</td></tr></tbody></table></div>
-<h3>Типы открытия</h3>
-<p>Правила раздела 7 <code>PROFILE_RULES.md</code>, утверждены 22.09.</p>
-<div class="twrap"><table class="plain md"><thead><tr><th>Тип открытия</th><th>Условия</th><th>Доля дней</th></tr></thead><tbody><tr><td>Open-Auction внутри VA</td><td>открытие внутри VA опоры</td><td>38.5 %</td></tr><tr><td>Open-Drive</td><td>открытие вне VA, своя граница VA не тронута; экстремум IB против тренда остался в блоке A</td><td>22.2 %</td></tr><tr><td>Open-Auction вне VA</td><td>экстремум размыт или кандидат в Open-Test-Drive без пробоя IB в 10:30–11:30</td><td>18.4 %</td></tr><tr><td>Open-Rejection-Reverse</td><td>коснулись своей границы VA, в 10:30 внутри VA или прошли насквозь</td><td>12.9 %</td></tr><tr><td>Open-Test-Drive</td><td>тест VA, возврат к экстремуму A или касание границы диапазона в B, затем пробой IB по тренду в 10:30–11:30</td><td>8.0 %</td></tr></tbody></table></div>
-<p>Точка открытия (выше диапазона / выше VA / внутри VA / ниже VA / ниже диапазона) и тип открытия вместе дают матрицу из 17 ячеек — это тест 1.</p></div></section>
-<section class="card fold"><details><summary>Журнал изменений</summary><div class="prose"><ul><li>2026-09-30: тест 1 переделан. Калькулятор «точка и тип открытия → тип дня», своя высота строки и свой период для статистики (пересчёт в браузере, при 8 тиках совпадает с пайплайном день в день), сводка по клику на тепловой карте. Таблица «по тренду точки открытия или против» убрана.</li><li>2026-09-30: причин закрытия композита осталось две — миграция VA и сломанная форма. Тип дня из правила убран: трендовый день входит на общих основаниях.</li><li>2026-09-30: композит закрывает любой день, который в него не вошёл. Раньше день пропускался, а композит жил дальше, и внутри 65 композитов из 783 оказывались дыры.</li><li>2026-09-29: окно правила блоков — первые 10 блоков дня. Вариант «до блока с экстремумом» оказался дырявым: 05.08.2025 поставил лоу в блоке C, проверились два блока из тринадцати, и день с пятичасовым отскоком попал в Trend.</li><li>2026-09-29: Trend переписан. Расширение за IB снято: оно отбраковывало дни с ранним трендом, движение попадало внутрь IB. Взамен правило двух блоков без нарушений и закрытие в крайних 25 % вместо 20 %.</li><li>2026-09-26: в чарте можно задать свою высоту строки в тиках; профиль и value area пересчитываются в браузере тем же правилом, что в пайплайне.</li><li>2026-09-24: чарт профилей и композитов.</li><li>2026-09-21: дни ролла включены, вчерашние уровни и композит сдвигаются на спред.</li><li>2026-09-19: VA 68 %, excess без последнего блока, single prints от 2 блоков, poor high / low в 2 блока. ETH с 18:00. Блоки: день 30 мин, неделя 4 ч, месяц 1 день. Два режима размера блока параллельно.</li></ul></div></details></section>
-<div class="cards"><a class="tcard" href="Opening%20%26%20Day%20Types/index.html"><div class="tcard-kind">Раздел</div><div class="tcard-name">Тесты открытия</div><div class="tcard-sub">Тесты по открытию RTH-сессии ES</div></a></div>
-<div class="foot">Тесты / Market Profile</div>
+<nav class="crumbs"><a href="../index.html">Algo Tests</a><span class="sep">/</span><span class="cur">Market Profile</span></nav>
+<header class="hdr"><div><h1>Market Profile</h1><div class="sub">TPO-профиль ES · 2010-06-07 → 2026-09-15 · 4088 дней</div></div><div class="meta" id="hdr-meta"></div></header>
+<section class="card"><div class="prose"><div class="mpc" id="mpc" data-own="mode,ref,filter"></div></div></section>
+<h2 class="cards-title">Тесты</h2>
+<div class="cards"><a class="tcard" href="%D0%9C%D0%B5%D1%81%D1%82%D0%BE%20%D0%B8%20%D1%82%D0%B8%D0%BF%20%D0%BE%D1%82%D0%BA%D1%80%D1%8B%D1%82%D0%B8%D1%8F%20%E2%86%92%20%D1%82%D0%B8%D0%BF%20%D0%B4%D0%BD%D1%8F/index.html"><div class="tcard-kind">Тест</div><div class="tcard-name">Место и тип открытия → тип дня</div><div class="tcard-sub">Какой тип дня вероятнее при данной точке и типе открытия</div></a></div>
 </div>
 <script src="../assets/data/mp_chart_data.js" defer></script>
 <script>
@@ -95,6 +56,8 @@
 .mpc .mpc-load{padding:40px 0;text-align:center;color:var(--t3);font-size:12px}
 .mpc .mpc-flt{margin:2px 0 16px;padding:12px 0 0;border-top:1px solid var(--border)}
 .mpc .mpc-flt .controls{margin-bottom:0;gap:14px 18px}
+.mpc .ctl{flex-wrap:wrap;max-width:100%}
+.mpc .seg{flex-wrap:wrap;max-width:100%}
 .mpc .mpc-flt-t{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:10px}
 .mpc .mpc-flt-t b{color:var(--t2);font-weight:500}
 .mpc .mpc-flt-t .mpc-reset{margin-left:10px;font:inherit;font-size:10px;letter-spacing:.06em;text-transform:none;color:var(--t3);background:none;border:none;border-bottom:1px solid var(--border-2);padding:0 0 1px;cursor:pointer}
@@ -229,14 +192,14 @@
     function matches(i){
       const d = day(i);
       if (d[F.flags] & 16) return false;                  // день не в статистике теста
-      if (!owns('filter') && sel.idx) return sel.idx.has(i);   // тест прислал готовый список дней
+      if (sel.idx) return sel.idx.has(i);                 // тест прислал готовый список дней
       const f = filterNow();
       if (!f.zones.length && !f.opens.length && !f.dts.length) return true;
       return (!f.zones.length || f.zones.includes(zoneOf(d)))
         && (!f.opens.length || f.opens.includes(typeOf(d)))
         && (!f.dts.length || f.dts.includes(d[F.dt]));
     }
-    const anyFilter = () => { if (!owns('filter') && sel.idx) return true;
+    const anyFilter = () => { if (sel.idx) return true;
       const f = filterNow(); return !!(f.zones.length || f.opens.length || f.dts.length); };
 
     // колонки: дни и (если включено) склеенные профили композитов после последнего дня-участника
@@ -512,13 +475,13 @@
       const el = document.createElement('div'); el.className = 'seg';
       const all = document.createElement('button');
       all.textContent = 'Все'; all.setAttribute('aria-pressed', !cur.length);
-      all.addEventListener('click', () => upd(key, []));
+      all.addEventListener('click', () => { sel.idx = null; upd(key, []); });
       el.appendChild(all);
       opts.forEach(([v, t]) => {
         const b = document.createElement('button'); b.textContent = t;
         b.setAttribute('aria-pressed', cur.includes(v));
         b.addEventListener('click', () => { const a = cur.slice(), i = a.indexOf(v);
-          i < 0 ? a.push(v) : a.splice(i, 1); upd(key, a); });
+          i < 0 ? a.push(v) : a.splice(i, 1); sel.idx = null; upd(key, a); });
         el.appendChild(b);
       });
       return el;
@@ -570,11 +533,13 @@
           ctl('Тип открытия', multi(D.open_types.map(o => [o[0], o[1].replace('Open-','O-')]), S.fo, 'fo')),
           ctl('Тип дня', multi(D.day_types.map(t => [t[0], t[1].replace('Double-Distribution ','DD-')]), S.ft, 'ft')));
         const t = root.querySelector('#mpc-flt-t');
-        const names = filterNames();
+        const names = sel.idx ? 'из теста · ' + sel.label : filterNames();
         t.innerHTML = 'Какие дни подсветить' + (names ? ': <b>' + names + '</b>' : '');
         if (names){
           const r = document.createElement('button'); r.className = 'mpc-reset'; r.textContent = 'сбросить';
-          r.addEventListener('click', () => { S.fz = []; S.fo = []; S.ft = []; save(); build_cols(); controls(); draw(); });
+          r.addEventListener('click', () => { S.fz = []; S.fo = []; S.ft = []; sel.idx = null;
+            try{ history.replaceState(null, '', location.pathname); }catch(e){}
+            save(); build_cols(); controls(); draw(); });
           t.appendChild(r);
         }
       }
@@ -613,18 +578,12 @@
         () => document.fullscreenElement === stage ? document.exitFullscreen() : stage.requestFullscreen()));
       const gap = document.createElement('div'); gap.className = 'gap'; b.append(gap);
       const info = document.createElement('div'); info.className = 'mpc-sel';
-      const selName = owns('filter') ? (filterNames() || 'все дни') : (sel.label || 'все дни');
+      const selName = sel.idx ? (sel.label || 'дни из теста') : owns('filter') ? (filterNames() || 'все дни') : (sel.label || 'все дни');
       const on = cols.filter(c => c.t === 'd' && c.on).length;
       info.innerHTML = `подсветка: <b>${selName}</b> · ${on} из ${nTest} дней в статистике`;
       b.append(info);
       root.querySelector('#mpc-hint').textContent =
-        'Тянуть мышью по графику — двигать ленту, по шкале дат — растягивать и сжимать дни, по ценовой шкале — ' +
-        'растягивать и сжимать цену. Колесо — масштаб по дням (над ценовой шкалой или с Alt — по цене), Shift + колесо — ' +
-        'прокрутка. ' +
-        (S.man ? 'Масштаб цены твой: при прокрутке шкала стоит на месте, кнопка «цена по кадру» вернёт автоподбор. '
-               : 'Масштаб цены подбирается по видимым дням, пока ты не задашь свой. ') + 'Линиями отмечены только POC, границы value area и границы диапазона дня; слева плашка первого часа ' +
-        '(IB), стрелки — открытие и закрытие RTH. Границы диапазона дня пунктиром, POC и границы value area сплошные. ' +
-        'Карточка дня — наведение с зажатым Ctrl или Cmd.';
+        'Мышь: двигать ленту · колесо: масштаб по дням, над шкалой цены или с Alt: по цене · Ctrl + наведение: карточка дня';
     }
 
     // ---------------------------------------------------------------- мышь
@@ -728,8 +687,20 @@
       build_cols(); controls(); draw();
     });
 
+    // пришли со страницы теста по «показать на графике»: дни, режим, опора и строка оттуда
+    if (owns('filter') && location.hash === '#pick'){
+      let pk = null; try{ pk = JSON.parse(localStorage.getItem('mp-chart-pick') || 'null'); }catch(e){}
+      if (pk && Array.isArray(pk.idx)){
+        sel = {zones: [], open: '', dt: '', label: pk.label || '', idx: new Set(pk.idx)};
+        if (pk.m) S.m = pk.m; if (pk.c) S.c = pk.c; S.ticks = pk.ticks || 0; S.hl = 1;
+        // лента встаёт на последний подсвеченный день
+        if (pk.idx.length) S.pickLast = Math.max(...pk.idx);
+      }
+    }
     build_cols();
     S.i0 = S.i0 || Math.max(0, cols.length - 8);
+    if (S.pickLast !== undefined){ const k = cols.findIndex(c => c.t === 'd' && c.i === S.pickLast);
+      if (k >= 0) S.i0 = Math.max(0, k - 5); delete S.pickLast; }
     controls(); draw();
     window.MPChart.debug = () => ({S, view, lo, hi, W, H, colW, cols: cols.length, Y, P, sel,
                                    AXW, TOP, BOT, MAXB, pads: pads(), dayProfile, compProfile, levels, build});
