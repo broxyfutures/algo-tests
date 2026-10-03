@@ -6,6 +6,9 @@
 Тест 3: точка и тип открытия → тест границ IB (TEST_PLAN, Strong Points 1, правила 03.10.2026).
 Тест границы: в 10:30–16:00 цена дошла до хая IB или выше / до лоу IB или ниже, ровно уровень, без допуска.
 Исход дня от размера блока не зависит: u только верх, d только низ, b обе, n ни одной.
+При тесте обеих границ: какая первой (u хай, d лоу, s в одном блоке и порядок неизвестен) и разрыв в
+блоках между первым и вторым тестом (0 = один блок). Порядок внутри блока берётся из минуток
+(data/derived/ib_first_minutes.csv, scripts/08_ib_first_minutes.py), если файл есть.
 
 Точка открытия: цена 09:30 против опоры (5 зон или 3 группы). Тип открытия: mp/opentype.py
 (утверждено 22.09.2026). Исход: тип дня (mp/daytype.py); у направленных типов — по тренду точки
@@ -15,7 +18,8 @@
   {test, outcome, fields, meta, zones, open_types, day_types, variants, rows}
   тест 1: rows = [date, f0 zone, f0 open_type, f0 day_type, f0 day_dir, f1 …, a0 …, a1 …]
   тест 2: rows = [date, f0 zone, f0 open_type, f1 …, a0 …, a1 …]
-  тест 3: rows = [date, f0 zone, f0 open_type, f1 …, a0 …, a1 …, ib]
+  тест 3: rows = [date, f0 zone, f0 open_type, f1 …, a0 …, a1 …, ib, first, gap]
+          (first и gap заполнены только при ib = b, иначе "" и -1)
   варианты: f / a = fixed / adaptive, 0 / 1 = опора вчерашний день / композит
 
 Исключены: укороченные дни, дни без опоры (первый день истории, дни после дыр в данных).
@@ -40,18 +44,36 @@ OUT2 = MP / "Место открытия → тип открытия"
 OUT3 = MP / "Место и тип открытия → тест границ IB"
 
 
-def ib_tests() -> pd.Series:
-    """Код теста границ IB по дате: блоки A + B = IB, блоки C…M (10:30–16:00) ищут тест."""
+def ib_tests() -> pd.DataFrame:
+    """По дате: code теста границ IB (u / d / b / n), first и gap при b.
+    Блоки A + B = IB, блоки C…M (10:30–16:00) ищут тест: цена дошла до уровня или дальше."""
     p = pd.read_parquet(C.DERIVED / "periods_30m.parquet", columns=["date", "session", "period", "high", "low"])
     r = p[p["session"] == "RTH"]
     ib = r[r["period"] < C.IB_PERIODS].groupby("date").agg(ibh=("high", "max"), ibl=("low", "min"))
-    later = r[r["period"] >= C.IB_PERIODS].groupby("date").agg(mx=("high", "max"), mn=("low", "min"))
-    x = ib.join(later, how="inner")
-    up, dn = x["mx"] >= x["ibh"], x["mn"] <= x["ibl"]
-    code = pd.Series("n", index=x.index)
-    code[up & ~dn], code[dn & ~up], code[up & dn] = "u", "d", "b"
-    code.index = pd.to_datetime(code.index)
-    return code
+    later = r[r["period"] >= C.IB_PERIODS].join(ib, on="date")
+    later["tu"] = later["high"] >= later["ibh"]
+    later["td"] = later["low"] <= later["ibl"]
+    fu = later[later["tu"]].groupby("date")["period"].min()     # первый блок теста хая
+    fd = later[later["td"]].groupby("date")["period"].min()     # первый блок теста лоу
+    x = pd.DataFrame(index=ib.index).join(fu.rename("fu")).join(fd.rename("fd"))
+    up, dn = x["fu"].notna(), x["fd"].notna()
+    x["code"] = "n"
+    x.loc[up & ~dn, "code"], x.loc[dn & ~up, "code"], x.loc[up & dn, "code"] = "u", "d", "b"
+    b = x["code"] == "b"
+    x["first"] = ""
+    x.loc[b & (x["fu"] < x["fd"]), "first"] = "u"
+    x.loc[b & (x["fd"] < x["fu"]), "first"] = "d"
+    x.loc[b & (x["fu"] == x["fd"]), "first"] = "s"
+    x["gap"] = -1
+    x.loc[b, "gap"] = (x.loc[b, "fu"] - x.loc[b, "fd"]).abs().astype(int)
+    x.index = pd.to_datetime(x.index)
+    mf = C.DERIVED / "ib_first_minutes.csv"                    # порядок внутри одного блока по минуткам
+    if mf.exists():
+        m = pd.read_csv(mf, parse_dates=["date"], keep_default_na=False).set_index("date")["first"]
+        m = m[m.index.isin(x.index[x["first"] == "s"])]
+        x.loc[m.index, "first"] = m
+        print(f"Порядок по минуткам: {len(m)} дней с тестом обеих границ в одном блоке")
+    return x
 
 
 def load(mode: str) -> pd.DataFrame:
@@ -83,7 +105,10 @@ def main() -> int:
     common = {"zones": ZONES, "open_types": OPEN_TYPES, "day_types": DAY_TYPES, "variants": ["f0", "f1", "a0", "a1"], "meta": meta}
     rows2 = [[r[0]] + [v for k in range(4) for v in r[1 + 4 * k:3 + 4 * k]] for r in rows]
     ibc = ib_tests()
-    rows3 = [r + [ibc[pd.Timestamp(r[0])]] for r in rows2]
+    rows3 = []
+    for r in rows2:
+        x = ibc.loc[pd.Timestamp(r[0])]
+        rows3.append(r + [x["code"], x["first"], int(x["gap"])])
     for out, res in ((OUT, {"test": "1", "outcome": "day", "fields": ["zone", "open", "day", "dir"], **common, "rows": rows}),
                      (OUT2, {"test": "2", "outcome": "open", "fields": ["zone", "open"], **common, "rows": rows2}),
                      (OUT3, {"test": "3", "outcome": "ib", "fields": ["zone", "open"], **common, "rows": rows3})):
@@ -105,7 +130,9 @@ def main() -> int:
     print("\nТест 2 (fixed, опора вчера), % дней зоны:")
     print(pct2.reindex(columns=[c for c, _ in OPEN_TYPES] + ["n"]).to_string())
 
-    ib3 = pd.Series([r[-1] for r in rows3])
+    ib3 = pd.Series([r[-3] for r in rows3])
+    f3 = pd.Series([r[-2] for r in rows3 if r[-3] == "b"])
+    print("Тест 3, какая граница первой (дни с обеими), %:", f3.value_counts(normalize=True).mul(100).round(1).to_dict())
     print("\nТест 3, тест границ IB (все дни), %:", ib3.value_counts(normalize=True).mul(100).round(1).to_dict())
     return 0
 
