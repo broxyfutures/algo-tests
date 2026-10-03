@@ -101,8 +101,8 @@
 .om-donut .om-lab tspan{fill:var(--t1);font-weight:600}
 .om-donut .om-lab tspan.om-l2{fill:var(--t2);font-weight:400}
 .om-side{flex:1 1 340px;min-width:0;font-family:var(--mono)}
-.om-two{display:flex;gap:28px 48px;flex-wrap:wrap}
-.om-two > div{flex:1 1 320px;min-width:0;font-family:var(--mono)}
+.om-two{display:flex;gap:16px;flex-wrap:wrap}
+.om-two > div{flex:1 1 320px;min-width:0;font-family:var(--mono);border:1px solid var(--border-2);border-radius:2px;padding:14px 16px 6px}
 .om-dn2{width:100%;max-width:460px;margin:0 auto 12px}
 .om-donut .om-lab.om-lab-b{font-size:18px}
 .om-head{font-size:11px;letter-spacing:.06em;color:var(--t3);margin-bottom:10px;line-height:1.6}
