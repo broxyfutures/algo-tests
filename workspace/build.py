@@ -16,7 +16,8 @@ test.md = frontmatter (плоские key: value и списки «- item») + �
   markdown       ничего, только текст;
   cot_pa_tables  таблицы 3×5 (нужен results.json от scripts/06_export_results.py);
   mp_zone_table  зона открытия × тип (архивные тесты 1.1 и 1.2, results.json заморожен);
-  mp_open_matrix точка открытия × тип открытия → тип дня (results.json от mp-es-pipeline/scripts/11_test_open_matrix.py);
+  mp_open_matrix точка открытия × тип открытия → тип дня и точка открытия → тип открытия
+                 (results.json от mp-es-pipeline/scripts/11_test_open_matrix.py, исход в поле outcome);
   cot_yesno      вопрос да/нет у границ индекса (results.json от 08_export_yesno.py);
   mp_chart       смотрелка профилей и композитов без таблиц (данные от 12_export_chart.py).
 

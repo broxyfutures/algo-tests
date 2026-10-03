@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 """
 Тест 1: точка открытия × тип открытия → тип дня. Описательная статистика, без порогов.
+Тест 2: точка открытия → тип открытия (TEST_PLAN, Opening Types & Day Types 2). Та же выборка и те же
+варианты, в строках только зона и тип открытия.
 
 Точка открытия: цена 09:30 против опоры (5 зон или 3 группы). Тип открытия: mp/opentype.py
 (утверждено 22.09.2026). Исход: тип дня (mp/daytype.py); у направленных типов — по тренду точки
 открытия или против (тренд: открытие выше VA → вверх, ниже VA → вниз, внутри VA → нет).
 
-Выход: results.json в папке теста workspace (страница пересчитывает таблицы сама):
-  {test, meta, zones, open_types, day_types, variants, rows}
-  rows: [date, f0 zone, f0 open_type, f0 day_type, f0 day_dir, f1 …, a0 …, a1 …]
+Выход: results.json в папках тестов workspace (страница пересчитывает таблицы сама):
+  {test, outcome, fields, meta, zones, open_types, day_types, variants, rows}
+  тест 1: rows = [date, f0 zone, f0 open_type, f0 day_type, f0 day_dir, f1 …, a0 …, a1 …]
+  тест 2: rows = [date, f0 zone, f0 open_type, f1 …, a0 …, a1 …]
   варианты: f / a = fixed / adaptive, 0 / 1 = опора вчерашний день / композит
 
 Исключены: укороченные дни, дни без опоры (первый день истории, дни после дыр в данных).
@@ -27,7 +30,9 @@ import pandas as pd  # noqa: E402
 import config as C  # noqa: E402
 from mp.codes import DAY_CODE, DAY_TYPES, DIR, OPEN_CODE, OPEN_TYPES, ZONE_CODE, ZONES  # noqa: E402
 
-OUT = C.ROOT.parent / "workspace" / "Market Profile" / "Место и тип открытия → тип дня"
+MP = C.ROOT.parent / "workspace" / "Market Profile"
+OUT = MP / "Место и тип открытия → тип дня"
+OUT2 = MP / "Место открытия → тип открытия"
 
 
 def load(mode: str) -> pd.DataFrame:
@@ -54,15 +59,15 @@ def main() -> int:
             x = data[mode].loc[i]
             r += [ZONE_CODE[x[f"open_zone_{ref}"]], OPEN_CODE[x[f"open_type_{ref}"]], DAY_CODE[x["day_type"]], DIR[x["day_dir"]]]
         rows.append(r)
-    res = {
-        "test": "1", "zones": ZONES, "open_types": OPEN_TYPES, "day_types": DAY_TYPES,
-        "variants": ["f0", "f1", "a0", "a1"], "rows": rows,
-        "meta": {"built": date.today().isoformat(), "from": rows[0][0], "to": rows[-1][0], "days": len(rows),
-                 "note": "Полные RTH-дни ES. Исключены укороченные дни и дни без опоры."},
-    }
-    OUT.mkdir(parents=True, exist_ok=True)
-    (OUT / "results.json").write_text(json.dumps(res, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    print(f"{len(rows)} дней → {OUT / 'results.json'}")
+    meta = {"built": date.today().isoformat(), "from": rows[0][0], "to": rows[-1][0], "days": len(rows),
+            "note": "Полные RTH-дни ES. Исключены укороченные дни и дни без опоры."}
+    common = {"zones": ZONES, "open_types": OPEN_TYPES, "day_types": DAY_TYPES, "variants": ["f0", "f1", "a0", "a1"], "meta": meta}
+    rows2 = [[r[0]] + [v for k in range(4) for v in r[1 + 4 * k:3 + 4 * k]] for r in rows]
+    for out, res in ((OUT, {"test": "1", "outcome": "day", "fields": ["zone", "open", "day", "dir"], **common, "rows": rows}),
+                     (OUT2, {"test": "2", "outcome": "open", "fields": ["zone", "open"], **common, "rows": rows2})):
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "results.json").write_text(json.dumps(res, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        print(f"{len(rows)} дней → {out / 'results.json'}")
 
     df = pd.DataFrame([r[:5] for r in rows], columns=["date", "z", "o", "t", "dir"])
     tab = pd.crosstab([df.z, df.o], df.t)
@@ -71,6 +76,12 @@ def main() -> int:
     pct["n"] = tab["n"]
     print("\n(fixed, опора вчера), % дней ячейки:")
     print(pct.reindex(columns=[c for c, _, _ in DAY_TYPES] + ["n"]).to_string())
+
+    tab2 = pd.crosstab(df.z, df.o)
+    pct2 = tab2.div(tab2.sum(axis=1), axis=0).mul(100).round(1)
+    pct2["n"] = tab2.sum(axis=1)
+    print("\nТест 2 (fixed, опора вчера), % дней зоны:")
+    print(pct2.reindex(columns=[c for c, _ in OPEN_TYPES] + ["n"]).to_string())
     return 0
 
 
