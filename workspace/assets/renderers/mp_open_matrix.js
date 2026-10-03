@@ -262,15 +262,16 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
     if (inside && r.val <= c1030 && c1030 <= r.vah) return 'oai';
     const up = inside ? c1030 > r.vah : o > r.vah;    // открытие внутри VA: тренд = сторона выхода в 10:30
     const ibH = Math.max(H[0], H[1]), ibL = Math.min(L[0], L[1]);
-    if (inside) return ((up ? o - ibL : ibH - o) * 5 > ibMed) ? 'otd' : 'od';
+    const deep = (up ? o - ibL : ibH - o) * 5 > ibMed;   // откат за цену открытия больше 20 % обычного IB
+    const bTest = up ? L[1] <= L[0] + t : H[1] >= H[0] - t;   // блок B дошёл до экстремума блока A против тренда
+    if (inside) return deep || bTest ? 'otd' : 'od';
     const trendSide = up ? c1030 > o : c1030 < o;
     const vaTouch = up ? ibL <= r.vah + t : ibH >= r.val - t;
     if (vaTouch){
       const backOut = up ? c1030 > r.vah : c1030 < r.val;
       return !backOut ? 'orr' : trendSide ? 'otd' : 'oao';
     }
-    const adv = up ? o - ibL : ibH - o;               // откат за цену открытия против тренда
-    if (!(adv * 5 > ibMed)) return 'od';              // порог 20 % обычного IB
+    if (!deep && !bTest) return 'od';
     return trendSide ? 'otd' : 'oao';
   }
   // направление открытия внутри VA: сторона выхода из VA в 10:30 ('' если остались внутри)

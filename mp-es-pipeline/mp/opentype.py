@@ -7,11 +7,13 @@ IB = блоки A + B (09:30–10:30), цена в 10:30 (закрытие B). �
 Тренд точки открытия: выше VA → лонг, ниже VA → шорт. Своя граница VA: VAH при лонге, VAL при шорте.
 Откат = насколько цена за 09:30–10:30 зашла за цену открытия против тренда.
 Порог = 20 % обычного IB (медиана ширины IB за 20 прошлых дней, ib_med).
+Тест в B = блок B дошёл до экстремума блока A против тренда (лоу A при лонге, хай A при шорте), касание 1 тик.
+Open-Drive требует и малого отката, и отсутствия теста в B: тест в B = рынку понадобилась «дозаправка».
 
 Открытие внутри VA (тренда по месту открытия нет, его задаёт выход из VA):
   цена в 10:30 внутри VA → Open-Auction внутри VA (open_auction_in)
   цена в 10:30 за VA: тренд = сторона выхода (выше VAH лонг, ниже VAL шорт), откат считается против него
-       откат не больше порога → Open-Drive, больше порога → Open-Test-Drive
+       откат не больше порога и теста в B нет → Open-Drive, иначе → Open-Test-Drive
 
 Открытие вне VA:
   1. Своя граница VA коснулась за 09:30–10:30 (Open-Drive уже невозможен):
@@ -19,9 +21,9 @@ IB = блоки A + B (09:30–10:30), цена в 10:30 (закрытие B). �
        цена в 10:30 за VA и по тренду от цены открытия      → Open-Test-Drive
        цена в 10:30 за VA, но не по тренду от цены открытия → Open-Auction вне VA
   2. VA не коснулась:
-       откат не больше порога                               → Open-Drive
-       откат больше порога, цена в 10:30 по тренду от цены открытия → Open-Test-Drive
-       откат больше порога, цена в 10:30 не по тренду        → Open-Auction вне VA
+       откат не больше порога и теста в B нет                → Open-Drive
+       иначе, цена в 10:30 по тренду от цены открытия        → Open-Test-Drive
+       иначе, цена в 10:30 не по тренду от цены открытия     → Open-Auction вне VA
 
 Все типы известны в 10:30. Пробой IB в 10:30–11:30 (ib_break) считается справочно, в правилах не участвует.
 
@@ -57,8 +59,11 @@ def classify(lo, hi, cl, open_: float, vah: float, val: float, high: float, low:
     bias, against = ("up", "down") if up else ("down", "up")
     trend_side = c1030 > open_ if up else c1030 < open_
     adv = open_ - ib_lo if up else ib_hi - open_          # откат за цену открытия против тренда
+    deep = adv * PULLBACK_DIV > ib_med
+    # тест в B: блок B дошёл до экстремума блока A против тренда
+    b_test = lo[n_a:n_ib].min() <= lo[:n_a].min() + t if up else hi[n_a:n_ib].max() >= hi[:n_a].max() - t
     if inside:
-        res.update(open_type="open_test_drive" if adv * PULLBACK_DIV > ib_med else "open_drive", open_dir=bias, trigger="va_exit")
+        res.update(open_type="open_test_drive" if deep or b_test else "open_drive", open_dir=bias, trigger="va_exit")
         return res
 
     def drive_or_auction():
@@ -79,10 +84,10 @@ def classify(lo, hi, cl, open_: float, vah: float, val: float, high: float, low:
         return drive_or_auction()
 
     # 2. VA не коснулась: решает откат за цену открытия против тренда
-    if not adv * PULLBACK_DIV > ib_med:
+    if not deep and not b_test:
         res.update(open_type="open_drive", open_dir=bias)
         return res
-    res["trigger"] = "pullback"
+    res["trigger"] = "pullback" if deep else "b_test"
     return drive_or_auction()
 
 
