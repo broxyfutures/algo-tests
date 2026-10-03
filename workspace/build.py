@@ -441,10 +441,10 @@ def render_section(folder: Path, depth: int, crumbs: list[str], children: list[d
         parts.append('<div class="tools-wrap"><div class="tools-panel"><div class="cards tools">' + "".join(cards) + "</div></div></div>")
     else:
         # страница инструмента: карточка Tests, внутри плитки разделов (ключ group в test.md, порядок —
-        # по первому тесту раздела), в разделе тесты списком друг под другом; под Tests карточка Chart
+        # по ключу order, затем по имени папки), в разделе тесты списком друг под другом; под Tests карточка Chart
         if children:
             groups: dict[str, list[dict]] = {}
-            for c in children:
+            for c in sorted(children, key=lambda c: int(c["meta"].get("order") or 999)):   # order — номер по плану
                 groups.setdefault(c["meta"].get("group") or "", []).append(c)
             blocks = []
             for g, cs in groups.items():

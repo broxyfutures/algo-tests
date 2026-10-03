@@ -1,6 +1,8 @@
 // Рендерер mp_open_matrix: описательная статистика двух тестов на одной подаче.
 //   outcome 'day'  (тест 1): точка + тип открытия → тип дня, rows: [date, f0 zone, f0 open, f0 day, f0 dir, f1 …, a0 …, a1 …];
-//   outcome 'open' (тест 2): точка открытия → тип открытия, rows: [date, f0 zone, f0 open, f1 …, a0 …, a1 …].
+//   outcome 'open' (тест 2): точка открытия → тип открытия, rows: [date, f0 zone, f0 open, f1 …, a0 …, a1 …];
+//   outcome 'ib'   (тест 3): точка + тип открытия → тест границ IB, rows как в тесте 2 и в конце код дня
+//                  u только верх, d только низ, b обе, n ни одной (от размера блока не зависит).
 // Ожидает window.DATA = {test, outcome, fields, meta, zones, open_types, day_types, variants, rows} из results.json
 // (mp-es-pipeline/scripts/11_test_open_matrix.py).
 // Режим «своя строка» пересчитывает точку и тип открытия, Double-Distribution и композиты прямо здесь,
@@ -12,14 +14,18 @@
   const D = window.DATA, M = D.meta;
   const KEY = 'mp-open-matrix-' + D.test + '-v2';
   const OPEN = D.outcome === 'open';                     // исход: тип открытия (тест 2) или тип дня (тест 1)
+  const IB = D.outcome === 'ib';                         // исход: тест границ IB (тест 3)
   const NF = (D.fields || ['zone', 'open', 'day', 'dir']).length;   // полей на вариант в строке results.json
   // nv: 1 учитывать, 0 исключить из выборки исход EX (Normal Variation в тесте 1, Open-Auction внутри VA в тесте 2)
   // cz / co: выбранные точки и типы открытия, пустой список = любые
-  const S = {m:'f', c:'0', from:'', to:'', ticks:8, cz:['av'], co:['od'], nv:1};
+  // v (тест 3): вид исхода, '3' нет / одна / обе, '4' верх / низ / обе / нет, 't' по тренду открытия / против / обе / нет
+  const S = {m:'f', c:'0', from:'', to:'', ticks:8, cz:['av'], co:['od'], nv:1, v:'4'};
   try{ Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); }catch(e){}
   if (!['f', 'a', 'x'].includes(S.m)) S.m = 'f';
   ['cz', 'co'].forEach(k => { if (!Array.isArray(S[k])) S[k] = !S[k] || S[k] === '*' ? [] : [S[k]]; });
   if (OPEN) S.co = [];
+  if (IB) S.nv = 1;
+  if (!['3', '4', 't'].includes(S.v)) S.v = '4';
   const save = () => { try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} };
   const f1 = v => Number.isFinite(v) ? v.toFixed(1) : '';
   const sg = v => (v > 0 ? '+' : '') + f1(v);
@@ -28,9 +34,22 @@
   const ZN = Object.fromEntries(D.zones);
   const OT = D.open_types, OTN = Object.fromEntries(OT);
   const DT = D.day_types;
-  const OUT = OPEN ? OT : DT, EX = OPEN ? 'oai' : 'nv';  // исходы теста и исключаемый тумблером исход
+  const EX = OPEN ? 'oai' : 'nv';  // исключаемый тумблером исход
   const EXN = OPEN ? 'Open-Auction внутри VA' : 'Normal Variation';
-  const OUTN = OPEN ? 'тип открытия' : 'тип дня';  const FIRST = D.rows[0][0], LAST = D.rows[D.rows.length - 1][0];
+  const OUTN = IB ? 'тест границ IB' : OPEN ? 'тип открытия' : 'тип дня';
+  // тест 3: исходы по виду. По тренду открытия: при открытии выше VA граница по тренду = хай IB, ниже VA = лоу IB
+  const IBV = {
+    '4': [['u', 'Тест только хая IB'], ['d', 'Тест только лоу IB'], ['b', 'Тест обеих границ IB'], ['n', 'Без теста границ IB']],
+    '3': [['o', 'Тест одной границы IB'], ['b', 'Тест обеих границ IB'], ['n', 'Без теста границ IB']],
+    't': [['w', 'Тест только границы по тренду'], ['a', 'Тест только границы против тренда'], ['b', 'Тест обеих границ IB'], ['n', 'Без теста границ IB']]};
+  const ibView = (code, z) => {
+    if (S.v === '4') return code;
+    if (S.v === '3') return code === 'u' || code === 'd' ? 'o' : code;
+    if (z === 'iv' || !z) return '';                     // открытие внутри VA: тренда нет, в этом виде не участвует
+    if (code !== 'u' && code !== 'd') return code;
+    return (code === 'u') === (z === 'ar' || z === 'av') ? 'w' : 'a';
+  };
+  const outList = () => IB ? IBV[S.v] : OPEN ? OT : DT;  const FIRST = D.rows[0][0], LAST = D.rows[D.rows.length - 1][0];
 
   // цвета типов дня: синие, голубые, фиолетовые и розовые, порядок как в DT (nm, nt, nv, tr, dd, nc, ne).
   // Цвет закреплён за типом и не меняется, когда Normal Variation исключён.
@@ -264,7 +283,9 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
       Object.assign(state, {vah: cs.vah, val: cs.val, high: cs.hi, low: cs.lo});
 
       const o = d[F.o], c1030 = d[F.c1030];
-      out.push({dt,
+      const ibH = Math.max(H[0], H[1]), ibL = Math.min(L[0], L[1]);
+      const up = H.slice(2).some(v => v >= ibH), dn = L.slice(2).some(v => v <= ibL);
+      out.push({dt, ib: up && dn ? 'b' : up ? 'u' : dn ? 'd' : 'n',
         z0: refDay ? zoneOf(o, refDay) : '', t0: refDay ? openType(L, H, o, c1030, refDay) : '',
         z1: refComp ? zoneOf(o, refComp) : '', t1: refComp ? openType(L, H, o, c1030, refComp) : ''});
     });
@@ -361,12 +382,15 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
         if (days[i][F.flags] & 16 || !inRange(d)) return;
         const e = E[i];
         const o = S.c === '0' ? e.t0 : e.t1;
-        out.push({date: d, i, z5: S.c === '0' ? e.z0 : e.z1, o, t: OPEN ? o : e.dt});
+        const z5 = S.c === '0' ? e.z0 : e.z1;
+        out.push({date: d, i, z5, o, t: IB ? ibView(e.ib, z5) : OPEN ? o : e.dt});
       });
-      return out;
+      return IB ? out.filter(r => r.t) : out;
     }
     const off = 1 + NF * D.variants.indexOf(S.m + S.c);
-    return D.rows.filter(r => inRange(r[0])).map(r => ({date: r[0], z5: r[off], o: r[off + 1], t: OPEN ? r[off + 1] : r[off + 2]}));
+    const out = D.rows.filter(r => inRange(r[0])).map(r => ({date: r[0], z5: r[off], o: r[off + 1],
+      t: IB ? ibView(r[r.length - 1], r[off]) : OPEN ? r[off + 1] : r[off + 2]}));
+    return IB ? out.filter(r => r.t) : out;
   }
 
   // «показать на графике»: дни уходят на страницу инструмента через localStorage
@@ -376,7 +400,8 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
     // фильтры графика ставятся теми же, что в калькуляторе: точки, типы открытия, типы дня (без NV, если исключён);
     // в тесте 2 исключённый Open-Auction внутри VA уходит из фильтра типов открытия.
     // Список дней (idx) нужен только там, где фильтры графика его не повторят: своя строка или свой период.
-    const exact = S.m === 'x' || !!S.from || !!S.to;
+    // В тесте 3 исхода нет среди фильтров графика, поэтому список дней передаётся всегда.
+    const exact = IB || S.m === 'x' || !!S.from || !!S.to;
     try{ localStorage.setItem('mp-chart-pick', JSON.stringify({idx: exact ? idx : null, label, m: S.m === 'x' ? 'f' : S.m, c: S.c,
       ticks: S.m === 'x' ? S.ticks : 0, fz: S.cz,
       fo: OPEN ? (S.nv ? [] : OT.map(t => t[0]).filter(t => t !== EX)) : S.co,
@@ -414,16 +439,17 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
       ctl('Блок', seg([['f', 'Фикс. 2 пт'], ['a', 'Адаптивный'], ['x', 'Своя строка']], S.m, v => upd('m', v)), ...(S.m === 'x' ? [tickInput()] : [])),
       ctl('Опора', seg([['0', 'Вчерашний день'], ['1', 'Композит']], S.c, v => upd('c', v))),
       ctl('Период', seg(PRESETS.map(p => [p[0], p[1]]), presetNow(), v => { const p = PRESETS.find(x => x[0] === v); updMany({from: p[2], to: p[3]}); }), dateRange()),
-      ctl(EXN, seg([[1, 'Учитывать'], [0, 'Исключить']], S.nv, v => upd('nv', v))),
+      IB ? ctl('Исход', seg([['3', 'Нет / одна / обе'], ['4', 'Хай / лоу / обе / нет'], ['t', 'По тренду открытия']], S.v, v => upd('v', v)))
+         : ctl(EXN, seg([[1, 'Учитывать'], [0, 'Исключить']], S.nv, v => upd('nv', v))),
     );
     const calc = document.getElementById('om-calc');
     let R = rowsNow();
     if (!R){ calc.innerHTML = '<p class="om-busy">Загружаю цены блоков для пересчёта…</p>'; return; }
     if (!S.nv) R = R.filter(r => r.t !== EX);
-    const types = OUT.map((t, i) => ({code: t[0], name: t[1], color: slot(i + 1)})).filter(t => S.nv || t.code !== EX);
+    const types = outList().map((t, i) => ({code: t[0], name: t[1], color: slot(i + 1)})).filter(t => S.nv || t.code !== EX);
     const count = rows => { const c = {}; rows.forEach(r => { c[r.t] = (c[r.t] || 0) + 1; }); return c; };
     const cb = count(R), base = code => R.length ? (cb[code] || 0) / R.length * 100 : 0;
-    const noNV = S.nv ? '' : ' · без ' + EXN;
+    const noNV = (S.nv ? '' : ' · без ' + EXN) + (IB && S.v === 't' ? ' · без открытий внутри VA' : '');
     calc.innerHTML = '<div class="om-viz"><div class="om-sec om-all"></div><div class="om-sec om-calc"></div></div>';
 
     // ---------------------------------------------------------------- общая диаграмма: все дни выборки
@@ -433,7 +459,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
       const byShare = types.slice().sort((a, b) => (cb[b.code] || 0) - (cb[a.code] || 0));
       all.innerHTML = `<div class="om-res"><div class="om-donut">${donut(types.map(t => ({label: t.name, value: cb[t.code] || 0, color: t.color})), R.length)}</div>` +
         `<div class="om-side"><div class="om-head"><b>Все дни выборки</b><br>${R.length} дней · ${periodLabel()}${noNV}</div>` +
-        `<table class="om-leg"><thead><tr><th>${OPEN ? 'Тип открытия' : 'Тип дня'}</th><th>Доля</th><th>Дней</th></tr></thead><tbody>` +
+        `<table class="om-leg"><thead><tr><th>${IB ? 'Тест границ IB' : OPEN ? 'Тип открытия' : 'Тип дня'}</th><th>Доля</th><th>Дней</th></tr></thead><tbody>` +
         byShare.map(t => `<tr><td><i class="om-sw" style="background:${t.color}"></i>${t.name}</td><td>${f1(base(t.code))}%</td><td class="n">${cb[t.code] || 0}</td></tr>`).join('') +
         `</tbody></table></div></div>`;
     }
@@ -441,8 +467,10 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
     // ---------------------------------------------------------------- калькулятор: точка (+ тип открытия) = исход
     const box = calc.querySelector('.om-calc');
     // типы открытия, возможные при выбранных точках: внутри VA только Open-Auction внутри VA, вне VA остальные
+    const zones = D.zones.filter(([z]) => !(IB && S.v === 't' && z === 'iv'));   // по тренду: без «внутри VA»
+    S.cz = S.cz.filter(z => zones.some(x => x[0] === z));
     const inV = S.cz.includes('iv'), outV = S.cz.some(z => z !== 'iv');
-    const opens = OT.map(o => o[0]).filter(o => !S.cz.length || (o === 'oai' ? inV : outV));
+    const opens = OT.map(o => o[0]).filter(o => (!S.cz.length || (o === 'oai' ? inV : outV)) && !(IB && S.v === 't' && o === 'oai'));
     S.co = S.co.filter(o => opens.includes(o));
     const sel = R.filter(r => (!S.cz.length || S.cz.includes(r.z5)) && (OPEN || !S.co.length || S.co.includes(r.o)));
     const cs = count(sel);
@@ -453,7 +481,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
     eqRes.innerHTML = sel.length ? `<b>${OUTN}</b> · ${sel.length} дней${R.length ? ' · ' + f1(sel.length / R.length * 100) + '% выборки' : ''}` : `<b>${OUTN}</b> · нет таких дней`;
     const op = t => { const e = document.createElement('span'); e.className = 'om-op'; e.textContent = t; return e; };
     box.querySelector('.om-eq').append(
-      multiDropdown('z', 'Точка открытия', 'любая', D.zones.map(([z, n]) => [z, n]), S.cz, v => upd('cz', v)),
+      multiDropdown('z', 'Точка открытия', 'любая', zones.map(([z, n]) => [z, n]), S.cz, v => upd('cz', v)),
       ...(OPEN ? [] : [op('+'), multiDropdown('o', 'Тип открытия', 'любой', opens.map(o => [o, OTN[o]]), S.co, v => upd('co', v))]),
       op('='), eqRes);
     if (sel.length){
@@ -470,7 +498,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
 
     const blkN = S.m === 'f' ? 'фикс. 2 пт' : S.m === 'a' ? 'адаптивный блок' : `своя строка ${S.ticks} тиков`;
     document.getElementById('om-note').textContent = `${blkN} · опора: ${S.c === '0' ? 'вчерашний день' : 'композит'} · ${periodLabel()}${noNV}. ` +
-      `«п.п.» в калькуляторе: разница с долей этого типа среди всех дней выборки.` +
+      `«п.п.» в калькуляторе: разница с долей ${IB ? 'этого исхода' : 'этого типа'} среди всех дней выборки.` +
       (S.m === 'x' ? ' Своя строка пересчитывает VA, открытия, DD и композиты, при 8 тиках совпадает с фикс. 2 пт.' : '');
   }
 
