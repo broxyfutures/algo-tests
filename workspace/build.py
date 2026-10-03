@@ -5,7 +5,7 @@
 
 Сайт в три уровня:
   - корень                     → баннер Algo Tests и плитки инструментов;
-  - папка инструмента          → чарт (renderer в index.md) и плитки тестов;
+  - папка инструмента          → чарт (renderer в index.md) и плитки тестов по разделам (ключ group);
   - папка с test.md            → страница теста: идея, правила, статистика
                                  (интерактив встаёт в блок mount_in, по умолчанию «Результаты»).
 Имена папок от корня → хлебные крошки. assets/ и скрытые папки пропускаются,
@@ -440,10 +440,18 @@ def render_section(folder: Path, depth: int, crumbs: list[str], children: list[d
                      'title="Новый проект в Claude Code">+</a>')
         parts.append('<div class="tools-wrap"><div class="tools-panel"><div class="cards tools">' + "".join(cards) + "</div></div></div>")
     else:
-        # страница инструмента: карточка Tests с плитками тестов, под ней карточка Chart
+        # страница инструмента: карточка Tests, внутри плитки разделов (ключ group в test.md, порядок —
+        # по первому тесту раздела), в разделе тесты списком друг под другом; под Tests карточка Chart
         if children:
-            parts.insert(0, '<section class="card"><h2 class="card-title">Tests</h2><div class="cards">'
-                         + "".join(tile(c, "Тест" if c["is_test"] else "Раздел") for c in children) + "</div></section>")
+            groups: dict[str, list[dict]] = {}
+            for c in children:
+                groups.setdefault(c["meta"].get("group") or "", []).append(c)
+            blocks = []
+            for g, cs in groups.items():
+                lst = '<div class="cards tlist">' + "".join(tile(c, "Тест" if c["is_test"] else "Раздел") for c in cs) + "</div>"
+                blocks.append(f'<div class="tgroup"><div class="tgroup-title">{esc(g)}</div>{lst}</div>' if g else lst)
+            parts.insert(0, '<section class="card"><h2 class="card-title">Tests</h2><div class="tgroups">'
+                         + "".join(blocks) + "</div></section>")
         if r["mount"] and not mounted:
             parts.append(f'<section class="card"><h2 class="card-title">Chart</h2>{r["mount"](meta)}</section>')
         if not children and not r["mount"]:
