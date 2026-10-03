@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Правила</title>
+<script>try{if(localStorage.getItem("algo-tests-theme")==="light")document.documentElement.setAttribute("data-theme","light")}catch(e){}</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../../assets/style.css"></head>
+<body>
+<div class="theme-toggle" id="theme-toggle" role="button" tabindex="0" aria-label="Переключить тему"><span class="label" id="theme-toggle-label">Тёмная</span><div class="theme-toggle-track"><div class="theme-toggle-knob"></div></div></div>
+<div class="app">
+<nav class="crumbs"><a href="../../../index.html">Algo Tests</a><span class="sep">/</span><a href="../../index.html">Market Profile</a><span class="sep">/</span><a href="../index.html">Место и тип открытия → время экстремумов дня</a><span class="sep">/</span><span class="cur">Правила</span></nav>
+<header class="hdr"><div><h1>Правила</h1></div><div class="meta" id="hdr-meta"></div></header>
+<section class="card"><h2 class="card-title">Идея</h2><div class="prose"><p>Когда в течение дня ставится лучшая и худшая цена относительно тренда открытия: к какому времени худшее отклонение против позиции обычно позади и когда ждать лучшую цену по тренду. Плюс насколько далеко цена уходит от цены открытия в обе стороны.</p>
+<p>Выборка: полные дни 2010–2026, без укороченных и без дней без опоры. Та же, что в остальных тестах Market Profile.</p></div></section>
+<section class="card"><h2 class="card-title">Экстремумы и отклонения</h2><div class="prose"><p>Считается по ценам RTH 09:30–16:00, отклонения за весь день.</p>
+<div class="twrap"><table class="plain md"><thead><tr><th>Что</th><th>Правило</th></tr></thead><tbody><tr><td>Лучшее отклонение</td><td>экстремум дня по тренду открытия: хай дня при тренде вверх, лоу дня при тренде вниз</td></tr><tr><td>Худшее отклонение</td><td>экстремум дня против тренда открытия: лоу дня при тренде вверх, хай дня при тренде вниз</td></tr><tr><td>Время экстремума</td><td>30-минутный блок, в котором цена экстремума достигнута впервые. Если та же цена повторилась позже, берётся первое касание</td></tr><tr><td>Величина отклонения</td><td>расстояние от цены открытия 09:30 до экстремума, в % обычного IB (медиана ширины IB за 20 прошлых дней)</td></tr></tbody></table></div></div></section>
+<section class="card"><h2 class="card-title">Тренд открытия</h2><div class="prose"><div class="twrap"><table class="plain md"><thead><tr><th>Открытие</th><th>Тренд</th></tr></thead><tbody><tr><td>выше VA (выше диапазона или выше VA в диапазоне)</td><td>вверх</td></tr><tr><td>ниже VA (ниже диапазона или ниже VA в диапазоне)</td><td>вниз</td></tr><tr><td>внутри VA, в 10:30 цена выше VAH</td><td>вверх</td></tr><tr><td>внутри VA, в 10:30 цена ниже VAL</td><td>вниз</td></tr><tr><td>внутри VA, в 10:30 цена внутри VA (Open-Auction внутри VA)</td><td>тренда нет</td></tr></tbody></table></div></div></section>
+<section class="card"><h2 class="card-title">Переключатели</h2><div class="prose"><div class="twrap"><table class="plain md"><thead><tr><th>Переключатель</th><th>Что делает</th></tr></thead><tbody><tr><td>Экстремум: лучшее по тренду, худшее против тренда</td><td>время экстремума по тренду открытия или против него. Дни Open-Auction внутри VA не участвуют: у них нет тренда</td></tr><tr><td>Экстремум: хай дня, лоу дня</td><td>время хая или лоу дня без привязки к тренду, все дни выборки</td></tr><tr><td>Время: окна</td><td>четыре фазы дня</td></tr><tr><td>Время: блоки 30 мин</td><td>13 блоков A…M, цвет блока = цвет его окна</td></tr></tbody></table></div>
+<p>Окна дня:</p>
+<div class="twrap"><table class="plain md"><thead><tr><th>Окно</th><th>Время</th><th>Блоки</th></tr></thead><tbody><tr><td>Open</td><td>09:30–10:30</td><td>A, B (это IB)</td></tr><tr><td>Drive</td><td>10:30–12:30</td><td>C, D, E, F</td></tr><tr><td>Mid day</td><td>12:30–14:00</td><td>G, H, I</td></tr><tr><td>Close</td><td>14:00–16:00</td><td>J, K, L, M</td></tr></tbody></table></div>
+<p>Окна разной длины. Показывается доля окна как есть, без пересчёта на один блок.</p></div></section>
+<section class="card"><h2 class="card-title">Таблица окон и величина отклонения</h2><div class="prose"><p>Обе плитки берут дни из выбора калькулятора.</p>
+<div class="twrap"><table class="plain md"><thead><tr><th>Плитка</th><th>Что показывает</th></tr></thead><tbody><tr><td>Окно: худшее × лучшее</td><td>строка = окно худшего отклонения, колонка = окно лучшего, в ячейке % дней выбора. В видах «хай дня» и «лоу дня»: строка = окно лоу, колонка = окно хая</td></tr><tr><td>Величина отклонения</td><td>25 %, медиана и 75 % дней выбора для лучшего и худшего отклонения, рядом медиана по всем дням выборки</td></tr></tbody></table></div></div></section>
+<section class="card"><h2 class="card-title">Опора</h2><div class="prose"><p>VA, high и low вчерашнего профиля. Переключатель «Опора: композит»: открытый композит от 2 дней, если он есть. Опора и размер блока меняют только точку и тип открытия, тест границ IB от них не зависит.</p></div></section>
+<section class="card"><h2 class="card-title">Точка открытия</h2><div class="prose"><p>Цена 09:30 относительно опоры.</p>
+<div class="twrap"><table class="plain md"><thead><tr><th>Зона</th><th>Где открылись</th></tr></thead><tbody><tr><td>выше диапазона</td><td>выше вчерашнего high</td></tr><tr><td>выше VA, в диапазоне</td><td>между VAH и high</td></tr><tr><td>внутри VA</td><td>между VAL и VAH</td></tr><tr><td>ниже VA, в диапазоне</td><td>между low и VAL</td></tr><tr><td>ниже диапазона</td><td>ниже вчерашнего low</td></tr></tbody></table></div></div></section>
+<section class="card"><h2 class="card-title">Тип открытия</h2><div class="prose"><p>IB = 09:30–10:30 (блоки A и B). Тренд открытия: выше VA лонг, ниже VA шорт; при открытии внутри VA тренд задаёт сторона, с которой цена в 10:30 вышла из VA. Своя граница VA: VAH при открытии выше VA, VAL при открытии ниже, касание с точностью 1 тик. Откат = насколько цена за 09:30–10:30 зашла за цену открытия против тренда. Порог отката = 20 % обычного IB (медиана ширины IB за 20 прошлых дней). Все типы известны в 10:30.</p>
+<div class="twrap"><table class="plain md"><thead><tr><th>Тип</th><th>Правило</th></tr></thead><tbody><tr><td>Open-Auction внутри VA</td><td>открылись внутри VA, и в 10:30 цена внутри VA</td></tr><tr><td>Open-Rejection-Reverse</td><td>открылись вне VA, за 09:30–10:30 коснулись своей границы VA, и в 10:30 цена внутри VA или прошла её насквозь</td></tr><tr><td>Open-Drive</td><td>откат не больше порога. При открытии вне VA: своя граница VA не тронута. При открытии внутри VA: в 10:30 цена за VA</td></tr><tr><td>Open-Test-Drive</td><td>при открытии вне VA: откат больше порога или была тронута своя граница VA, и в 10:30 цена за VA и по тренду от цены открытия. При открытии внутри VA: в 10:30 цена за VA, откат больше порога</td></tr><tr><td>Open-Auction вне VA</td><td>открылись вне VA; откат больше порога или была тронута своя граница VA, и в 10:30 цена за VA, но не по тренду от цены открытия</td></tr></tbody></table></div>
+<p>Тип дня в тесте не используется: он известен только после закрытия.</p></div></section>
+</div>
+
+<script>
+(function(){
+  var KEY = 'algo-tests-theme';
+  var el = document.getElementById('theme-toggle');
+  var label = document.getElementById('theme-toggle-label');
+  if (!el) return;
+  function sync(){
+    var light = document.documentElement.getAttribute('data-theme') === 'light';
+    label.textContent = light ? 'Светлая' : 'Тёмная';
+  }
+  function flip(){
+    var light = document.documentElement.getAttribute('data-theme') === 'light';
+    if (light) document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', 'light');
+    try { localStorage.setItem(KEY, light ? 'dark' : 'light'); } catch(e){}
+    sync();
+  }
+  sync();
+  el.addEventListener('click', flip);
+  el.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
+})();
+</script>
+</body></html>
