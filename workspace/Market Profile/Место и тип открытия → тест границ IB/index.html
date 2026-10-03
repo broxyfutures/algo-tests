@@ -101,6 +101,7 @@
 .om-donut .om-lead{stroke:var(--t4);fill:none;stroke-width:1}
 .om-donut .om-lab{font-family:var(--mono);font-size:12px;fill:var(--t2)}
 .om-donut .om-lab tspan{fill:var(--t1);font-weight:600}
+.om-donut .om-lab tspan.om-l2{fill:var(--t2);font-weight:400}
 .om-side{flex:1 1 340px;min-width:0;font-family:var(--mono)}
 .om-head{font-size:11px;letter-spacing:.06em;color:var(--t3);margin-bottom:10px;line-height:1.6}
 .om-head b{color:var(--t1);font-weight:600}
@@ -341,7 +342,16 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
         ? `M${xy(R, a0)} A${R} ${R} 0 1 1 ${xy(R, a0 + Math.PI)} A${R} ${R} 0 1 1 ${xy(R, a0)} M${xy(r, a0)} A${r} ${r} 0 1 0 ${xy(r, a0 + Math.PI)} A${r} ${r} 0 1 0 ${xy(r, a0)}Z`
         : `M${xy(R, a0)} A${R} ${R} 0 ${big} 1 ${xy(R, a1)} L${xy(r, a1)} A${r} ${r} 0 ${big} 0 ${xy(r, a0)}Z`;
       arcs += `<path d="${d}" fill="${p.color}" stroke="var(--surface)" stroke-width="2" fill-rule="evenodd"><title>${p.label}: ${f1(f * 100)}% (${p.value})</title></path>`;
-      if (f >= 0.02) labs.push({f, mid, label: p.label});
+      if (f >= 0.02){
+        // длинное название переносим на вторую строку по пробелу ближе к середине
+        let lines = [p.label];
+        if (p.label.length > 22){
+          const sp = [...p.label].map((ch, i) => ch === ' ' ? i : -1).filter(i => i > 0);
+          const cut = sp.sort((a, b) => Math.abs(a - p.label.length / 2) - Math.abs(b - p.label.length / 2))[0];
+          if (cut) lines = [p.label.slice(0, cut), p.label.slice(cut + 1)];
+        }
+        labs.push({f, mid, lines, h: lines.length > 1 ? 32 : 17});
+      }
       a0 = a1;
     });
     // подписи разводим по вертикали внутри своей половины, чтобы не наезжали друг на друга
@@ -349,13 +359,16 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
     ['r', 'l'].forEach(side => {
       const Lb = labs.filter(l => (Math.cos(l.mid) >= 0 ? 'r' : 'l') === side)
         .map(l => ({...l, y: Pt(R + 22, l.mid)[1]})).sort((a, b) => a.y - b.y);
-      for (let i = 1; i < Lb.length; i++) if (Lb[i].y - Lb[i - 1].y < 17) Lb[i].y = Lb[i - 1].y + 17;
-      for (let i = Lb.length - 2; i >= 0; i--) if (Lb[i + 1].y - Lb[i].y < 17) Lb[i].y = Lb[i + 1].y - 17;
+      const gap = (a, b) => (a.h + b.h) / 2;
+      for (let i = 1; i < Lb.length; i++) if (Lb[i].y - Lb[i - 1].y < gap(Lb[i], Lb[i - 1])) Lb[i].y = Lb[i - 1].y + gap(Lb[i], Lb[i - 1]);
+      for (let i = Lb.length - 2; i >= 0; i--) if (Lb[i + 1].y - Lb[i].y < gap(Lb[i], Lb[i + 1])) Lb[i].y = Lb[i + 1].y - gap(Lb[i], Lb[i + 1]);
       Lb.forEach(l => {
         const x1 = cx + (side === 'r' ? 1 : -1) * (R + 26), x2 = x1 + (side === 'r' ? 14 : -14);
         const [px0, py0] = Pt(R + 3, l.mid);
         leads += `<polyline class="om-lead" points="${px0.toFixed(1)},${py0.toFixed(1)} ${x1.toFixed(1)},${l.y.toFixed(1)} ${x2.toFixed(1)},${l.y.toFixed(1)}"/>` +
-          `<text class="om-lab" x="${(x2 + (side === 'r' ? 5 : -5)).toFixed(1)}" y="${(l.y + 4).toFixed(1)}" text-anchor="${side === 'r' ? 'start' : 'end'}">${l.label} <tspan>${f1(l.f * 100)}%</tspan></text>`;
+          (() => { const tx = (x2 + (side === 'r' ? 5 : -5)).toFixed(1), two = l.lines.length > 1, pc = ` <tspan>${f1(l.f * 100)}%</tspan>`;
+            return `<text class="om-lab" x="${tx}" y="${(l.y + (two ? -3 : 4)).toFixed(1)}" text-anchor="${side === 'r' ? 'start' : 'end'}">` +
+              (two ? `${l.lines[0]}<tspan class="om-l2" x="${tx}" dy="14">${l.lines[1]}</tspan>${pc}` : l.lines[0] + pc) + `</text>`; })();
       });
     });
     return `<svg viewBox="0 0 800 350" role="img" aria-label="распределение: ${OUTN}">${arcs}${leads}` +
@@ -488,7 +501,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
     const gapOk = r => S.fg === 'all' || (S.fg === '0' ? r.gap === 0 : r.gap === S.fn);
     const pick2 = rows => rows.filter(r => r.ib === 'b' && gapOk(r)).map(r => ({...r, f: firstView(r.fi, r.z5)}));
     const all = pick2(R), mine = pick2(sel);
-    const kinds = FIRSTV[S.v === 't' ? 't' : 'hl'].map(([code, name], i) => ({code, name, color: code === 's' ? 'var(--t4)' : slot(i ? 3 : 1)}));
+    const kinds = FIRSTV[S.v === 't' ? 't' : 'hl'].map(([code, name], i) => ({code, name, color: code === 's' ? 'var(--t4)' : slot(i + 1)}));
     const cnt = rows => { const c = {}; rows.forEach(r => { c[r.f] = (c[r.f] || 0) + 1; }); return c; };
     const ca = cnt(all), cm = cnt(mine), pa = k => all.length ? (ca[k] || 0) / all.length * 100 : 0;
     const strip = (rows, c) => `<div class="om-sbar">` + kinds.filter(k => c[k.code]).map(k => { const v = c[k.code] / rows.length * 100;
