@@ -491,7 +491,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
     const strip = (rows, c) => `<div class="om-sbar">` + kinds.filter(k => c[k.code]).map(k => { const v = c[k.code] / rows.length * 100;
       return `<div style="flex:${v} 1 0;background:${k.color}" title="${k.name}: ${f1(v)}% (${c[k.code]} из ${rows.length})">${v >= 8 ? f1(v) + '%' : ''}</div>`; }).join('') + `</div>`;
     const gapN = S.fg === 'all' ? '' : S.fg === '0' ? ' · в этот же блок' : ` · через ${S.fn} блок.`;
-    host.innerHTML = `<div class="om-lab0">Какая граница протестирована первой?</div>` +
+    host.innerHTML = `<div class="om-lab0" style="color:var(--t1)">Какая граница протестирована первой?</div>` +
       `<div class="om-head">Только дни, когда протестированы обе границы IB.</div><div class="om-fctl"></div>`;
     host.querySelector('.om-fctl').append(ctl('Вторая граница', seg([['all', 'Все'], ['0', 'В этот же блок'], ['n', 'Через N блоков']], S.fg, v => upd('fg', v)), gapInput()));
     const out = document.createElement('div'); host.appendChild(out);
