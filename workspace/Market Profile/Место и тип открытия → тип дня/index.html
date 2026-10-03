@@ -23,7 +23,7 @@
 //                  Плитка «Какая граница протестирована первой?» под калькулятором берёт дни b из его выбора.
 //   outcome 'ext'  (тест 4): точка + тип открытия → время экстремума дня, в конце строки hb, lb (блок RTH 0…12, где
 //                  впервые достигнут хай / лоу дня) и hp, lp (ход от цены открытия до хая / лоу, % обычного IB).
-//                  Под калькулятором: таблица «окно худшего × окно лучшего» и величина отклонений по его выбору.
+//                  Под калькулятором: список сочетаний «окно худшей цены + окно лучшей цены» и расстояния от цены открытия.
 // Ожидает window.DATA = {test, outcome, fields, meta, zones, open_types, day_types, variants, rows} из results.json
 // (mp-es-pipeline/scripts/11_test_open_matrix.py).
 // Режим «своя строка» пересчитывает точку и тип открытия, Double-Distribution и композиты прямо здесь,
@@ -558,29 +558,31 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
   // В видах по тренду: худшее = экстремум против тренда открытия, лучшее = по тренду. В видах «хай / лоу»: лоу и хай дня.
   const trendView = () => S.v === 'b' || S.v === 'w';
   function renderCross(host, sel, title){
-    const tv = trendView(), rn = tv ? 'Худшее' : 'Лоу дня', cn = tv ? 'Лучшее' : 'Хай дня';
-    host.innerHTML = `<div class="om-lab0" style="color:var(--t1)">Окно: ${rn.toLowerCase()} × ${cn.toLowerCase()}</div>` +
-      `<div class="om-head"><b>${esc(title)}</b> · ${sel.length ? sel.length + ' дней' : 'нет таких дней'} · % дней выбора</div>`;
+    const tv = trendView();
+    const rn = tv ? 'Худшая цена дня (против тренда открытия)' : 'Лоу дня', cn = tv ? 'Лучшая цена дня (по тренду открытия)' : 'Хай дня';
+    host.innerHTML = `<div class="om-lab0" style="color:var(--t1)">${tv ? 'Когда худшая и когда лучшая цена дня' : 'Когда лоу и когда хай дня'}</div>` +
+      `<div class="om-head"><b>${esc(title)}</b> · ${sel.length ? sel.length + ' дней' : 'нет таких дней'} · сочетания по убыванию</div>`;
     if (!sel.length) return;
     const m = WIN.map(() => WIN.map(() => 0));
     sel.forEach(r => { const up = tv ? r.tr === 'u' : true; m[WOF[up ? r.lb : r.hb]][WOF[up ? r.hb : r.lb]]++; });
-    const mx = Math.max(...m.flat()), pc = n => n / sel.length * 100;
-    const short = WIN.map(w => w[1].split(' ').slice(0, -1).join(' '));
-    host.innerHTML += `<table class="om-leg om-x"><thead><tr><th>${rn} ↓ · ${cn} →</th>${short.map(s => `<th>${s}</th>`).join('')}<th>Всего</th></tr></thead><tbody>` +
-      m.map((row, i) => `<tr><td>${WIN[i][1]}</td>` + row.map(n => `<td style="background:color-mix(in srgb, var(--d1) ${Math.round(n / mx * 55)}%, transparent)" title="${n} дн">${f1(pc(n))}%</td>`).join('') +
-        `<td class="n">${f1(pc(row.reduce((a, b) => a + b, 0)))}%</td></tr>`).join('') +
-      `<tr><td>Всего</td>${WIN.map((_, j) => `<td class="n">${f1(pc(m.reduce((a, row) => a + row[j], 0)))}%</td>`).join('')}<td class="n">100.0%</td></tr></tbody></table>`;
+    const list = [];
+    m.forEach((row, i) => row.forEach((n, j) => { if (n) list.push({i, j, n}); }));
+    list.sort((a, b) => b.n - a.n);
+    const sw = k => `<i class="om-sw" style="background:${slot(k + 1)}"></i>`;
+    host.innerHTML += `<table class="om-leg om-x"><thead><tr><th>${rn}</th><th style="text-align:left">${cn}</th><th>Доля</th><th>Дней</th></tr></thead><tbody>` +
+      list.map(c => `<tr><td>${sw(c.i)}${WIN[c.i][1]}</td><td style="text-align:left;color:var(--t2)">${sw(c.j)}${WIN[c.j][1]}</td>` +
+        `<td>${f1(c.n / sel.length * 100)}%</td><td class="n">${c.n}</td></tr>`).join('') + `</tbody></table>`;
   }
   function renderDev(host, R, sel, title){
     const tv = trendView();
     const q = (a, p) => { if (!a.length) return NaN; const s = a.slice().sort((x, y) => x - y), k = (s.length - 1) * p, lo = Math.floor(k), hi = Math.ceil(k);
       return s[lo] + (s[hi] - s[lo]) * (k - lo); };
     const best = r => tv ? (r.tr === 'u' ? r.hp : r.lp) : r.hp, worst = r => tv ? (r.tr === 'u' ? r.lp : r.hp) : r.lp;
-    const rows = [[tv ? 'Лучшее отклонение (по тренду)' : 'Вверх от открытия до хая дня', best], [tv ? 'Худшее отклонение (против тренда)' : 'Вниз от открытия до лоу дня', worst]];
+    const rows = [[tv ? 'От цены открытия до лучшей цены дня (по тренду)' : 'От цены открытия вверх до хая дня', best], [tv ? 'От цены открытия до худшей цены дня (против тренда)' : 'От цены открытия вниз до лоу дня', worst]];
     const n0 = v => Number.isFinite(v) ? Math.round(v) + '%' : '';
-    host.innerHTML = `<div class="om-lab0" style="color:var(--t1)">Величина отклонения от цены открытия</div>` +
+    host.innerHTML = `<div class="om-lab0" style="color:var(--t1)">Как далеко цена уходит от цены открытия</div>` +
       `<div class="om-head"><b>${esc(title)}</b> · ${sel.length ? sel.length + ' дней' : 'нет таких дней'} · в % обычного IB (медиана ширины IB за 20 прошлых дней)</div>` +
-      (sel.length ? `<table class="om-leg"><thead><tr><th>Отклонение</th><th>25 %</th><th>Медиана</th><th>75 %</th><th>Медиана, все дни выборки</th></tr></thead><tbody>` +
+      (sel.length ? `<table class="om-leg"><thead><tr><th>Расстояние</th><th>В четверти дней меньше</th><th>В половине дней меньше</th><th>В трёх четвертях дней меньше</th><th>В половине дней меньше, все дни выборки</th></tr></thead><tbody>` +
         rows.map(([nm, fn]) => { const a = sel.map(fn); return `<tr><td>${nm}</td><td>${n0(q(a, 0.25))}</td><td>${n0(q(a, 0.5))}</td><td>${n0(q(a, 0.75))}</td><td class="n">${n0(q(R.map(fn), 0.5))}</td></tr>`; }).join('') +
         `</tbody></table>` : '');
   }
