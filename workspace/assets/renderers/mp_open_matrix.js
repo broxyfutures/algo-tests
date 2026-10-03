@@ -103,7 +103,8 @@
 .om-side{flex:1 1 340px;min-width:0;font-family:var(--mono)}
 .om-two{display:flex;gap:28px 48px;flex-wrap:wrap}
 .om-two > div{flex:1 1 320px;min-width:0;font-family:var(--mono)}
-.om-dn2{width:230px;max-width:70%;margin:4px auto 16px}
+.om-dn2{width:100%;max-width:460px;margin:0 auto 12px}
+.om-donut .om-lab.om-lab-b{font-size:18px}
 .om-head{font-size:11px;letter-spacing:.06em;color:var(--t3);margin-bottom:10px;line-height:1.6}
 .om-head b{color:var(--t1);font-weight:600}
 table.om-leg{border-collapse:collapse;width:100%;font-size:12.5px}
@@ -358,7 +359,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
           const cut = sp.sort((a, b) => Math.abs(a - p.label.length / 2) - Math.abs(b - p.label.length / 2))[0];
           if (cut) lines = [p.label.slice(0, cut), p.label.slice(cut + 1)];
         }
-        labs.push({f, mid, lines, h: lines.length > 1 ? 32 : 17});
+        labs.push({f, mid, lines, h: compact ? 25 : lines.length > 1 ? 32 : 17});
       }
       a0 = a1;
     });
@@ -375,11 +376,11 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
         const [px0, py0] = Pt(R + 3, l.mid);
         leads += `<polyline class="om-lead" points="${px0.toFixed(1)},${py0.toFixed(1)} ${x1.toFixed(1)},${l.y.toFixed(1)} ${x2.toFixed(1)},${l.y.toFixed(1)}"/>` +
           (() => { const tx = (x2 + (side === 'r' ? 5 : -5)).toFixed(1), two = l.lines.length > 1, pc = ` <tspan>${f1(l.f * 100)}%</tspan>`;
-            return `<text class="om-lab" x="${tx}" y="${(l.y + (two ? -3 : 4)).toFixed(1)}" text-anchor="${side === 'r' ? 'start' : 'end'}">` +
+            return `<text class="om-lab${compact ? ' om-lab-b' : ''}" x="${tx}" y="${(l.y + (two ? -3 : compact ? 6 : 4)).toFixed(1)}" text-anchor="${side === 'r' ? 'start' : 'end'}">` +
               (two ? `${l.lines[0]}<tspan class="om-l2" x="${tx}" dy="14">${l.lines[1]}</tspan>${pc}` : l.lines[0] + pc) + `</text>`; })();
       });
     });
-    return `<svg viewBox="${compact ? '262 37 276 276' : '0 0 800 350'}" role="img" aria-label="распределение: ${OUTN}">${arcs}${compact ? '' : leads}` +
+    return `<svg viewBox="${compact ? '95 -30 610 410' : '0 0 800 350'}" role="img" aria-label="распределение: ${OUTN}">${arcs}${leads}` +
       `<text x="${cx}" y="${cy + 2}" text-anchor="middle" fill="var(--t1)" font-size="30" font-weight="600" font-family="var(--mono)">${total}</text>` +
       `<text x="${cx}" y="${cy + 24}" text-anchor="middle" fill="var(--t3)" font-size="12" font-family="var(--mono)">дней</text></svg>`;
   }
@@ -550,7 +551,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
     else all.innerHTML = `<div class="om-head"><b>Все дни выборки</b> · ${R.length} дней · ${periodLabel()} · ${scope}</div><div class="om-two">` +
       KINDS.map(([k, nm, th]) => { const c = count(R, k), by = types.slice().sort((a, b) => (c[b.code] || 0) - (c[a.code] || 0));
         return `<div><div class="om-lab0" style="color:var(--t1)">${nm}</div>` +
-          `<div class="om-donut om-dn2">${donut(types.map(t => ({label: t.name, value: c[t.code] || 0, color: t.color})), R.length, true)}</div>` +
+          `<div class="om-donut om-dn2">${donut(types.map(t => ({label: S.tm === 'w' ? t.name.split(' ').slice(0, -1).join(' ') : t.name[0], value: c[t.code] || 0, color: t.color})), R.length, true)}</div>` +
           `<table class="om-leg"><thead><tr><th>${th}</th><th>Доля</th><th>Дней</th></tr></thead><tbody>` +
           by.map(t => `<tr><td><i class="om-sw" style="background:${t.color}"></i>${t.name}</td><td>${f1((c[t.code] || 0) / R.length * 100)}%</td><td class="n">${c[t.code] || 0}</td></tr>`).join('') +
           `</tbody></table></div>`; }).join('') + `</div>`;
