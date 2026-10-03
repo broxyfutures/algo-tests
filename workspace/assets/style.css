@@ -1,6 +1,6 @@
 /* workspace · общий стиль страниц тестов */
 :root{
-  --bg:#000;--surface:#080808;--surface-2:#101010;--border:#1a1a1a;--border-2:#252525;--border-hi:#aaa;
+  --bg:#000;--surface:#080808;--surface-2:#101010;--surface-3:#181818;--border:#1a1a1a;--border-2:#252525;--border-hi:#aaa;
   --t1:#f0f0f0;--t2:#aaaaaa;--t3:#666666;--t4:#3a3a3a;
   --up:#7da8ff;--up-bg:rgba(91,141,239,.14);--up-bg-2:rgba(91,141,239,.28);
   --dn:#f4a0cc;--dn-bg:rgba(244,160,204,.12);--dn-bg-2:rgba(244,160,204,.26);
@@ -11,7 +11,7 @@
 }
 /* светлая тема: включается переключателем в углу экрана (кнопка внизу файла) */
 :root[data-theme="light"]{
-  --bg:#ffffff;--surface:#f6f7f8;--surface-2:#ebedef;--border:#e2e4e7;--border-2:#d2d5d9;--border-hi:#1a1a1a;
+  --bg:#ffffff;--surface:#f6f7f8;--surface-2:#ebedef;--surface-3:#e1e4e7;--border:#e2e4e7;--border-2:#d2d5d9;--border-hi:#1a1a1a;
   --t1:#111318;--t2:#52565c;--t3:#84888e;--t4:#c7cad0;
   --up:#2f5fd6;--up-bg:rgba(47,95,214,.10);--up-bg-2:rgba(47,95,214,.20);
   --dn:#c22e6d;--dn-bg:rgba(194,46,109,.09);--dn-bg-2:rgba(194,46,109,.18);
@@ -210,4 +210,5 @@ table.plain{width:100%;border-collapse:collapse;font-size:12px}
 .tgroup{border:1px solid var(--border-2);border-radius:2px;background:var(--surface-2);padding:14px 16px 16px}
 .tgroup-title{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--t1);font-weight:600;margin:0 0 12px}
 .cards.tlist{display:flex;flex-direction:column;gap:8px}
-.cards.tlist .tcard{min-height:0;padding:12px 16px;gap:4px}
+.cards.tlist .tcard{min-height:0;padding:12px 16px;gap:4px;background:var(--surface-2);border-color:var(--border-2);transition:background .15s}
+.cards.tlist .tcard:hover{background:var(--surface-3)}
