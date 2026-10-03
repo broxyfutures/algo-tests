@@ -3,7 +3,7 @@
 //   outcome 'open' (тест 2): точка открытия → тип открытия, rows: [date, f0 zone, f0 open, f1 …, a0 …, a1 …];
 //   outcome 'ib'   (тест 3): точка + тип открытия → тест границ IB, rows как в тесте 2 и в конце код дня
 //                  u только верх, d только низ, b обе, n ни одной (от размера блока не зависит), затем при b:
-//                  first (u хай / d лоу / s в одной минуте, порядок неизвестен) и gap (блоков между тестами).
+//                  first (u хай / d лоу / s в одной минуте: в плитке не показывается) и gap (блоков между тестами).
 //                  Плитка «Какая граница протестирована первой?» под калькулятором берёт дни b из его выбора.
 // Ожидает window.DATA = {test, outcome, fields, meta, zones, open_types, day_types, variants, rows} из results.json
 // (mp-es-pipeline/scripts/11_test_open_matrix.py).
@@ -57,8 +57,8 @@
   const outList = () => IB ? IBV[S.v] : OPEN ? OT : DT;
   // какая граница первой: в виде «по тренду» по тренду открытия / против, в остальных хай / лоу
   const FIRSTV = {
-    hl: [['u', 'Первым тест хая IB'], ['d', 'Первым тест лоу IB'], ['s', 'В одной минуте, порядок неизвестен']],
-    t: [['w', 'Первым тест границы по тренду'], ['a', 'Первым тест границы против тренда'], ['s', 'В одной минуте, порядок неизвестен']]};
+    hl: [['u', 'Первым тест хая IB'], ['d', 'Первым тест лоу IB']],
+    t: [['w', 'Первым тест границы по тренду'], ['a', 'Первым тест границы против тренда']]};
   const firstView = (fi, z) => {
     if (S.v !== 't' || fi === 's') return fi;
     return (fi === 'u') === (z === 'ar' || z === 'av') ? 'w' : 'a';
@@ -483,9 +483,9 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
   }
   function renderFirst(host, R, sel, title){
     const gapOk = r => S.fg === 'all' || (S.fg === '0' ? r.gap === 0 : r.gap === S.fn);
-    const pick2 = rows => rows.filter(r => r.ib === 'b' && gapOk(r)).map(r => ({...r, f: firstView(r.fi, r.z5)}));
+    const pick2 = rows => rows.filter(r => r.ib === 'b' && r.fi !== 's' && gapOk(r)).map(r => ({...r, f: firstView(r.fi, r.z5)}));
     const all = pick2(R), mine = pick2(sel);
-    const kinds = FIRSTV[S.v === 't' ? 't' : 'hl'].map(([code, name], i) => ({code, name, color: code === 's' ? 'var(--t4)' : slot(i + 1)}));
+    const kinds = FIRSTV[S.v === 't' ? 't' : 'hl'].map(([code, name], i) => ({code, name, color: slot(i + 1)}));
     const cnt = rows => { const c = {}; rows.forEach(r => { c[r.f] = (c[r.f] || 0) + 1; }); return c; };
     const ca = cnt(all), cm = cnt(mine), pa = k => all.length ? (ca[k] || 0) / all.length * 100 : 0;
     const strip = (rows, c) => `<div class="om-sbar">` + kinds.filter(k => c[k.code]).map(k => { const v = c[k.code] / rows.length * 100;
