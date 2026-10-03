@@ -514,8 +514,8 @@
         fc.innerHTML = '';
         fc.append(
           ctl('Точка открытия', multi(D.zones.map(z => [z[0], z[1]]), S.fz, 'fz')),
-          ctl('Тип открытия', multi(D.open_types.map(o => [o[0], o[1].replace('Open-','O-')]), S.fo, 'fo')),
-          ctl('Тип дня', multi(D.day_types.map(t => [t[0], t[1].replace('Double-Distribution ','DD-')]), S.ft, 'ft')));
+          ctl('Тип открытия', multi(D.open_types.map(o => [o[0], o[1]]), S.fo, 'fo')),
+          ctl('Тип дня', multi(D.day_types.map(t => [t[0], t[1]]), S.ft, 'ft')));
         const t = root.querySelector('#mpc-flt-t');
         const names = sel.idx ? 'из теста · ' + sel.label : filterNames();
         t.innerHTML = 'Какие дни подсветить' + (names ? ': <b>' + names + '</b>' : '');

@@ -3,6 +3,9 @@
 Тест 1: точка открытия × тип открытия → тип дня. Описательная статистика, без порогов.
 Тест 2: точка открытия → тип открытия (TEST_PLAN, Opening Types & Day Types 2). Та же выборка и те же
 варианты, в строках только зона и тип открытия.
+Тест 3: точка и тип открытия → тест границ IB (TEST_PLAN, Strong Points 1, правила 03.10.2026).
+Тест границы: в 10:30–16:00 цена дошла до хая IB или выше / до лоу IB или ниже, ровно уровень, без допуска.
+Исход дня от размера блока не зависит: u только верх, d только низ, b обе, n ни одной.
 
 Точка открытия: цена 09:30 против опоры (5 зон или 3 группы). Тип открытия: mp/opentype.py
 (утверждено 22.09.2026). Исход: тип дня (mp/daytype.py); у направленных типов — по тренду точки
@@ -12,6 +15,7 @@
   {test, outcome, fields, meta, zones, open_types, day_types, variants, rows}
   тест 1: rows = [date, f0 zone, f0 open_type, f0 day_type, f0 day_dir, f1 …, a0 …, a1 …]
   тест 2: rows = [date, f0 zone, f0 open_type, f1 …, a0 …, a1 …]
+  тест 3: rows = [date, f0 zone, f0 open_type, f1 …, a0 …, a1 …, ib]
   варианты: f / a = fixed / adaptive, 0 / 1 = опора вчерашний день / композит
 
 Исключены: укороченные дни, дни без опоры (первый день истории, дни после дыр в данных).
@@ -33,6 +37,21 @@ from mp.codes import DAY_CODE, DAY_TYPES, DIR, OPEN_CODE, OPEN_TYPES, ZONE_CODE,
 MP = C.ROOT.parent / "workspace" / "Market Profile"
 OUT = MP / "Место и тип открытия → тип дня"
 OUT2 = MP / "Место открытия → тип открытия"
+OUT3 = MP / "Место и тип открытия → тест границ IB"
+
+
+def ib_tests() -> pd.Series:
+    """Код теста границ IB по дате: блоки A + B = IB, блоки C…M (10:30–16:00) ищут тест."""
+    p = pd.read_parquet(C.DERIVED / "periods_30m.parquet", columns=["date", "session", "period", "high", "low"])
+    r = p[p["session"] == "RTH"]
+    ib = r[r["period"] < C.IB_PERIODS].groupby("date").agg(ibh=("high", "max"), ibl=("low", "min"))
+    later = r[r["period"] >= C.IB_PERIODS].groupby("date").agg(mx=("high", "max"), mn=("low", "min"))
+    x = ib.join(later, how="inner")
+    up, dn = x["mx"] >= x["ibh"], x["mn"] <= x["ibl"]
+    code = pd.Series("n", index=x.index)
+    code[up & ~dn], code[dn & ~up], code[up & dn] = "u", "d", "b"
+    code.index = pd.to_datetime(code.index)
+    return code
 
 
 def load(mode: str) -> pd.DataFrame:
@@ -63,8 +82,11 @@ def main() -> int:
             "note": "Полные RTH-дни ES. Исключены укороченные дни и дни без опоры."}
     common = {"zones": ZONES, "open_types": OPEN_TYPES, "day_types": DAY_TYPES, "variants": ["f0", "f1", "a0", "a1"], "meta": meta}
     rows2 = [[r[0]] + [v for k in range(4) for v in r[1 + 4 * k:3 + 4 * k]] for r in rows]
+    ibc = ib_tests()
+    rows3 = [r + [ibc[pd.Timestamp(r[0])]] for r in rows2]
     for out, res in ((OUT, {"test": "1", "outcome": "day", "fields": ["zone", "open", "day", "dir"], **common, "rows": rows}),
-                     (OUT2, {"test": "2", "outcome": "open", "fields": ["zone", "open"], **common, "rows": rows2})):
+                     (OUT2, {"test": "2", "outcome": "open", "fields": ["zone", "open"], **common, "rows": rows2}),
+                     (OUT3, {"test": "3", "outcome": "ib", "fields": ["zone", "open"], **common, "rows": rows3})):
         out.mkdir(parents=True, exist_ok=True)
         (out / "results.json").write_text(json.dumps(res, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
         print(f"{len(rows)} дней → {out / 'results.json'}")
@@ -82,6 +104,9 @@ def main() -> int:
     pct2["n"] = tab2.sum(axis=1)
     print("\nТест 2 (fixed, опора вчера), % дней зоны:")
     print(pct2.reindex(columns=[c for c, _ in OPEN_TYPES] + ["n"]).to_string())
+
+    ib3 = pd.Series([r[-1] for r in rows3])
+    print("\nТест 3, тест границ IB (все дни), %:", ib3.value_counts(normalize=True).mul(100).round(1).to_dict())
     return 0
 
 

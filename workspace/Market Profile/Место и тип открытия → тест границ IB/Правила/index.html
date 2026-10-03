@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Правила</title>
+<script>try{if(localStorage.getItem("algo-tests-theme")==="light")document.documentElement.setAttribute("data-theme","light")}catch(e){}</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<link rel="stylesheet" href="../../../assets/style.css"></head>
+<body>
+<div class="theme-toggle" id="theme-toggle" role="button" tabindex="0" aria-label="Переключить тему"><span class="label" id="theme-toggle-label">Тёмная</span><div class="theme-toggle-track"><div class="theme-toggle-knob"></div></div></div>
+<div class="app">
+<nav class="crumbs"><a href="../../../index.html">Algo Tests</a><span class="sep">/</span><a href="../../index.html">Market Profile</a><span class="sep">/</span><a href="../index.html">Место и тип открытия → тест границ IB</a><span class="sep">/</span><span class="cur">Правила</span></nav>
+<header class="hdr"><div><h1>Правила</h1></div><div class="meta" id="hdr-meta"></div></header>
+<section class="card"><h2 class="card-title">Идея</h2><div class="prose"><p>Где статистически ставить стоп и тейк профит: как часто цена после IB возвращается к его хаю и лоу до конца дня. Если при открытии выше VA лоу IB не тронут, это сильный лоу (Strong Low), при открытии ниже VA нетронутый хай IB это сильный хай (Strong High).</p>
+<p>Выборка: полные дни 2010–2026, без укороченных и без дней без опоры. Та же, что в остальных тестах Market Profile.</p></div></section>
+<section class="card"><h2 class="card-title">Тест границы IB</h2><div class="prose"><p>IB = блоки A и B, 09:30–10:30. Тест ищется в 10:30–16:00, только RTH.</p>
+<div class="twrap"><table class="plain md"><thead><tr><th>Граница</th><th>Тест есть, если</th></tr></thead><tbody><tr><td>хай IB</td><td>цена дошла до хая IB или выше</td></tr><tr><td>лоу IB</td><td>цена дошла до лоу IB или ниже</td></tr></tbody></table></div>
+<p>Ровно уровень, без допуска в тиках.</p></div></section>
+<section class="card"><h2 class="card-title">Исходы</h2><div class="prose"><p>Переключатель «Исход» показывает один и тот же день в трёх видах.</p>
+<div class="twrap"><table class="plain md"><thead><tr><th>Вид</th><th>Исходы</th></tr></thead><tbody><tr><td>Нет / одна / обе</td><td>без теста границ IB; тест одной границы; тест обеих границ</td></tr><tr><td>Хай / лоу / обе / нет</td><td>тест только хая IB; тест только лоу IB; тест обеих границ; без теста</td></tr><tr><td>По тренду открытия</td><td>тест только границы по тренду; тест только границы против тренда; тест обеих границ; без теста</td></tr></tbody></table></div>
+<p>Схема вида «по тренду открытия»:</p>
+<div class="twrap"><table class="plain md"><thead><tr><th>Открытие</th><th>Граница по тренду</th><th>Граница против тренда</th><th>«Тест только границы по тренду» значит</th></tr></thead><tbody><tr><td>выше VA (выше диапазона или выше VA в диапазоне)</td><td>хай IB</td><td>лоу IB</td><td>лоу IB не тронут до 16:00, Strong Low</td></tr><tr><td>ниже VA (ниже диапазона или ниже VA в диапазоне)</td><td>лоу IB</td><td>хай IB</td><td>хай IB не тронут до 16:00, Strong High</td></tr><tr><td>внутри VA</td><td>тренда нет</td><td></td><td>в этом виде не участвует</td></tr></tbody></table></div></div></section>
+<section class="card"><h2 class="card-title">Опора</h2><div class="prose"><p>VA, high и low вчерашнего профиля. Переключатель «Опора: композит»: открытый композит от 2 дней, если он есть. Опора и размер блока меняют только точку и тип открытия, тест границ IB от них не зависит.</p></div></section>
+<section class="card"><h2 class="card-title">Точка открытия</h2><div class="prose"><p>Цена 09:30 относительно опоры.</p>
+<div class="twrap"><table class="plain md"><thead><tr><th>Зона</th><th>Где открылись</th></tr></thead><tbody><tr><td>выше диапазона</td><td>выше вчерашнего high</td></tr><tr><td>выше VA, в диапазоне</td><td>между VAH и high</td></tr><tr><td>внутри VA</td><td>между VAL и VAH</td></tr><tr><td>ниже VA, в диапазоне</td><td>между low и VAL</td></tr><tr><td>ниже диапазона</td><td>ниже вчерашнего low</td></tr></tbody></table></div></div></section>
+<section class="card"><h2 class="card-title">Тип открытия</h2><div class="prose"><p>A = 09:30–10:00, B = 10:00–10:30, IB = A + B. Своя граница VA: VAH при открытии выше VA, VAL при открытии ниже. Касание с точностью 1 тик.</p>
+<div class="twrap"><table class="plain md"><thead><tr><th>Тип</th><th>Правило</th></tr></thead><tbody><tr><td>Open-Auction внутри VA</td><td>открылись внутри VA</td></tr><tr><td>Open-Rejection-Reverse</td><td>за 09:30–10:30 коснулись своей границы VA, и в 10:30 цена внутри VA или прошла её насквозь</td></tr><tr><td>Open-Drive</td><td>своя граница VA не тронута, и в B цена не вернулась к экстремуму A. При открытии за диапазоном: в B не дошли до вчерашнего high / low и не пробили экстремум A</td></tr><tr><td>Open-Test-Drive</td><td>был тест: касание своей границы VA, но в 10:30 цена снова на стороне открытия; или B вернулся к экстремуму A; или при открытии за диапазоном B коснулся вчерашнего high / low. И в 10:30–11:30 пробит IB по тренду</td></tr><tr><td>Open-Auction вне VA</td><td>тест был, пробоя IB нет. Или за диапазоном экстремум A пробит без касания границы диапазона</td></tr></tbody></table></div>
+<p>Тип дня в тесте не используется: он известен только после закрытия.</p></div></section>
+</div>
+
+<script>
+(function(){
+  var KEY = 'algo-tests-theme';
+  var el = document.getElementById('theme-toggle');
+  var label = document.getElementById('theme-toggle-label');
+  if (!el) return;
+  function sync(){
+    var light = document.documentElement.getAttribute('data-theme') === 'light';
+    label.textContent = light ? 'Светлая' : 'Тёмная';
+  }
+  function flip(){
+    var light = document.documentElement.getAttribute('data-theme') === 'light';
+    if (light) document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', 'light');
+    try { localStorage.setItem(KEY, light ? 'dark' : 'light'); } catch(e){}
+    sync();
+  }
+  sync();
+  el.addEventListener('click', flip);
+  el.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
+})();
+</script>
+</body></html>
