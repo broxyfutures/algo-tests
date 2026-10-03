@@ -542,11 +542,10 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
 
     // ---------------------------------------------------------------- калькулятор: точка (+ тип открытия) = исход
     const box = calc.querySelector('.om-calc');
-    // типы открытия, возможные при выбранных точках: внутри VA только Open-Auction внутри VA, вне VA остальные
+    // в списке всегда все типы открытия; несочетаемый выбор (точка вне VA + Open-Auction внутри VA) даёт 0 дней
     const zones = D.zones.filter(([z]) => !(IB && S.v === 't' && z === 'iv'));   // по тренду: без «внутри VA»
     S.cz = S.cz.filter(z => zones.some(x => x[0] === z));
-    const inV = S.cz.includes('iv'), outV = S.cz.some(z => z !== 'iv');
-    const opens = OT.map(o => o[0]).filter(o => (!S.cz.length || (o === 'oai' ? inV : outV)) && !(IB && S.v === 't' && o === 'oai'));
+    const opens = OT.map(o => o[0]).filter(o => !(IB && S.v === 't' && o === 'oai'));
     S.co = S.co.filter(o => opens.includes(o));
     const sel = R.filter(r => (!S.cz.length || S.cz.includes(r.z5)) && (OPEN || !S.co.length || S.co.includes(r.o)));
     const cs = count(sel);
