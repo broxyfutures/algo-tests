@@ -47,21 +47,23 @@
     '4': [['u', 'Тест только хая IB'], ['d', 'Тест только лоу IB'], ['b', 'Тест обеих границ IB'], ['n', 'Без теста границ IB']],
     '3': [['o', 'Тест одной границы IB'], ['b', 'Тест обеих границ IB'], ['n', 'Без теста границ IB']],
     't': [['w', 'Тест только границы по тренду'], ['a', 'Тест только границы против тренда'], ['b', 'Тест обеих границ IB'], ['n', 'Без теста границ IB']]};
-  const ibView = (code, z) => {
+  // тренд открытия: выше VA лонг, ниже VA шорт; внутри VA = сторона выхода из VA в 10:30 (у Open-Auction внутри VA тренда нет)
+  const trendOf = (z, dir) => z === 'ar' || z === 'av' ? 'u' : z === 'br' || z === 'bv' ? 'd' : z === 'iv' ? (dir || '') : '';
+  const ibView = (code, tr) => {
     if (S.v === '4') return code;
     if (S.v === '3') return code === 'u' || code === 'd' ? 'o' : code;
-    if (z === 'iv' || !z) return '';                     // открытие внутри VA: тренда нет, в этом виде не участвует
+    if (!tr) return '';                                  // тренда нет: в этом виде не участвует
     if (code !== 'u' && code !== 'd') return code;
-    return (code === 'u') === (z === 'ar' || z === 'av') ? 'w' : 'a';
+    return code === tr ? 'w' : 'a';
   };
   const outList = () => IB ? IBV[S.v] : OPEN ? OT : DT;
   // какая граница первой: в виде «по тренду» по тренду открытия / против, в остальных хай / лоу
   const FIRSTV = {
     hl: [['u', 'Первым тест хая IB'], ['d', 'Первым тест лоу IB']],
     t: [['w', 'Первым тест границы по тренду'], ['a', 'Первым тест границы против тренда']]};
-  const firstView = (fi, z) => {
+  const firstView = (fi, tr) => {
     if (S.v !== 't' || fi === 's') return fi;
-    return (fi === 'u') === (z === 'ar' || z === 'av') ? 'w' : 'a';
+    return fi === tr ? 'w' : 'a';
   };
   // исход теста 3 по дате: от размера блока и опоры не зависит, своя строка берёт его отсюда
   const IBROW = IB ? Object.fromEntries(D.rows.map(r => [r[0], r.slice(-3)])) : {};  const FIRST = D.rows[0][0], LAST = D.rows[D.rows.length - 1][0];
@@ -239,9 +241,11 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
   function openType(L, H, o, c1030, r, ibMed){
     const t = TICK;
     if (L.length < 2) return '';
-    if (r.val <= o && o <= r.vah) return 'oai';
-    const up = o > r.vah;
+    const inside = r.val <= o && o <= r.vah;
+    if (inside && r.val <= c1030 && c1030 <= r.vah) return 'oai';
+    const up = inside ? c1030 > r.vah : o > r.vah;    // открытие внутри VA: тренд = сторона выхода в 10:30
     const ibH = Math.max(H[0], H[1]), ibL = Math.min(L[0], L[1]);
+    if (inside) return ((up ? o - ibL : ibH - o) * 5 > ibMed) ? 'otd' : 'od';
     const trendSide = up ? c1030 > o : c1030 < o;
     const vaTouch = up ? ibL <= r.vah + t : ibH >= r.val - t;
     if (vaTouch){
@@ -252,6 +256,8 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
     if (!(adv * 5 > ibMed)) return 'od';              // порог 20 % обычного IB
     return trendSide ? 'otd' : 'oao';
   }
+  // направление открытия внутри VA: сторона выхода из VA в 10:30 ('' если остались внутри)
+  const exitDir = (o, c1030, r) => !(r.val <= o && o <= r.vah) ? '' : c1030 > r.vah ? 'u' : c1030 < r.val ? 'd' : '';
   // обычный IB: медиана ширины IB за 20 прошлых дней (scripts/07_classify_opens.py), у первого дня своя ширина
   function ibMedians(blocks){
     const w = blocks.map(([L, H]) => L.length < 2 ? NaN : Math.max(H[0], H[1]) - Math.min(L[0], L[1]));
@@ -306,7 +312,9 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
       const up = H.slice(2).some(v => v >= ibH), dn = L.slice(2).some(v => v <= ibL);
       out.push({dt, ib: up && dn ? 'b' : up ? 'u' : dn ? 'd' : 'n',
         z0: refDay ? zoneOf(o, refDay) : '', t0: refDay ? openType(L, H, o, c1030, refDay, ibMed[i]) : '',
-        z1: refComp ? zoneOf(o, refComp) : '', t1: refComp ? openType(L, H, o, c1030, refComp, ibMed[i]) : ''});
+        d0: refDay && L.length > 1 ? exitDir(o, c1030, refDay) : '',
+        z1: refComp ? zoneOf(o, refComp) : '', t1: refComp ? openType(L, H, o, c1030, refComp, ibMed[i]) : '',
+        d1: refComp && L.length > 1 ? exitDir(o, c1030, refComp) : ''});
     });
     engineCache.set(ticks, out);
     return out;
@@ -413,16 +421,17 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
         if (days[i][F.flags] & 16 || !inRange(d)) return;
         const e = E[i];
         const o = S.c === '0' ? e.t0 : e.t1;
-        const z5 = S.c === '0' ? e.z0 : e.z1;
+        const z5 = S.c === '0' ? e.z0 : e.z1, tr = trendOf(z5, S.c === '0' ? e.d0 : e.d1);
         const [ib, fi, gap] = IBROW[d] || [e.ib, '', -1];
-        out.push({date: d, i, z5, o, t: IB ? ibView(ib, z5) : OPEN ? o : e.dt, ib, fi, gap});
+        out.push({date: d, i, z5, o, tr, t: IB ? ibView(ib, tr) : OPEN ? o : e.dt, ib, fi, gap});
       });
       return IB ? out.filter(r => r.t) : out;
     }
     const off = 1 + NF * D.variants.indexOf(S.m + S.c);
     const out = D.rows.filter(r => inRange(r[0])).map(r => {
       const [ib, fi, gap] = IB ? r.slice(-3) : ['', '', -1];
-      return {date: r[0], z5: r[off], o: r[off + 1], t: IB ? ibView(ib, r[off]) : OPEN ? r[off + 1] : r[off + 2], ib, fi, gap};
+      const tr = IB ? trendOf(r[off], r[off + 2]) : '';
+      return {date: r[0], z5: r[off], o: r[off + 1], tr, t: IB ? ibView(ib, tr) : OPEN ? r[off + 1] : r[off + 2], ib, fi, gap};
     });
     return IB ? out.filter(r => r.t) : out;
   }
@@ -484,7 +493,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
   }
   function renderFirst(host, R, sel, title){
     const gapOk = r => S.fg === 'all' || (S.fg === '0' ? r.gap === 0 : r.gap === S.fn);
-    const pick2 = rows => rows.filter(r => r.ib === 'b' && r.fi !== 's' && gapOk(r)).map(r => ({...r, f: firstView(r.fi, r.z5)}));
+    const pick2 = rows => rows.filter(r => r.ib === 'b' && r.fi !== 's' && gapOk(r)).map(r => ({...r, f: firstView(r.fi, r.tr)}));
     const all = pick2(R), mine = pick2(sel);
     const kinds = FIRSTV[S.v === 't' ? 't' : 'hl'].map(([code, name], i) => ({code, name, color: slot(i + 1)}));
     const cnt = rows => { const c = {}; rows.forEach(r => { c[r.f] = (c[r.f] || 0) + 1; }); return c; };
@@ -524,7 +533,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
     const types = outList().map((t, i) => ({code: t[0], name: t[1], color: slot(i + 1)})).filter(t => S.nv || t.code !== EX);
     const count = rows => { const c = {}; rows.forEach(r => { c[r.t] = (c[r.t] || 0) + 1; }); return c; };
     const cb = count(R), base = code => R.length ? (cb[code] || 0) / R.length * 100 : 0;
-    const noNV = (S.nv ? '' : ' · без ' + EXN) + (IB && S.v === 't' ? ' · без открытий внутри VA' : '');
+    const noNV = (S.nv ? '' : ' · без ' + EXN) + (IB && S.v === 't' ? ' · без Open-Auction внутри VA' : '');
     calc.innerHTML = '<div class="om-viz"><div class="om-sec om-all"></div><div class="om-sec om-calc"></div>' +
       (IB ? '<div class="om-sec om-first"></div>' : '') + '</div>';
 
@@ -543,7 +552,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
     // ---------------------------------------------------------------- калькулятор: точка (+ тип открытия) = исход
     const box = calc.querySelector('.om-calc');
     // в списке всегда все типы открытия; несочетаемый выбор (точка вне VA + Open-Auction внутри VA) даёт 0 дней
-    const zones = D.zones.filter(([z]) => !(IB && S.v === 't' && z === 'iv'));   // по тренду: без «внутри VA»
+    const zones = D.zones;
     S.cz = S.cz.filter(z => zones.some(x => x[0] === z));
     const opens = OT.map(o => o[0]).filter(o => !(IB && S.v === 't' && o === 'oai'));
     S.co = S.co.filter(o => opens.includes(o));

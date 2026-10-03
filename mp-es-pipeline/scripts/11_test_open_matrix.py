@@ -18,7 +18,7 @@
   {test, outcome, fields, meta, zones, open_types, day_types, variants, rows}
   тест 1: rows = [date, f0 zone, f0 open_type, f0 day_type, f0 day_dir, f1 …, a0 …, a1 …]
   тест 2: rows = [date, f0 zone, f0 open_type, f1 …, a0 …, a1 …]
-  тест 3: rows = [date, f0 zone, f0 open_type, f1 …, a0 …, a1 …, ib, first, gap]
+  тест 3: rows = [date, f0 zone, f0 open_type, f0 open_dir, f1 …, a0 …, a1 …, ib, first, gap]
           (first и gap заполнены только при ib = b, иначе "" и -1)
   варианты: f / a = fixed / adaptive, 0 / 1 = опора вчерашний день / композит
 
@@ -106,12 +106,16 @@ def main() -> int:
     rows2 = [[r[0]] + [v for k in range(4) for v in r[1 + 4 * k:3 + 4 * k]] for r in rows]
     ibc = ib_tests()
     rows3 = []
-    for r in rows2:
+    for i, r in zip(idx, rows2):
         x = ibc.loc[pd.Timestamp(r[0])]
-        rows3.append(r + [x["code"], x["first"], int(x["gap"])])
+        # тест 3: к точке и типу открытия добавлено направление открытия (нужно для тренда при открытии внутри VA)
+        r3 = [r[0]]
+        for k, (mode, ref) in enumerate(variants):
+            r3 += r[1 + 2 * k:3 + 2 * k] + [DIR[data[mode].at[i, f"open_dir_{ref}"]]]
+        rows3.append(r3 + [x["code"], x["first"], int(x["gap"])])
     for out, res in ((OUT, {"test": "1", "outcome": "day", "fields": ["zone", "open", "day", "dir"], **common, "rows": rows}),
                      (OUT2, {"test": "2", "outcome": "open", "fields": ["zone", "open"], **common, "rows": rows2}),
-                     (OUT3, {"test": "3", "outcome": "ib", "fields": ["zone", "open"], **common, "rows": rows3})):
+                     (OUT3, {"test": "3", "outcome": "ib", "fields": ["zone", "open", "odir"], **common, "rows": rows3})):
         out.mkdir(parents=True, exist_ok=True)
         (out / "results.json").write_text(json.dumps(res, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
         print(f"{len(rows)} дней → {out / 'results.json'}")

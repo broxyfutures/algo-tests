@@ -8,7 +8,10 @@ IB = блоки A + B (09:30–10:30), цена в 10:30 (закрытие B). �
 Откат = насколько цена за 09:30–10:30 зашла за цену открытия против тренда.
 Порог = 20 % обычного IB (медиана ширины IB за 20 прошлых дней, ib_med).
 
-Открытие внутри VA → Open-Auction внутри VA (open_auction_in).
+Открытие внутри VA (тренда по месту открытия нет, его задаёт выход из VA):
+  цена в 10:30 внутри VA → Open-Auction внутри VA (open_auction_in)
+  цена в 10:30 за VA: тренд = сторона выхода (выше VAH лонг, ниже VAL шорт), откат считается против него
+       откат не больше порога → Open-Drive, больше порога → Open-Test-Drive
 
 Открытие вне VA:
   1. Своя граница VA коснулась за 09:30–10:30 (Open-Drive уже невозможен):
@@ -41,18 +44,22 @@ def classify(lo, hi, cl, open_: float, vah: float, val: float, high: float, low:
     res = {"open_type": "", "open_dir": "", "trigger": "", "c1030": np.nan, "ib_break": False}
     if len(lo) < n_ib:
         return res
-    if val <= open_ <= vah:
-        res["open_type"] = "open_auction_in"
-        return res
-
-    up = open_ > vah
     ib_hi, ib_lo = hi[:n_ib].max(), lo[:n_ib].min()
     c1030 = cl[n_ib - 1]
     res["c1030"] = c1030
+    inside = val <= open_ <= vah
+    if inside and val <= c1030 <= vah:
+        res["open_type"] = "open_auction_in"
+        return res
+    up = c1030 > vah if inside else open_ > vah          # открытие внутри VA: тренд = сторона выхода в 10:30
     nxt_hi, nxt_lo = hi[n_ib:n_ib + 60], lo[n_ib:n_ib + 60]
     res["ib_break"] = bool(nxt_hi.size and nxt_hi.max() >= ib_hi + t) if up else bool(nxt_lo.size and nxt_lo.min() <= ib_lo - t)
     bias, against = ("up", "down") if up else ("down", "up")
     trend_side = c1030 > open_ if up else c1030 < open_
+    adv = open_ - ib_lo if up else ib_hi - open_          # откат за цену открытия против тренда
+    if inside:
+        res.update(open_type="open_test_drive" if adv * PULLBACK_DIV > ib_med else "open_drive", open_dir=bias, trigger="va_exit")
+        return res
 
     def drive_or_auction():
         if trend_side:
@@ -72,7 +79,6 @@ def classify(lo, hi, cl, open_: float, vah: float, val: float, high: float, low:
         return drive_or_auction()
 
     # 2. VA не коснулась: решает откат за цену открытия против тренда
-    adv = open_ - ib_lo if up else ib_hi - open_
     if not adv * PULLBACK_DIV > ib_med:
         res.update(open_type="open_drive", open_dir=bias)
         return res

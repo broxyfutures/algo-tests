@@ -8,7 +8,8 @@
     open_type    open_auction_in / open_drive / open_test_drive / open_rejection_reverse /
                  open_auction_out (пусто: нет опоры)
     open_dir     up / down (у Open-Auction пусто)
-    trigger      va: своя граница VA коснулась в первый час; pullback: откат больше 20 % обычного IB
+    trigger      va: своя граница VA коснулась в первый час; pullback: откат больше 20 % обычного IB;
+                 va_exit: открытие внутри VA, в 10:30 цена за VA
     c1030        цена в 10:30 (закрытие блока B)
     ib_break     пробой IB по тренду в 10:30–11:30 (справочно, в правилах не участвует)
     open_zone    above_range / above_value / in_value / below_value / below_range
