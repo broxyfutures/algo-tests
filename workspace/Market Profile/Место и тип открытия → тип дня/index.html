@@ -469,8 +469,8 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
   document.addEventListener('click', () => { openDD = ''; document.querySelectorAll('.om-sel.open').forEach(x => x.classList.remove('open')); });
 
   // ================================================================ тест 3: какая граница протестирована первой
-  // Только дни с тестом обеих границ IB. Общая полоса по выборке, полоса и плитки по выбору калькулятора
-  // с разницей в п.п. к общей. Фильтр разрыва: все / в этот же блок / через N блоков (ровно N).
+  // Только дни с тестом обеих границ IB. Полоса и плитки по выбору калькулятора (пустой выбор = все дни)
+  // с разницей в п.п. к доле среди всех дней выборки. Фильтр разрыва: все / в этот же блок / через N блоков (ровно N).
   function gapInput(){
     const w = document.createElement('span'); w.className = 'om-inl';
     const a = document.createElement('span'); a.textContent = 'через';
@@ -488,7 +488,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
     const gapOk = r => S.fg === 'all' || (S.fg === '0' ? r.gap === 0 : r.gap === S.fn);
     const pick2 = rows => rows.filter(r => r.ib === 'b' && gapOk(r)).map(r => ({...r, f: firstView(r.fi, r.z5)}));
     const all = pick2(R), mine = pick2(sel);
-    const kinds = FIRSTV[S.v === 't' ? 't' : 'hl'].map(([code, name], i) => ({code, name, color: code === 's' ? 'var(--t4)' : slot(i + 1)}));
+    const kinds = FIRSTV[S.v === 't' ? 't' : 'hl'].map(([code, name], i) => ({code, name, color: code === 's' ? 'var(--t4)' : slot(i ? 3 : 1)}));
     const cnt = rows => { const c = {}; rows.forEach(r => { c[r.f] = (c[r.f] || 0) + 1; }); return c; };
     const ca = cnt(all), cm = cnt(mine), pa = k => all.length ? (ca[k] || 0) / all.length * 100 : 0;
     const strip = (rows, c) => `<div class="om-sbar">` + kinds.filter(k => c[k.code]).map(k => { const v = c[k.code] / rows.length * 100;
@@ -499,8 +499,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
     host.querySelector('.om-fctl').append(ctl('Вторая граница', seg([['all', 'Все'], ['0', 'В этот же блок'], ['n', 'Через N блоков']], S.fg, v => upd('fg', v)), gapInput()));
     const out = document.createElement('div'); host.appendChild(out);
     if (!all.length){ out.innerHTML = '<p class="om-busy">В выборке нет таких дней.</p>'; return; }
-    let html = `<div class="om-head" style="margin-top:12px"><b>Все дни выборки</b> · ${all.length} дней${gapN}</div>${strip(all, ca)}`;
-    html += `<div class="om-head" style="margin-top:16px"><b>${esc(title)}</b> · ${mine.length ? mine.length + ' дней' : 'нет таких дней'}${gapN}</div>`;
+    let html = `<div class="om-head" style="margin-top:12px"><b>${esc(title)}</b> · ${mine.length ? mine.length + ' дней' : 'нет таких дней'}${gapN}</div>`;
     if (mine.length){
       const ranked = kinds.map(k => ({...k, n: cm[k.code] || 0})).map(k => ({...k, p: k.n / mine.length * 100, d: k.n / mine.length * 100 - pa(k.code)}))
         .sort((a, b) => b.n - a.n);
