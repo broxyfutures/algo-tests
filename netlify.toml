@@ -1,4 +1,7 @@
 [build]
+  # Сборки на Netlify остановлены до окончания тестов (03.10.2026), чтобы не тратить бесплатные минуты.
+  # Сайт пока живёт на GitHub Pages. Чтобы включить Netlify обратно, удалить строку ignore.
+  ignore = "exit 0"
   publish = "workspace"
   command = "cd workspace && python3 build.py"
 
