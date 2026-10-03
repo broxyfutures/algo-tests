@@ -22,7 +22,7 @@
   // cz / co: выбранные точки и типы открытия, пустой список = любые
   // v (тест 3): вид исхода, '3' нет / одна / обе, '4' верх / низ / обе / нет, 't' по тренду открытия / против / обе / нет
   // fg / fn (тест 3): фильтр разрыва между тестами границ, 'all' все, '0' в этот же блок, 'n' через fn блоков
-  const S = {m:'f', c:'0', from:'', to:'', ticks:8, cz:['av'], co:['od'], nv:1, v:'4', fg:'all', fn:1};
+  const S = {m:'f', c:'0', from:'', to:'', ticks:8, cz:['av'], co:['od'], nv:1, v:'4', fg:'all', fn:1, fv:1};
   try{ Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); }catch(e){}
   if (!['f', 'a', 'x'].includes(S.m)) S.m = 'f';
   ['cz', 'co'].forEach(k => { if (!Array.isArray(S[k])) S[k] = !S[k] || S[k] === '*' ? [] : [S[k]]; });
@@ -477,7 +477,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
 
   // ================================================================ тест 3: какая граница протестирована первой
   // Только дни с тестом обеих границ IB. Полоса и плитки по выбору калькулятора (пустой выбор = все дни)
-  // с разницей в п.п. к доле среди всех дней выборки. Фильтр разрыва: все / в этот же блок / через N блоков (ровно N).
+  // с разницей в п.п. к доле среди всех дней выборки. Тумблер «Открытие внутри VA»: учитывать / исключить такие дни. Фильтр разрыва: все / в этот же блок / через N блоков (ровно N).
   function gapInput(){
     const w = document.createElement('span'); w.className = 'om-inl';
     const a = document.createElement('span'); a.textContent = 'через';
@@ -493,7 +493,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
   }
   function renderFirst(host, R, sel, title){
     const gapOk = r => S.fg === 'all' || (S.fg === '0' ? r.gap === 0 : r.gap === S.fn);
-    const pick2 = rows => rows.filter(r => r.ib === 'b' && r.fi !== 's' && gapOk(r)).map(r => ({...r, f: firstView(r.fi, r.tr)}));
+    const pick2 = rows => rows.filter(r => r.ib === 'b' && r.fi !== 's' && (S.fv || r.z5 !== 'iv') && gapOk(r)).map(r => ({...r, f: firstView(r.fi, r.tr)}));
     const all = pick2(R), mine = pick2(sel);
     const kinds = FIRSTV[S.v === 't' ? 't' : 'hl'].map(([code, name], i) => ({code, name, color: slot(i + 1)}));
     const cnt = rows => { const c = {}; rows.forEach(r => { c[r.f] = (c[r.f] || 0) + 1; }); return c; };
@@ -503,7 +503,9 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
     const gapN = S.fg === 'all' ? '' : S.fg === '0' ? ' · в этот же блок' : ` · через ${S.fn} блок.`;
     host.innerHTML = `<div class="om-lab0" style="color:var(--t1)">Какая граница протестирована первой?</div>` +
       `<div class="om-head">Только дни, когда протестированы обе границы IB.</div><div class="om-fctl"></div>`;
-    host.querySelector('.om-fctl').append(ctl('Вторая граница', seg([['all', 'Все'], ['0', 'В этот же блок'], ['n', 'Через N блоков']], S.fg, v => upd('fg', v)), gapInput()));
+    host.querySelector('.om-fctl').append(
+      ctl('Открытие внутри VA', seg([[1, 'Учитывать'], [0, 'Исключить']], S.fv, v => upd('fv', v))),
+      ctl('Вторая граница', seg([['all', 'Все'], ['0', 'В этот же блок'], ['n', 'Через N блоков']], S.fg, v => upd('fg', v)), gapInput()));
     const out = document.createElement('div'); host.appendChild(out);
     if (!all.length){ out.innerHTML = '<p class="om-busy">В выборке нет таких дней.</p>'; return; }
     let html = `<div class="om-head" style="margin-top:12px"><b>${esc(title)}</b> · ${mine.length ? mine.length + ' дней' : 'нет таких дней'}${gapN}</div>`;
