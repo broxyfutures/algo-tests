@@ -235,30 +235,30 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
     if (o < r.val) return 'bv';
     return 'iv';
   }
-  // mp/opentype.py: classify по ценам блоков A, B (IB), закрытию B и блокам C + D (следующий час)
-  function openType(L, H, o, c1030, r){
+  // mp/opentype.py: classify по ценам блоков A, B (IB), закрытию B и обычному IB (медиана 20 прошлых дней)
+  function openType(L, H, o, c1030, r, ibMed){
     const t = TICK;
     if (L.length < 2) return '';
     if (r.val <= o && o <= r.vah) return 'oai';
     const up = o > r.vah;
     const ibH = Math.max(H[0], H[1]), ibL = Math.min(L[0], L[1]);
-    const nH = H.slice(2, 4), nL = L.slice(2, 4);
-    const brk = up ? (nH.length > 0 && Math.max(...nH) >= ibH + t) : (nL.length > 0 && Math.min(...nL) <= ibL - t);
-    const cand = () => brk ? 'otd' : 'oao';
+    const trendSide = up ? c1030 > o : c1030 < o;
     const vaTouch = up ? ibL <= r.vah + t : ibH >= r.val - t;
     if (vaTouch){
       const backOut = up ? c1030 > r.vah : c1030 < r.val;
-      return backOut ? cand() : 'orr';
+      return !backOut ? 'orr' : trendSide ? 'otd' : 'oao';
     }
-    const outside = up ? o > r.high : o < r.low;
-    if (!outside){
-      const bTestsA = up ? L[1] <= L[0] + t : H[1] >= H[0] - t;
-      return bTestsA ? cand() : 'od';
-    }
-    const bTouch = up ? L[1] <= r.high + t : H[1] >= r.low - t;
-    if (bTouch) return cand();
-    const aHeld = up ? L[1] >= L[0] - t : H[1] <= H[0] + t;
-    return aHeld ? 'od' : 'oao';
+    const adv = up ? o - ibL : ibH - o;               // откат за цену открытия против тренда
+    if (!(adv * 5 > ibMed)) return 'od';              // порог 20 % обычного IB
+    return trendSide ? 'otd' : 'oao';
+  }
+  // обычный IB: медиана ширины IB за 20 прошлых дней (scripts/07_classify_opens.py), у первого дня своя ширина
+  function ibMedians(blocks){
+    const w = blocks.map(([L, H]) => L.length < 2 ? NaN : Math.max(H[0], H[1]) - Math.min(L[0], L[1]));
+    return w.map((own, i) => {
+      const a = w.slice(Math.max(0, i - 20), i).filter(Number.isFinite).sort((x, y) => x - y), n = a.length;
+      return !n ? own : n % 2 ? a[(n - 1) / 2] : (a[n / 2 - 1] + a[n / 2]) / 2;
+    });
   }
 
   // вся история с высотой строки ticks × 0.25: [{z0, t0, z1, t1, dt}] по индексу дня графика
@@ -270,6 +270,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
       for (let k = 0; k < d[F.bl].length; k += 2){ L.push(d[F.l] + d[F.bl][k] * TICK); H.push(d[F.l] + d[F.bl][k + 1] * TICK); }
       return [L, H]; });
     const lv = blocks.map(([L, H]) => vaOf(L, H, row));
+    const ibMed = ibMedians(blocks);
     let cL = null, cH = null, state = null;
     days.forEach((d, i) => {
       const [L, H] = blocks[i], fl = d[F.flags], sh = d[F.sh] || 0;
@@ -304,8 +305,8 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
       const ibH = Math.max(H[0], H[1]), ibL = Math.min(L[0], L[1]);
       const up = H.slice(2).some(v => v >= ibH), dn = L.slice(2).some(v => v <= ibL);
       out.push({dt, ib: up && dn ? 'b' : up ? 'u' : dn ? 'd' : 'n',
-        z0: refDay ? zoneOf(o, refDay) : '', t0: refDay ? openType(L, H, o, c1030, refDay) : '',
-        z1: refComp ? zoneOf(o, refComp) : '', t1: refComp ? openType(L, H, o, c1030, refComp) : ''});
+        z0: refDay ? zoneOf(o, refDay) : '', t0: refDay ? openType(L, H, o, c1030, refDay, ibMed[i]) : '',
+        z1: refComp ? zoneOf(o, refComp) : '', t1: refComp ? openType(L, H, o, c1030, refComp, ibMed[i]) : ''});
     });
     engineCache.set(ticks, out);
     return out;

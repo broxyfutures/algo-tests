@@ -88,8 +88,8 @@ def main() -> int:
     if op_path.exists():
         o = pd.read_csv(op_path, parse_dates=["date"], keep_default_na=False).set_index("date").loc[day]
         for sfx, lab in (("day", "опора вчера"), ("comp", "опора композит")):
-            trig = {"va": "тест VA", "a_extreme": "возврат к экстремуму A", "range": "касание границы диапазона",
-                    "a_blurred": "экстремум A размыт", "": ""}[o[f"trigger_{sfx}"]]
+            trig = {"va": "тест VA", "pullback": "откат больше 20 % обычного IB",
+                    "": ""}[o[f"trigger_{sfx}"]]
             brk = ", пробой IB в 10:30–11:30" if str(o[f"ib_break_{sfx}"]) == "True" else ""
             print(f"Открытие ({lab}): точка {o[f'open_zone_{sfx}'] or '—'}, тип {names[o[f'open_type_{sfx}']]} "
                   f"{o[f'open_dir_{sfx}']}" + (f" ({trig}{brk})" if trig else "") +
