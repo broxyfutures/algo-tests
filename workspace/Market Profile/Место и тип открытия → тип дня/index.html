@@ -21,9 +21,9 @@
 //                  u только верх, d только низ, b обе, n ни одной (от размера блока не зависит), затем при b:
 //                  first (u хай / d лоу / s в одной минуте: в плитке не показывается) и gap (блоков между тестами).
 //                  Плитка «Какая граница протестирована первой?» под калькулятором берёт дни b из его выбора.
-//   outcome 'ext'  (тест 4): точка + тип открытия → время экстремума дня, в конце строки hb, lb (блок RTH 0…12, где
-//                  впервые достигнут хай / лоу дня) и hp, lp (ход от цены открытия до хая / лоу, % обычного IB).
-//                  Под калькулятором: список сочетаний «окно худшей цены + окно лучшей цены» и расстояния от цены открытия.
+//   outcome 'ext'  (тест 4): точка + тип открытия → время худшего и лучшего отклонения дня по тренду открытия,
+//                  в конце строки hb, lb: блок RTH 0…12, где впервые достигнут хай / лоу дня. Своя подача: два кольца
+//                  рядом (худшее и лучшее отклонение) и две полосы в калькуляторе, см. renderExt.
 // Ожидает window.DATA = {test, outcome, fields, meta, zones, open_types, day_types, variants, rows} из results.json
 // (mp-es-pipeline/scripts/11_test_open_matrix.py).
 // Режим «своя строка» пересчитывает точку и тип открытия, Double-Distribution и композиты прямо здесь,
@@ -48,7 +48,7 @@
   ['cz', 'co'].forEach(k => { if (!Array.isArray(S[k])) S[k] = !S[k] || S[k] === '*' ? [] : [S[k]]; });
   if (OPEN) S.co = [];
   if (IB || EXT) S.nv = 1;
-  if (EXT){ if (!['b', 'w', 'h', 'l'].includes(S.v)) S.v = 'b'; }
+  if (EXT){ if (!['t', 'u', 'd'].includes(S.v)) S.v = 't'; }
   else if (!['3', '4', 't'].includes(S.v)) S.v = '4';
   if (!['w', 'b'].includes(S.tm)) S.tm = 'w';
   if (!['all', '0', 'n'].includes(S.fg)) S.fg = 'all';
@@ -64,21 +64,15 @@
   const EX = OPEN ? 'oai' : 'nv';  // исключаемый тумблером исход
   const EXN = OPEN ? 'Open-Auction внутри VA' : 'Normal Variation';
   const OUTN = EXT ? 'время экстремума' : IB ? 'тест границ IB' : OPEN ? 'тип открытия' : 'тип дня';
-  // тест 4: окна дня и блоки. Вид S.v: b лучшее отклонение (экстремум по тренду открытия), w худшее (против тренда),
-  // h хай дня, l лоу дня (без тренда, все дни). S.tm: w окна, b блоки по 30 минут.
+  // тест 4: окна дня и блоки. S.v: t все дни с трендом открытия, u лонговые дни, d шортовые. S.tm: w окна, b блоки
+  // по 30 минут. S.fv: учитывать ли открытия внутри VA (их тренд = сторона выхода из VA в 10:30).
   const WIN = [['w0', 'Open 09:30–10:30'], ['w1', 'Drive 10:30–12:30'], ['w2', 'Mid day 12:30–14:00'], ['w3', 'Close 14:00–16:00']];
   const WOF = [0, 0, 1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3];   // окно блока A…M
   const blkT = i => { const m = 570 + i * 30; return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
   const BLK = WOF.map((_, i) => ['b' + i, 'ABCDEFGHIJKLM'[i] + ' ' + blkT(i) + '–' + blkT(i + 1)]);
-  const EXTV = {b: 'Лучшее отклонение', w: 'Худшее отклонение', h: 'Хай дня', l: 'Лоу дня'};
-  const TRV = () => (IB && S.v === 't') || (EXT && (S.v === 'b' || S.v === 'w'));   // вид по тренду открытия
-  const extBlk = (v, tr, hb, lb) => v === 'h' ? hb : v === 'l' ? lb : !tr ? -1 : (v === 'b') === (tr === 'u') ? hb : lb;
-  const extView = (tr, hb, lb) => { const b = extBlk(S.v, tr, hb, lb); return b < 0 ? '' : S.tm === 'w' ? 'w' + WOF[b] : 'b' + b; };
-  // тест 3: исходы по виду. По тренду открытия: при открытии выше VA граница по тренду = хай IB, ниже VA = лоу IB
-  const IBV = {
-    '4': [['u', 'Тест только хая IB'], ['d', 'Тест только лоу IB'], ['b', 'Тест обеих границ IB'], ['n', 'Без теста границ IB']],
-    '3': [['o', 'Тест одной границы IB'], ['b', 'Тест обеих границ IB'], ['n', 'Без теста границ IB']],
-    't': [['w', 'Тест только границы по тренду'], ['a', 'Тест только границы против тренда'], ['b', 'Тест обеих границ IB'], ['n', 'Без теста границ IB']]};
+  const EXTV = {t: 'лонговые и шортовые дни', u: 'лонговые дни', d: 'шортовые дни'};
+  const TRV = () => IB && S.v === 't';                  // вид по тренду открытия в тесте 3
+  const extOk = (tr, z) => !!tr && (S.v === 't' || tr === S.v) && (S.fv || z !== 'iv');
   // тренд открытия: выше VA лонг, ниже VA шорт; внутри VA = сторона выхода из VA в 10:30 (у Open-Auction внутри VA тренда нет)
   const trendOf = (z, dir) => z === 'ar' || z === 'av' ? 'u' : z === 'br' || z === 'bv' ? 'd' : z === 'iv' ? (dir || '') : '';
   const ibView = (code, tr) => {
@@ -88,7 +82,7 @@
     if (code !== 'u' && code !== 'd') return code;
     return code === tr ? 'w' : 'a';
   };
-  const outList = () => EXT ? (S.tm === 'w' ? WIN : BLK) : IB ? IBV[S.v] : OPEN ? OT : DT;
+  const outList = () => IB ? IBV[S.v] : OPEN ? OT : DT;
   // какая граница первой: в виде «по тренду» по тренду открытия / против, в остальных хай / лоу
   const FIRSTV = {
     hl: [['u', 'Первым тест хая IB'], ['d', 'Первым тест лоу IB']],
@@ -99,7 +93,7 @@
   };
   // исход теста 3 по дате: от размера блока и опоры не зависит, своя строка берёт его отсюда
   const IBROW = IB ? Object.fromEntries(D.rows.map(r => [r[0], r.slice(-3)])) : {};
-  const EXROW = EXT ? Object.fromEntries(D.rows.map(r => [r[0], r.slice(-4)])) : {};
+  const EXROW = EXT ? Object.fromEntries(D.rows.map(r => [r[0], r.slice(-2)])) : {};
   const FIRST = D.rows[0][0], LAST = D.rows[D.rows.length - 1][0];
 
   // цвета типов дня: синие, голубые, фиолетовые и розовые, порядок как в DT (nm, nt, nv, tr, dd, nc, ne).
@@ -123,6 +117,9 @@
 .om-donut .om-lab tspan{fill:var(--t1);font-weight:600}
 .om-donut .om-lab tspan.om-l2{fill:var(--t2);font-weight:400}
 .om-side{flex:1 1 340px;min-width:0;font-family:var(--mono)}
+.om-two{display:flex;gap:28px 48px;flex-wrap:wrap}
+.om-two > div{flex:1 1 320px;min-width:0;font-family:var(--mono)}
+.om-dn2{width:230px;max-width:70%;margin:4px auto 16px}
 .om-head{font-size:11px;letter-spacing:.06em;color:var(--t3);margin-bottom:10px;line-height:1.6}
 .om-head b{color:var(--t1);font-weight:600}
 table.om-leg{border-collapse:collapse;width:100%;font-size:12.5px}
@@ -357,7 +354,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
 
 
   // ================================================================ большое кольцо
-  function donut(parts, total){
+  function donut(parts, total, compact){
     const R = 128, r = 80, cx = 400, cy = 175;
     const Pt = (rad, ang) => [cx + rad * Math.cos(ang), cy + rad * Math.sin(ang)];
     const xy = (rad, ang) => Pt(rad, ang).map(v => v.toFixed(2)).join(' ');
@@ -398,7 +395,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
               (two ? `${l.lines[0]}<tspan class="om-l2" x="${tx}" dy="14">${l.lines[1]}</tspan>${pc}` : l.lines[0] + pc) + `</text>`; })();
       });
     });
-    return `<svg viewBox="0 0 800 350" role="img" aria-label="распределение: ${OUTN}">${arcs}${leads}` +
+    return `<svg viewBox="${compact ? '262 37 276 276' : '0 0 800 350'}" role="img" aria-label="распределение: ${OUTN}">${arcs}${compact ? '' : leads}` +
       `<text x="${cx}" y="${cy + 2}" text-anchor="middle" fill="var(--t1)" font-size="30" font-weight="600" font-family="var(--mono)">${total}</text>` +
       `<text x="${cx}" y="${cy + 24}" text-anchor="middle" fill="var(--t3)" font-size="12" font-family="var(--mono)">дней</text></svg>`;
   }
@@ -457,7 +454,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
         const o = S.c === '0' ? e.t0 : e.t1;
         const z5 = S.c === '0' ? e.z0 : e.z1, tr = trendOf(z5, S.c === '0' ? e.d0 : e.d1);
         const [ib, fi, gap] = IBROW[d] || [e.ib, '', -1];
-        if (EXT){ const x = EXROW[d]; if (x) out.push({date: d, i, z5, o, tr, t: extView(tr, x[0], x[1]), hb: x[0], lb: x[1], hp: x[2], lp: x[3]}); return; }
+        if (EXT){ const x = EXROW[d]; if (x) out.push({date: d, i, z5, o, tr, t: extOk(tr, z5) ? 'x' : '', bb: tr === 'u' ? x[0] : x[1], wb: tr === 'u' ? x[1] : x[0]}); return; }
         out.push({date: d, i, z5, o, tr, t: IB ? ibView(ib, tr) : OPEN ? o : e.dt, ib, fi, gap});
       });
       return IB || EXT ? out.filter(r => r.t) : out;
@@ -466,7 +463,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
     const out = D.rows.filter(r => inRange(r[0])).map(r => {
       const [ib, fi, gap] = IB ? r.slice(-3) : ['', '', -1];
       const tr = IB || EXT ? trendOf(r[off], r[off + 2]) : '';
-      if (EXT){ const [hb, lb, hp, lp] = r.slice(-4); return {date: r[0], z5: r[off], o: r[off + 1], tr, t: extView(tr, hb, lb), hb, lb, hp, lp}; }
+      if (EXT){ const [hb, lb] = r.slice(-2); return {date: r[0], z5: r[off], o: r[off + 1], tr, t: extOk(tr, r[off]) ? 'x' : '', bb: tr === 'u' ? hb : lb, wb: tr === 'u' ? lb : hb}; }
       return {date: r[0], z5: r[off], o: r[off + 1], tr, t: IB ? ibView(ib, tr) : OPEN ? r[off + 1] : r[off + 2], ib, fi, gap};
     });
     return IB || EXT ? out.filter(r => r.t) : out;
@@ -554,37 +551,56 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
     out.innerHTML = html;
   }
 
-  // ================================================================ тест 4: окно худшего × окно лучшего и величина отклонений
-  // В видах по тренду: худшее = экстремум против тренда открытия, лучшее = по тренду. В видах «хай / лоу»: лоу и хай дня.
-  const trendView = () => S.v === 'b' || S.v === 'w';
-  function renderCross(host, sel, title){
-    const tv = trendView();
-    const rn = tv ? 'Худшая цена дня (против тренда открытия)' : 'Лоу дня', cn = tv ? 'Лучшая цена дня (по тренду открытия)' : 'Хай дня';
-    host.innerHTML = `<div class="om-lab0" style="color:var(--t1)">${tv ? 'Когда худшая и когда лучшая цена дня' : 'Когда лоу и когда хай дня'}</div>` +
-      `<div class="om-head"><b>${esc(title)}</b> · ${sel.length ? sel.length + ' дней' : 'нет таких дней'} · сочетания по убыванию</div>`;
-    if (!sel.length) return;
-    const m = WIN.map(() => WIN.map(() => 0));
-    sel.forEach(r => { const up = tv ? r.tr === 'u' : true; m[WOF[up ? r.lb : r.hb]][WOF[up ? r.hb : r.lb]]++; });
-    const list = [];
-    m.forEach((row, i) => row.forEach((n, j) => { if (n) list.push({i, j, n}); }));
-    list.sort((a, b) => b.n - a.n);
-    const sw = k => `<i class="om-sw" style="background:${slot(k + 1)}"></i>`;
-    host.innerHTML += `<table class="om-leg om-x"><thead><tr><th>${rn}</th><th style="text-align:left">${cn}</th><th>Доля</th><th>Дней</th></tr></thead><tbody>` +
-      list.map(c => `<tr><td>${sw(c.i)}${WIN[c.i][1]}</td><td style="text-align:left;color:var(--t2)">${sw(c.j)}${WIN[c.j][1]}</td>` +
-        `<td>${f1(c.n / sel.length * 100)}%</td><td class="n">${c.n}</td></tr>`).join('') + `</tbody></table>`;
-  }
-  function renderDev(host, R, sel, title){
-    const tv = trendView();
-    const q = (a, p) => { if (!a.length) return NaN; const s = a.slice().sort((x, y) => x - y), k = (s.length - 1) * p, lo = Math.floor(k), hi = Math.ceil(k);
-      return s[lo] + (s[hi] - s[lo]) * (k - lo); };
-    const best = r => tv ? (r.tr === 'u' ? r.hp : r.lp) : r.hp, worst = r => tv ? (r.tr === 'u' ? r.lp : r.hp) : r.lp;
-    const rows = [[tv ? 'От цены открытия до лучшей цены дня (по тренду)' : 'От цены открытия вверх до хая дня', best], [tv ? 'От цены открытия до худшей цены дня (против тренда)' : 'От цены открытия вниз до лоу дня', worst]];
-    const n0 = v => Number.isFinite(v) ? Math.round(v) + '%' : '';
-    host.innerHTML = `<div class="om-lab0" style="color:var(--t1)">Как далеко цена уходит от цены открытия</div>` +
-      `<div class="om-head"><b>${esc(title)}</b> · ${sel.length ? sel.length + ' дней' : 'нет таких дней'} · в % обычного IB (медиана ширины IB за 20 прошлых дней)</div>` +
-      (sel.length ? `<table class="om-leg"><thead><tr><th>Расстояние</th><th>В четверти дней меньше</th><th>В половине дней меньше</th><th>В трёх четвертях дней меньше</th><th>В половине дней меньше, все дни выборки</th></tr></thead><tbody>` +
-        rows.map(([nm, fn]) => { const a = sel.map(fn); return `<tr><td>${nm}</td><td>${n0(q(a, 0.25))}</td><td>${n0(q(a, 0.5))}</td><td>${n0(q(a, 0.75))}</td><td class="n">${n0(q(R.map(fn), 0.5))}</td></tr>`; }).join('') +
-        `</tbody></table>` : '');
+  // ================================================================ тест 4: время худшего и лучшего отклонения
+  // Худшее = экстремум дня против тренда открытия, лучшее = по тренду. Наверху два кольца рядом по всем дням
+  // раздела, в калькуляторе две полосы друг под другом по его выбору, «п.п.» = разница с долей во всех днях раздела.
+  function renderExt(calc, R){
+    const types = (S.tm === 'w' ? WIN : BLK).map((t, i) => ({code: t[0], name: t[1], color: slot(S.tm === 'b' ? WOF[i] + 1 : i + 1)}));
+    const code = b => S.tm === 'w' ? 'w' + WOF[b] : 'b' + b;
+    const KINDS = [['wb', 'Худшее отклонение', 'Когда худшая цена дня'], ['bb', 'Лучшее отклонение', 'Когда лучшая цена дня']];
+    const count = (rows, k) => { const c = {}; rows.forEach(r => { const x = code(r[k]); c[x] = (c[x] || 0) + 1; }); return c; };
+    const scope = EXTV[S.v] + (S.fv ? '' : ' · без открытий внутри VA');
+    calc.innerHTML = '<div class="om-viz"><div class="om-sec om-all"></div><div class="om-sec om-calc"></div></div>';
+    const all = calc.querySelector('.om-all');
+    if (!R.length) all.innerHTML = '<p class="om-busy">В выборке нет дней.</p>';
+    else all.innerHTML = `<div class="om-head"><b>Все дни выборки</b> · ${R.length} дней · ${periodLabel()} · ${scope}</div><div class="om-two">` +
+      KINDS.map(([k, nm, th]) => { const c = count(R, k), by = types.slice().sort((a, b) => (c[b.code] || 0) - (c[a.code] || 0));
+        return `<div><div class="om-lab0" style="color:var(--t1)">${nm}</div>` +
+          `<div class="om-donut om-dn2">${donut(types.map(t => ({label: t.name, value: c[t.code] || 0, color: t.color})), R.length, true)}</div>` +
+          `<table class="om-leg"><thead><tr><th>${th}</th><th>Доля</th><th>Дней</th></tr></thead><tbody>` +
+          by.map(t => `<tr><td><i class="om-sw" style="background:${t.color}"></i>${t.name}</td><td>${f1((c[t.code] || 0) / R.length * 100)}%</td><td class="n">${c[t.code] || 0}</td></tr>`).join('') +
+          `</tbody></table></div>`; }).join('') + `</div>`;
+
+    const box = calc.querySelector('.om-calc');
+    // точки открытия раздела: у лонговых дней выше VA и внутри VA, у шортовых ниже VA и внутри VA
+    const zones = D.zones.filter(([z]) => (S.fv || z !== 'iv') && (S.v === 't' || z === 'iv' || (S.v === 'u') === (z === 'ar' || z === 'av')));
+    S.cz = S.cz.filter(z => zones.some(x => x[0] === z));
+    const opens = OT.map(o => o[0]).filter(o => o !== 'oai');
+    S.co = S.co.filter(o => opens.includes(o));
+    const sel = R.filter(r => (!S.cz.length || S.cz.includes(r.z5)) && (!S.co.length || S.co.includes(r.o)));
+    const title = [S.cz.length ? S.cz.map(z => ZN[z]).join(', ') : 'любая точка', S.co.length ? S.co.map(o => OTN[o]).join(', ') : 'любой тип открытия'].join(' · ');
+    box.innerHTML = '<div class="om-lab0">Калькулятор</div><div class="om-eq"></div><div class="om-out"></div>';
+    const eqRes = document.createElement('span'); eqRes.className = 'om-eqres';
+    eqRes.innerHTML = sel.length ? `<b>время отклонений</b> · ${sel.length} дней${R.length ? ' · ' + f1(sel.length / R.length * 100) + '% выборки' : ''}` : `<b>время отклонений</b> · нет таких дней`;
+    const op = t => { const e = document.createElement('span'); e.className = 'om-op'; e.textContent = t; return e; };
+    box.querySelector('.om-eq').append(
+      multiDropdown('z', 'Точка открытия', 'любая', zones.map(([z, n]) => [z, n]), S.cz, v => upd('cz', v)), op('+'),
+      multiDropdown('o', 'Тип открытия', 'любой', opens.map(o => [o, OTN[o]]), S.co, v => upd('co', v)), op('='), eqRes);
+    if (sel.length){
+      box.querySelector('.om-out').innerHTML = KINDS.map(([k, nm]) => { const cs = count(sel, k), cb = count(R, k);
+        const ranked = types.map(t => ({...t, n: cs[t.code] || 0})).map(t => ({...t, p: t.n / sel.length * 100, d: t.n / sel.length * 100 - (cb[t.code] || 0) / R.length * 100}))
+          .sort((a, b) => b.n - a.n || (cb[b.code] || 0) - (cb[a.code] || 0));
+        const bar = ranked.filter(t => t.n).map(t =>
+          `<div style="flex:${t.p} 1 0;background:${t.color}" title="${t.name}: ${f1(t.p)}% (${t.n} из ${sel.length})">${t.p >= 8 ? f1(t.p) + '%' : ''}</div>`).join('');
+        const chips = ranked.map(t => `<div class="${t.n ? '' : 'zero'}"><span class="k"><i class="om-sw" style="background:${t.color}"></i>${t.name}</span>` +
+          `<div class="v">${f1(t.p)}%</div><div class="s">${t.n} дн · <span class="${t.d > 0.05 ? 'up' : t.d < -0.05 ? 'dn' : ''}" title="разница с долей среди всех дней выборки">${sg(t.d)} п.п.</span></div></div>`).join('');
+        return `<div class="om-lab0" style="color:var(--t1);margin:18px 0 0">${nm}</div><div class="om-sbar" style="margin-top:8px">${bar}</div><div class="om-rank">${chips}</div>`; }).join('') +
+        `<a class="om-go" href="../index.html#pick">показать эти дни на графике →</a>`;
+      box.querySelector('.om-go').addEventListener('click', () => pick(sel.map(r => r.date), title + ' · ' + scope));
+    }
+    const blkN = S.m === 'f' ? 'фикс. 2 пт' : S.m === 'a' ? 'адаптивный блок' : `своя строка ${S.ticks} тиков`;
+    document.getElementById('om-note').textContent = `${blkN} · опора: ${S.c === '0' ? 'вчерашний день' : 'композит'} · ${periodLabel()} · ${scope}. ` +
+      `Худшее отклонение: экстремум дня против тренда открытия, лучшее: по тренду. «п.п.»: разница с долей этого времени среди всех дней выборки.`;
   }
 
   // ================================================================ страница
@@ -594,7 +610,8 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
       ctl('Блок', seg([['f', 'Фикс. 2 пт'], ['a', 'Адаптивный'], ['x', 'Своя строка']], S.m, v => upd('m', v)), ...(S.m === 'x' ? [tickInput()] : [])),
       ctl('Опора', seg([['0', 'Вчерашний день'], ['1', 'Композит']], S.c, v => upd('c', v))),
       ctl('Период', seg(PRESETS.map(p => [p[0], p[1]]), presetNow(), v => { const p = PRESETS.find(x => x[0] === v); updMany({from: p[2], to: p[3]}); }), dateRange()),
-      ...(EXT ? [ctl('Экстремум', seg([['b', 'Лучшее по тренду открытия'], ['w', 'Худшее против тренда открытия'], ['h', 'Хай дня'], ['l', 'Лоу дня']], S.v, v => upd('v', v))),
+      ...(EXT ? [ctl('Отклонения', seg([['t', 'По тренду'], ['u', 'Лонговых дней'], ['d', 'Шортовых дней']], S.v, v => upd('v', v))),
+                 ctl('Открытие внутри VA', seg([[1, 'Учитывать'], [0, 'Исключить']], S.fv, v => upd('fv', v))),
                  ctl('Время', seg([['w', 'Окна'], ['b', 'Блоки 30 мин']], S.tm, v => upd('tm', v)))] : []),
       ...(EXT ? [] : [IB ? ctl('Исход', seg([['3', 'Нет / одна / обе'], ['4', 'Хай / лоу / обе / нет'], ['t', 'По тренду открытия']], S.v, v => upd('v', v)))
          : ctl(EXN, seg([[1, 'Учитывать'], [0, 'Исключить']], S.nv, v => upd('nv', v)))]),
@@ -602,13 +619,14 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
     const calc = document.getElementById('om-calc');
     let R = rowsNow();
     if (!R){ calc.innerHTML = '<p class="om-busy">Загружаю цены блоков для пересчёта…</p>'; return; }
+    if (EXT){ renderExt(calc, R); return; }
     if (!S.nv) R = R.filter(r => r.t !== EX);
-    const types = outList().map((t, i) => ({code: t[0], name: t[1], color: slot(EXT && S.tm === 'b' ? WOF[i] + 1 : i + 1)})).filter(t => S.nv || t.code !== EX);
+    const types = outList().map((t, i) => ({code: t[0], name: t[1], color: slot(i + 1)})).filter(t => S.nv || t.code !== EX);
     const count = rows => { const c = {}; rows.forEach(r => { c[r.t] = (c[r.t] || 0) + 1; }); return c; };
     const cb = count(R), base = code => R.length ? (cb[code] || 0) / R.length * 100 : 0;
-    const noNV = (S.nv ? '' : ' · без ' + EXN) + (TRV() ? ' · без Open-Auction внутри VA' : '') + (EXT ? ' · ' + EXTV[S.v].toLowerCase() : '');
+    const noNV = (S.nv ? '' : ' · без ' + EXN) + (TRV() ? ' · без Open-Auction внутри VA' : '');
     calc.innerHTML = '<div class="om-viz"><div class="om-sec om-all"></div><div class="om-sec om-calc"></div>' +
-      (IB ? '<div class="om-sec om-first"></div>' : '') + (EXT ? '<div class="om-sec om-cross"></div><div class="om-sec om-dev"></div>' : '') + '</div>';
+      (IB ? '<div class="om-sec om-first"></div>' : '') + '</div>';
 
     // ---------------------------------------------------------------- общая диаграмма: все дни выборки
     const all = calc.querySelector('.om-all');
@@ -617,7 +635,7 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
       const byShare = types.slice().sort((a, b) => (cb[b.code] || 0) - (cb[a.code] || 0));
       all.innerHTML = `<div class="om-res"><div class="om-donut">${donut(types.map(t => ({label: t.name, value: cb[t.code] || 0, color: t.color})), R.length)}</div>` +
         `<div class="om-side"><div class="om-head"><b>Все дни выборки</b><br>${R.length} дней · ${periodLabel()}${noNV}</div>` +
-        `<table class="om-leg"><thead><tr><th>${EXT ? EXTV[S.v] : IB ? 'Тест границ IB' : OPEN ? 'Тип открытия' : 'Тип дня'}</th><th>Доля</th><th>Дней</th></tr></thead><tbody>` +
+        `<table class="om-leg"><thead><tr><th>${IB ? 'Тест границ IB' : OPEN ? 'Тип открытия' : 'Тип дня'}</th><th>Доля</th><th>Дней</th></tr></thead><tbody>` +
         byShare.map(t => `<tr><td><i class="om-sw" style="background:${t.color}"></i>${t.name}</td><td>${f1(base(t.code))}%</td><td class="n">${cb[t.code] || 0}</td></tr>`).join('') +
         `</tbody></table></div></div>`;
     }
@@ -654,11 +672,10 @@ i.om-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-rig
     }
 
     if (IB) renderFirst(calc.querySelector('.om-first'), R, sel, title);
-    if (EXT){ renderCross(calc.querySelector('.om-cross'), sel, title); renderDev(calc.querySelector('.om-dev'), R, sel, title); }
 
     const blkN = S.m === 'f' ? 'фикс. 2 пт' : S.m === 'a' ? 'адаптивный блок' : `своя строка ${S.ticks} тиков`;
     document.getElementById('om-note').textContent = `${blkN} · опора: ${S.c === '0' ? 'вчерашний день' : 'композит'} · ${periodLabel()}${noNV}. ` +
-      `«п.п.» в калькуляторе: разница с долей ${EXT ? 'этого времени' : IB ? 'этого исхода' : 'этого типа'} среди всех дней выборки.` +
+      `«п.п.» в калькуляторе: разница с долей ${IB ? 'этого исхода' : 'этого типа'} среди всех дней выборки.` +
       (S.m === 'x' ? ' Своя строка пересчитывает VA, открытия, DD и композиты, при 8 тиках совпадает с фикс. 2 пт.' : '');
   }
 

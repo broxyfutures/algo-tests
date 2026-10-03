@@ -19,7 +19,7 @@
   тест 1: rows = [date, f0 zone, f0 open_type, f0 day_type, f0 day_dir, f1 …, a0 …, a1 …]
   тест 2: rows = [date, f0 zone, f0 open_type, f1 …, a0 …, a1 …]
   тест 3: rows = [date, f0 zone, f0 open_type, f0 open_dir, f1 …, a0 …, a1 …, ib, first, gap]
-  тест 4: rows = [date, f0 zone, f0 open_type, f0 open_dir, f1 …, a0 …, a1 …, hb, lb, hp, lp]
+  тест 4: rows = [date, f0 zone, f0 open_type, f0 open_dir, f1 …, a0 …, a1 …, hb, lb]
           (first и gap заполнены только при ib = b, иначе "" и -1)
   варианты: f / a = fixed / adaptive, 0 / 1 = опора вчерашний день / композит
 
@@ -47,19 +47,13 @@ OUT4 = MP / "Место и тип открытия → время экстрем
 
 
 def extremes() -> pd.DataFrame:
-    """По дате: hb / lb — блок RTH (0 = A … 12 = M), где впервые достигнут хай / лоу дня (по ценам, первое касание),
-    hp / lp — ход от цены открытия до хая / лоу в % обычного IB (медиана ширины IB за 20 прошлых дней)."""
+    """По дате: hb / lb — блок RTH (0 = A … 12 = M), где впервые достигнут хай / лоу дня (по ценам, первое касание)."""
     p = pd.read_parquet(C.DERIVED / "periods_30m.parquet", columns=["date", "session", "period", "high", "low"])
     r = p[(p["session"] == "RTH") & (p["period"] < len(C.LETTERS))]
     hi = r.pivot(index="date", columns="period", values="high")
     lo = r.pivot(index="date", columns="period", values="low")
-    x = pd.DataFrame({"hb": hi.fillna(-1e18).to_numpy().argmax(1), "lb": lo.fillna(1e18).to_numpy().argmin(1),
-                      "high": hi.max(axis=1).to_numpy(), "low": lo.min(axis=1).to_numpy()}, index=pd.to_datetime(hi.index))
-    o = pd.read_csv(C.DERIVED / "mp_open_fixed.csv", parse_dates=["date"]).set_index("date")[["open", "ib_med"]]
-    x = x.join(o)
-    x["hp"] = ((x["high"] - x["open"]) / x["ib_med"] * 100).round().astype(int)
-    x["lp"] = ((x["open"] - x["low"]) / x["ib_med"] * 100).round().astype(int)
-    return x
+    return pd.DataFrame({"hb": hi.fillna(-1e18).to_numpy().argmax(1), "lb": lo.fillna(1e18).to_numpy().argmin(1)},
+                        index=pd.to_datetime(hi.index))
 
 
 def ib_tests() -> pd.DataFrame:
@@ -135,7 +129,7 @@ def main() -> int:
     rows4 = []
     for r in rows3:
         x = ext.loc[pd.Timestamp(r[0])]
-        rows4.append(r[:-3] + [int(x["hb"]), int(x["lb"]), int(x["hp"]), int(x["lp"])])
+        rows4.append(r[:-3] + [int(x["hb"]), int(x["lb"])])
     for out, res in ((OUT4, {"test": "4", "outcome": "ext", "fields": ["zone", "open", "odir"], **common, "rows": rows4}),
                      (OUT, {"test": "1", "outcome": "day", "fields": ["zone", "open", "day", "dir"], **common, "rows": rows}),
                      (OUT2, {"test": "2", "outcome": "open", "fields": ["zone", "open"], **common, "rows": rows2}),
